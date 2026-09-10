@@ -1,0 +1,8 @@
+{
+  "name": "zenware",
+  "version": "1.0.0",
+  "description": "ZenWare Luau project",
+  "scripts": {
+    "build": "luau-bundler --src src --out dist/ZenWare.lua --entry Main"
+  }
+}
