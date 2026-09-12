@@ -1,5 +1,4 @@
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local VirtualUser = game:GetService("VirtualUser")
@@ -38,16 +37,16 @@ end
 
 local function SafeCall(callback)
     if type(callback) ~= "function" then
-        return false
+        return false, nil
     end
 
-    local ok, err = pcall(callback)
+    local ok, result = pcall(callback)
 
     if not ok then
-        warn("[ZenWare V3] " .. tostring(err))
+        warn("[ZenWare V3] " .. tostring(result))
     end
 
-    return ok
+    return ok, result
 end
 
 local function GetCharacter()
@@ -95,25 +94,31 @@ local function FormatVector3(position)
     )
 end
 
-local function SetClipboard(text)
+local function SetClipboard(value)
     if type(setclipboard) ~= "function" then
         return false
     end
 
     local ok = pcall(function()
-        setclipboard(tostring(text))
+        setclipboard(tostring(value))
     end)
 
     return ok
 end
 
 --------------------------------------------------
--- DEFAULT STATE
+-- STATE DEFAULTS
 --------------------------------------------------
 
-State.AutoWin = State.AutoWin or false
-State.TeleportLoop = State.TeleportLoop or false
-State.TreadmillLoop = State.TreadmillLoop or false
+State.AutoWin =
+    State.AutoWin or false
+
+State.TeleportLoop =
+    State.TeleportLoop or false
+
+State.TreadmillLoop =
+    State.TreadmillLoop or false
+
 State.TeleportInterval =
     tonumber(State.TeleportInterval)
     or 0.5
@@ -233,7 +238,7 @@ MainTab:CreateButton({
 })
 
 --------------------------------------------------
--- LOOPS
+-- TELEPORT LOOPS
 --------------------------------------------------
 
 MainTab:CreateSection(
@@ -332,7 +337,7 @@ MainTab:CreateToggle({
 })
 
 --------------------------------------------------
--- PLAYER INFO
+-- PLAYER INFORMATION
 --------------------------------------------------
 
 MainTab:CreateSection(
@@ -398,12 +403,6 @@ MainTab:CreateButton({
                 "Clipboard",
                 "User ID copied.",
                 2
-            )
-        else
-            Notify(
-                "Clipboard",
-                "Clipboard unavailable.",
-                3
             )
         end
     end,
@@ -484,7 +483,7 @@ RebirthTab:CreateParagraph({
 
     Content =
         "Automatically activates the "
-        .. "visible Rebirth button.",
+        .. "Rebirth button.",
 })
 
 RebirthTab:CreateSlider({
@@ -622,10 +621,6 @@ local TeleportTab =
         "map-pin"
     )
 
---------------------------------------------------
--- CUSTOM XYZ
---------------------------------------------------
-
 TeleportTab:CreateSection(
     "Custom XYZ"
 )
@@ -653,19 +648,13 @@ TeleportTab:CreateButton({
 
     Callback = function()
         local x =
-            tonumber(
-                xBox:GetText()
-            )
+            tonumber(xBox:GetText())
 
         local y =
-            tonumber(
-                yBox:GetText()
-            )
+            tonumber(yBox:GetText())
 
         local z =
-            tonumber(
-                zBox:GetText()
-            )
+            tonumber(zBox:GetText())
 
         if not (x and y and z) then
             Notify(
@@ -745,10 +734,6 @@ TeleportTab:CreateButton({
     end,
 })
 
---------------------------------------------------
--- OFFSET
---------------------------------------------------
-
 TeleportTab:CreateSection(
     "Position Offset"
 )
@@ -767,12 +752,6 @@ TeleportTab:CreateButton({
             GetRoot()
 
         if not root then
-            Notify(
-                "Offset",
-                "Root part not found.",
-                3
-            )
-
             return
         end
 
@@ -858,10 +837,6 @@ TeleportTab:CreateButton({
         end
     end,
 })
-
---------------------------------------------------
--- SAVED LOCATIONS
---------------------------------------------------
 
 TeleportTab:CreateSection(
     "Saved Locations"
@@ -1263,8 +1238,10 @@ local ServerTab =
         "server"
     )
 
+local serverFinderRunning = false
+
 ServerTab:CreateSection(
-    "Player Search"
+    "Find Player Server"
 )
 
 local usernameBox =
@@ -1274,7 +1251,178 @@ local usernameBox =
     })
 
 ServerTab:CreateButton({
-    Name = "Find Player",
+    Name = "Find & Join Player",
+
+    Callback = function()
+        if serverFinderRunning then
+            Notify(
+                "Server Finder",
+                "A search is already running.",
+                3
+            )
+
+            return
+        end
+
+        local username =
+            usernameBox:GetText()
+
+        username =
+            tostring(username or "")
+            :match("^%s*(.-)%s*$")
+
+        if username == "" then
+            Notify(
+                "Server Finder",
+                "Enter a username.",
+                3
+            )
+
+            return
+        end
+
+        serverFinderRunning = true
+
+        Notify(
+            "Server Finder",
+            "Looking up @" .. username .. "...",
+            3
+        )
+
+        task.spawn(function()
+
+            local ok, err =
+                pcall(function()
+
+                    --------------------------------------------------
+                    -- USERNAME -> USER ID
+                    --------------------------------------------------
+
+                    local userId =
+                        Players:GetUserIdFromNameAsync(
+                            username
+                        )
+
+                    if not userId then
+                        error(
+                            "User could not be resolved."
+                        )
+                    end
+
+                    Notify(
+                        "Server Finder",
+                        "User found. Checking server...",
+                        3
+                    )
+
+                    --------------------------------------------------
+                    -- PLAYER -> SERVER
+                    --------------------------------------------------
+
+                    local success
+                    local currentInstance
+                    local errorMessage
+                    local placeId
+                    local jobId
+
+                    success,
+                    currentInstance,
+                    errorMessage,
+                    placeId,
+                    jobId =
+                        pcall(function()
+                            return
+                                TeleportService:
+                                GetPlayerPlaceInstanceAsync(
+                                    userId
+                                )
+                        end)
+
+                    if not success then
+                        error(
+                            tostring(
+                                currentInstance
+                                or errorMessage
+                                or "Presence lookup failed."
+                            )
+                        )
+                    end
+
+                    --------------------------------------------------
+                    -- ROBLOX RETURNS INSTANCE INFO
+                    --------------------------------------------------
+
+                    if
+                        not placeId
+                        or not jobId
+                    then
+                        error(
+                            "Player is not currently in a joinable server."
+                        )
+                    end
+
+                    --------------------------------------------------
+                    -- ALREADY IN SERVER
+                    --------------------------------------------------
+
+                    if
+                        placeId == game.PlaceId
+                        and jobId == game.JobId
+                    then
+                        Notify(
+                            "Server Finder",
+                            "Player is already in your server.",
+                            4
+                        )
+
+                        return
+                    end
+
+                    --------------------------------------------------
+                    -- FOUND
+                    --------------------------------------------------
+
+                    Notify(
+                        "Server Finder",
+                        "Server found!\n"
+                            .. "PlaceId: "
+                            .. tostring(placeId)
+                            .. "\nJobId: "
+                            .. tostring(jobId)
+                            .. "\nJoining...",
+
+                        5
+                    )
+
+                    task.wait(0.5)
+
+                    --------------------------------------------------
+                    -- JOIN
+                    --------------------------------------------------
+
+                    TeleportService:
+                        TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            LocalPlayer
+                        )
+                end)
+
+            serverFinderRunning = false
+
+            if not ok then
+                Notify(
+                    "Server Finder",
+                    tostring(err),
+                    5
+                )
+            end
+        end)
+    end,
+})
+
+ServerTab:CreateButton({
+    Name = "Check Player Only",
 
     Callback = function()
         local username =
@@ -1294,61 +1442,79 @@ ServerTab:CreateButton({
             return
         end
 
-        local exactMatch = nil
-        local displayMatch = nil
+        task.spawn(function()
 
-        for _, player in ipairs(
-            Players:GetPlayers()
-        ) do
-            if
-                string.lower(
-                    player.Name
-                )
-                ==
-                string.lower(username)
-            then
-                exactMatch = player
-                break
-            end
+            local ok, result =
+                pcall(function()
 
-            if
-                string.lower(
-                    player.DisplayName
-                )
-                ==
-                string.lower(username)
-            then
-                displayMatch = player
-            end
-        end
+                    local userId =
+                        Players:GetUserIdFromNameAsync(
+                            username
+                        )
 
-        local player =
-            exactMatch
-            or displayMatch
+                    local success
+                    local currentInstance
+                    local errorMessage
+                    local placeId
+                    local jobId
 
-        if player then
+                    success,
+                    currentInstance,
+                    errorMessage,
+                    placeId,
+                    jobId =
+                        pcall(function()
+                            return
+                                TeleportService:
+                                GetPlayerPlaceInstanceAsync(
+                                    userId
+                                )
+                        end)
+
+                    if not success then
+                        error(
+                            tostring(
+                                currentInstance
+                                or errorMessage
+                                or "Lookup failed."
+                            )
+                        )
+                    end
+
+                    if
+                        not placeId
+                        or not jobId
+                    then
+                        return
+                            "User found, but no joinable server was returned."
+                    end
+
+                    return
+                        "ONLINE\n"
+                        .. "Username: "
+                        .. username
+                        .. "\nUserId: "
+                        .. tostring(userId)
+                        .. "\nPlaceId: "
+                        .. tostring(placeId)
+                        .. "\nJobId: "
+                        .. tostring(jobId)
+                end)
+
             Notify(
                 "Server Finder",
-                "FOUND\n"
-                    .. "Username: "
-                    .. player.Name
-                    .. "\nDisplay: "
-                    .. player.DisplayName
-                    .. "\nUserId: "
-                    .. tostring(
-                        player.UserId
-                    )
-                    .. "\nJobId: "
-                    .. game.JobId,
+                tostring(result),
                 6
             )
-        else
-            Notify(
-                "Server Finder",
-                "Player is not in this server.",
-                4
-            )
-        end
+        end)
+    end,
+})
+
+ServerTab:CreateButton({
+    Name = "Clear Username",
+
+    Callback = function()
+        usernameBox:SetText("")
     end,
 })
 
@@ -1357,19 +1523,15 @@ ServerTab:CreateSection(
 )
 
 ServerTab:CreateButton({
-    Name = "Current Server Info",
+    Name = "Server Information",
 
     Callback = function()
         Notify(
             "Current Server",
             "PlaceId: "
-                .. tostring(
-                    game.PlaceId
-                )
+                .. tostring(game.PlaceId)
                 .. "\nJobId: "
-                .. tostring(
-                    game.JobId
-                )
+                .. tostring(game.JobId)
                 .. "\nPlayers: "
                 .. tostring(
                     #Players:GetPlayers()
@@ -1383,9 +1545,7 @@ ServerTab:CreateButton({
     Name = "Copy Job ID",
 
     Callback = function()
-        if SetClipboard(
-            game.JobId
-        ) then
+        if SetClipboard(game.JobId) then
             Notify(
                 "Server Finder",
                 "Job ID copied.",
@@ -1401,78 +1561,19 @@ ServerTab:CreateButton({
     end,
 })
 
-ServerTab:CreateSection(
-    "Players"
-)
-
 ServerTab:CreateButton({
-    Name = "List Players",
+    Name = "Copy Place ID",
 
     Callback = function()
-        local names = {}
-
-        for _, player in ipairs(
-            Players:GetPlayers()
-        ) do
-            table.insert(
-                names,
-                player.Name
+        if SetClipboard(
+            tostring(game.PlaceId)
+        ) then
+            Notify(
+                "Server Finder",
+                "Place ID copied.",
+                2
             )
         end
-
-        table.sort(names)
-
-        local text =
-            table.concat(
-                names,
-                "\n"
-            )
-
-        if text == "" then
-            text = "No players."
-        end
-
-        Notify(
-            "Players",
-            text,
-            7
-        )
-    end,
-})
-
-ServerTab:CreateButton({
-    Name = "Count Players",
-
-    Callback = function()
-        Notify(
-            "Players",
-            "Current players: "
-                .. tostring(
-                    #Players:GetPlayers()
-                ),
-            3
-        )
-    end,
-})
-
-ServerTab:CreateButton({
-    Name = "Show My Server Data",
-
-    Callback = function()
-        Notify(
-            "Server Data",
-            "User: "
-                .. LocalPlayer.Name
-                .. "\nUserId: "
-                .. tostring(
-                    LocalPlayer.UserId
-                )
-                .. "\nJobId: "
-                .. tostring(
-                    game.JobId
-                ),
-            5
-        )
     end,
 })
 
@@ -1496,7 +1597,7 @@ ServerTab:CreateButton({
 })
 
 ServerTab:CreateButton({
-    Name = "Join Random Server",
+    Name = "Join Public Server",
 
     Callback = function()
         SafeCall(function()
@@ -1506,6 +1607,17 @@ ServerTab:CreateButton({
             )
         end)
     end,
+})
+
+ServerTab:CreateParagraph({
+    Title = "How it works",
+
+    Content =
+        "Enter a Roblox username.\n"
+        .. "ZenWare resolves the account, "
+        .. "looks up the player's current "
+        .. "PlaceId and JobId, then attempts "
+        .. "to join that specific instance.",
 })
 
 --------------------------------------------------
@@ -1523,10 +1635,6 @@ local SettingsTab =
         "settings"
     )
 
---------------------------------------------------
--- INTERFACE
---------------------------------------------------
-
 SettingsTab:CreateSection(
     "Interface"
 )
@@ -1537,9 +1645,7 @@ SettingsTab:CreateKeybind({
     Flag = "UIToggleKey",
 
     Callback = function(key)
-        Window:SetToggleKey(
-            key
-        )
+        Window:SetToggleKey(key)
 
         Notify(
             "Interface",
@@ -1562,9 +1668,7 @@ SettingsTab:CreateToggle({
             enabled
 
         SafeCall(function()
-            AutoLoad.Set(
-                enabled
-            )
+            AutoLoad.Set(enabled)
         end)
     end,
 })
@@ -1582,7 +1686,7 @@ SettingsTab:CreateToggle({
 })
 
 --------------------------------------------------
--- PLAYER SETTINGS
+-- PLAYER
 --------------------------------------------------
 
 SettingsTab:CreateSection(
@@ -1593,12 +1697,11 @@ SettingsTab:CreateSlider({
     Name = "Walk Speed",
     Min = 0,
     Max = 100,
-    Default = 16,
+    Default = State.WalkSpeed,
     Flag = "WalkSpeed",
 
     Callback = function(value)
-        State.WalkSpeed =
-            value
+        State.WalkSpeed = value
 
         local humanoid =
             GetHumanoid()
@@ -1614,22 +1717,18 @@ SettingsTab:CreateSlider({
     Name = "Jump Power",
     Min = 0,
     Max = 150,
-    Default = 50,
+    Default = State.JumpPower,
     Flag = "JumpPower",
 
     Callback = function(value)
-        State.JumpPower =
-            value
+        State.JumpPower = value
 
         local humanoid =
             GetHumanoid()
 
         if humanoid then
-            humanoid.UseJumpPower =
-                true
-
-            humanoid.JumpPower =
-                value
+            humanoid.UseJumpPower = true
+            humanoid.JumpPower = value
         end
     end,
 })
@@ -1638,12 +1737,11 @@ SettingsTab:CreateSlider({
     Name = "Hip Height",
     Min = 0,
     Max = 10,
-    Default = 2,
+    Default = State.HipHeight,
     Flag = "HipHeight",
 
     Callback = function(value)
-        State.HipHeight =
-            value
+        State.HipHeight = value
 
         local humanoid =
             GetHumanoid()
