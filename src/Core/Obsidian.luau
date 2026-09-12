@@ -64,34 +64,44 @@ function Obsidian.new(title, configFolder)
             }
 
             --------------------------------------------------
-            -- CREATE SECTION / GROUPBOX
+            -- ENSURE GROUP
             --------------------------------------------------
 
-            function ZenTab:CreateSection(name, icon)
-                local Group
-
-                if icon then
-                    Group = self.Tab:AddLeftGroupbox(
-                        name,
-                        icon
-                    )
-                else
-                    Group = self.Tab:AddLeftGroupbox(
-                        name
-                    )
+            function ZenTab:_EnsureGroup(name, icon)
+                if self.Group then
+                    return self.Group
                 end
 
-                self.Group = Group
+                local groupName =
+                    name or "General"
 
-                return Group
+                if icon then
+                    self.Group =
+                        self.Tab:AddLeftGroupbox(
+                            groupName,
+                            icon
+                        )
+                else
+                    self.Group =
+                        self.Tab:AddLeftGroupbox(
+                            groupName
+                        )
+                end
+
+                return self.Group
             end
 
             --------------------------------------------------
-            -- GET GROUP
+            -- SECTION
             --------------------------------------------------
 
-            local function getGroup(self)
-                return self.Group
+            function ZenTab:CreateSection(name, icon)
+                self.Group = nil
+
+                return self:_EnsureGroup(
+                    name,
+                    icon
+                )
             end
 
             --------------------------------------------------
@@ -101,15 +111,18 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateButton(config)
                 config = config or {}
 
-                local Group = getGroup(self)
-
-                if not Group then
-                    return nil
-                end
+                local Group =
+                    self:_EnsureGroup(
+                        config.Section or "Actions"
+                    )
 
                 return Group:AddButton({
-                    Text = config.Name or "Button",
-                    Func = config.Callback,
+                    Text =
+                        config.Name
+                        or "Button",
+
+                    Func =
+                        config.Callback,
                 })
             end
 
@@ -120,20 +133,26 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateToggle(config)
                 config = config or {}
 
-                local Group = getGroup(self)
-
-                if not Group then
-                    return nil
-                end
+                local Group =
+                    self:_EnsureGroup(
+                        config.Section or "Options"
+                    )
 
                 return Group:AddToggle(
                     config.Flag
                         or config.Name
                         or "Toggle",
+
                     {
-                        Text = config.Name or "Toggle",
-                        Default = config.Default == true,
-                        Callback = config.Callback,
+                        Text =
+                            config.Name
+                            or "Toggle",
+
+                        Default =
+                            config.Default == true,
+
+                        Callback =
+                            config.Callback,
                     }
                 )
             end
@@ -145,39 +164,49 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateSlider(config)
                 config = config or {}
 
-                local Group = getGroup(self)
-
-                if not Group then
-                    return nil
-                end
+                local Group =
+                    self:_EnsureGroup(
+                        config.Section or "Options"
+                    )
 
                 return Group:AddSlider(
                     config.Flag
                         or config.Name
                         or "Slider",
+
                     {
-                        Text = config.Name or "Slider",
+                        Text =
+                            config.Name
+                            or "Slider",
 
                         Default =
-                            tonumber(config.Default)
-                            or tonumber(config.Min)
+                            tonumber(
+                                config.Default
+                            )
                             or 0,
 
                         Min =
-                            tonumber(config.Min)
+                            tonumber(
+                                config.Min
+                            )
                             or 0,
 
                         Max =
-                            tonumber(config.Max)
+                            tonumber(
+                                config.Max
+                            )
                             or 100,
 
                         Rounding =
-                            tonumber(config.Rounding)
+                            tonumber(
+                                config.Rounding
+                            )
                             or 2,
 
                         Compact = false,
 
-                        Callback = config.Callback,
+                        Callback =
+                            config.Callback,
                     }
                 )
             end
@@ -189,64 +218,70 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateTextBox(config)
                 config = config or {}
 
-                local Group = getGroup(self)
+                local Group =
+                    self:_EnsureGroup(
+                        config.Section or "Input"
+                    )
 
-                if not Group then
-                    return {
-                        GetText = function()
-                            return ""
-                        end,
+                local input =
+                    Group:AddInput(
+                        config.Flag
+                            or config.Name
+                            or "Input",
 
-                        SetText = function()
-                        end,
+                        {
+                            Text =
+                                config.Name
+                                or "Input",
 
-                        Focus = function()
-                        end,
-                    }
-                end
+                            Placeholder =
+                                config.Placeholder
+                                or "",
 
-                local input = Group:AddInput(
-                    config.Flag
-                        or config.Name
-                        or "Input",
-                    {
-                        Text = config.Name or "Input",
+                            Default =
+                                tostring(
+                                    config.Default
+                                    or ""
+                                ),
 
-                        Placeholder =
-                            config.Placeholder
-                            or "",
-
-                        Default =
-                            tostring(
-                                config.Default
-                                or ""
-                            ),
-
-                        Callback =
-                            config.Callback,
-                    }
-                )
+                            Callback =
+                                config.Callback,
+                        }
+                    )
 
                 local api = {}
 
                 function api:GetText()
-                    if input and input.Value ~= nil then
-                        return tostring(input.Value)
+                    if
+                        input
+                        and input.Value ~= nil
+                    then
+                        return tostring(
+                            input.Value
+                        )
                     end
 
                     return ""
                 end
 
                 function api:SetText(value)
-                    if input and input.SetValue then
+                    if
+                        input
+                        and input.SetValue
+                    then
                         input:SetValue(
-                            tostring(value or "")
+                            tostring(
+                                value or ""
+                            )
                         )
                     end
                 end
 
                 function api:Focus()
-                    if input and input.Input then
+                    if
+                        input
+                        and input.Input
+                    then
                         input.Input:CaptureFocus()
                     end
                 end
@@ -261,39 +296,53 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateKeybind(config)
                 config = config or {}
 
-                local Group = getGroup(self)
-
-                if not Group then
-                    return nil
-                end
+                local Group =
+                    self:_EnsureGroup(
+                        config.Section
+                            or "Keybinds"
+                    )
 
                 local defaultKey =
                     config.Default
                     or Enum.KeyCode.F
 
-                if typeof(defaultKey) == "EnumItem" then
-                    defaultKey = defaultKey.Name
-                elseif type(defaultKey) ~= "string" then
+                if typeof(defaultKey)
+                    == "EnumItem"
+                then
+                    defaultKey =
+                        defaultKey.Name
+                elseif
+                    type(defaultKey)
+                    ~= "string"
+                then
                     defaultKey = "F"
                 end
 
-                local label = Group:AddLabel(
-                    config.Name or "Keybind"
-                )
+                local label =
+                    Group:AddLabel(
+                        config.Name
+                            or "Keybind"
+                    )
 
-                local keybind = label:AddKeyPicker(
+                return label:AddKeyPicker(
                     config.Flag
                         or config.Name
                         or "Keybind",
+
                     {
-                        Default = defaultKey,
+                        Default =
+                            defaultKey,
+
                         Mode = "Toggle",
-                        Text = config.Name or "Keybind",
-                        Callback = config.Callback,
+
+                        Text =
+                            config.Name
+                            or "Keybind",
+
+                        Callback =
+                            config.Callback,
                     }
                 )
-
-                return keybind
             end
 
             --------------------------------------------------
@@ -303,20 +352,23 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateColorPicker(config)
                 config = config or {}
 
-                local Group = getGroup(self)
+                local Group =
+                    self:_EnsureGroup(
+                        config.Section
+                            or "Appearance"
+                    )
 
-                if not Group then
-                    return nil
-                end
-
-                local label = Group:AddLabel(
-                    config.Name or "Color"
-                )
+                local label =
+                    Group:AddLabel(
+                        config.Name
+                            or "Color"
+                    )
 
                 return label:AddColorPicker(
                     config.Flag
                         or config.Name
                         or "Color",
+
                     {
                         Default =
                             config.Default,
@@ -338,11 +390,11 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateParagraph(config)
                 config = config or {}
 
-                local Group = getGroup(self)
-
-                if not Group then
-                    return nil
-                end
+                local Group =
+                    self:_EnsureGroup(
+                        config.Section
+                            or "Information"
+                    )
 
                 local title =
                     tostring(
@@ -378,26 +430,29 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateImage(config)
                 config = config or {}
 
-                local Group = getGroup(self)
-
-                if not Group then
-                    return nil
-                end
-
                 if not config.Image then
                     return nil
                 end
+
+                local Group =
+                    self:_EnsureGroup(
+                        config.Section
+                            or "Appearance"
+                    )
 
                 return Group:AddImage(
                     config.Flag
                         or config.Name
                         or "Image",
+
                     {
                         Image =
                             config.Image,
 
                         Height =
-                            tonumber(config.Height)
+                            tonumber(
+                                config.Height
+                            )
                             or 120,
 
                         Transparency =
@@ -421,13 +476,14 @@ function Obsidian.new(title, configFolder)
             --------------------------------------------------
 
             function ZenTab:CreateConfigSection()
-                local Group = getGroup(self)
+                local Group =
+                    self:_EnsureGroup(
+                        "Configuration"
+                    )
 
-                if not Group then
-                    return nil
-                end
-
-                Group:AddLabel("Configuration")
+                Group:AddLabel(
+                    "Configuration"
+                )
 
                 return Group
             end
@@ -439,16 +495,17 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateDropdown(config)
                 config = config or {}
 
-                local Group = getGroup(self)
-
-                if not Group then
-                    return nil
-                end
+                local Group =
+                    self:_EnsureGroup(
+                        config.Section
+                            or "Options"
+                    )
 
                 return Group:AddDropdown(
                     config.Flag
                         or config.Name
                         or "Dropdown",
+
                     {
                         Values =
                             config.Options
