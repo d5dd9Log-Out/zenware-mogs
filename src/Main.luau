@@ -14,7 +14,6 @@ local Remotes = require("Core/Remotes")
 local Teleports = require("Features/Teleports")
 local AutoClicker = require("Features/AutoClicker")
 local AutoMog = require("Features/AutoMog")
-local ServerFinder = require("Features/ServerFinder")
 local AutoLoad = require("Features/AutoLoad")
 
 local UI = require("UI/UI")
@@ -35,6 +34,20 @@ local function Notify(title, description, duration)
             Duration = duration or 3,
         })
     end)
+end
+
+local function SafeCall(callback)
+    if type(callback) ~= "function" then
+        return false
+    end
+
+    local ok, err = pcall(callback)
+
+    if not ok then
+        warn("[ZenWare V3] " .. tostring(err))
+    end
+
+    return ok
 end
 
 local function GetCharacter()
@@ -82,34 +95,20 @@ local function FormatVector3(position)
     )
 end
 
-local function SafeCall(callback)
-    if type(callback) ~= "function" then
+local function SetClipboard(text)
+    if type(setclipboard) ~= "function" then
         return false
     end
 
-    local ok, err = pcall(callback)
-
-    if not ok then
-        warn("[ZenWare V3] " .. tostring(err))
-    end
+    local ok = pcall(function()
+        setclipboard(tostring(text))
+    end)
 
     return ok
 end
 
-local function SetClipboard(text)
-    if type(setclipboard) == "function" then
-        pcall(function()
-            setclipboard(tostring(text))
-        end)
-
-        return true
-    end
-
-    return false
-end
-
 --------------------------------------------------
--- PLAYER STATE
+-- DEFAULT STATE
 --------------------------------------------------
 
 State.AutoWin = State.AutoWin or false
@@ -123,14 +122,26 @@ State.AutoRebirth = false
 State.RebirthInterval = 0.25
 
 State.AutoClicker = false
-State.AutoClickerSpeed = 10
+State.AutoClickerSpeed =
+    tonumber(State.AutoClickerSpeed)
+    or 10
 
 State.AutoMog = false
 State.AutoMogAll = false
 
-State.WalkSpeed = 16
-State.JumpPower = 50
-State.HipHeight = 2
+State.WalkSpeed =
+    tonumber(State.WalkSpeed)
+    or 16
+
+State.JumpPower =
+    tonumber(State.JumpPower)
+    or 50
+
+State.HipHeight =
+    tonumber(State.HipHeight)
+    or 2
+
+State.AntiAFK = false
 
 --------------------------------------------------
 -- MAIN
@@ -166,7 +177,7 @@ MainTab:CreateToggle({
 
             Notify(
                 "Auto Win",
-                "Win teleport started.",
+                "Enabled.",
                 2
             )
         else
@@ -189,7 +200,7 @@ MainTab:CreateButton({
 
         Notify(
             "Teleport",
-            "Teleported to Win.",
+            "Win teleport requested.",
             2
         )
     end,
@@ -205,23 +216,19 @@ MainTab:CreateButton({
 
         Notify(
             "Teleport",
-            "Teleported to Treadmill.",
+            "Treadmill teleport requested.",
             2
         )
     end,
 })
 
 MainTab:CreateButton({
-    Name = "Refresh Character",
+    Name = "Respawn Character",
 
     Callback = function()
-        LocalPlayer:LoadCharacter()
-
-        Notify(
-            "Player",
-            "Character respawn requested.",
-            2
-        )
+        SafeCall(function()
+            LocalPlayer:LoadCharacter()
+        end)
     end,
 })
 
@@ -229,7 +236,9 @@ MainTab:CreateButton({
 -- LOOPS
 --------------------------------------------------
 
-MainTab:CreateSection("Teleport Loops")
+MainTab:CreateSection(
+    "Teleport Loops"
+)
 
 MainTab:CreateSlider({
     Name = "Loop Interval",
@@ -280,7 +289,7 @@ MainTab:CreateToggle({
 
             Notify(
                 "Teleport Loop",
-                "Win loop stopped.",
+                "Stopped.",
                 2
             )
         end
@@ -315,7 +324,7 @@ MainTab:CreateToggle({
 
             Notify(
                 "Teleport Loop",
-                "Treadmill loop stopped.",
+                "Stopped.",
                 2
             )
         end
@@ -323,7 +332,7 @@ MainTab:CreateToggle({
 })
 
 --------------------------------------------------
--- PLAYER QUICK INFO
+-- PLAYER INFO
 --------------------------------------------------
 
 MainTab:CreateSection(
@@ -345,6 +354,20 @@ MainTab:CreateParagraph({
 })
 
 MainTab:CreateButton({
+    Name = "Show Position",
+
+    Callback = function()
+        Notify(
+            "Position",
+            FormatVector3(
+                GetPosition()
+            ),
+            4
+        )
+    end,
+})
+
+MainTab:CreateButton({
     Name = "Copy Job ID",
 
     Callback = function()
@@ -357,8 +380,8 @@ MainTab:CreateButton({
         else
             Notify(
                 "Clipboard",
-                "Clipboard is unavailable.",
-                2
+                "Clipboard unavailable.",
+                3
             )
         end
     end,
@@ -368,7 +391,9 @@ MainTab:CreateButton({
     Name = "Copy User ID",
 
     Callback = function()
-        if SetClipboard(LocalPlayer.UserId) then
+        if SetClipboard(
+            LocalPlayer.UserId
+        ) then
             Notify(
                 "Clipboard",
                 "User ID copied.",
@@ -377,33 +402,10 @@ MainTab:CreateButton({
         else
             Notify(
                 "Clipboard",
-                "Clipboard is unavailable.",
-                2
+                "Clipboard unavailable.",
+                3
             )
         end
-    end,
-})
-
---------------------------------------------------
--- POSITION
---------------------------------------------------
-
-MainTab:CreateSection(
-    "Position"
-)
-
-MainTab:CreateButton({
-    Name = "Show Current Position",
-
-    Callback = function()
-        local position =
-            GetPosition()
-
-        Notify(
-            "Current Position",
-            FormatVector3(position),
-            4
-        )
     end,
 })
 
@@ -481,8 +483,8 @@ RebirthTab:CreateParagraph({
     Title = "Automatic Rebirth",
 
     Content =
-        "Presses the game's Rebirth button "
-        .. "at the selected interval.",
+        "Automatically activates the "
+        .. "visible Rebirth button.",
 })
 
 RebirthTab:CreateSlider({
@@ -493,7 +495,8 @@ RebirthTab:CreateSlider({
     Flag = "RebirthInterval",
 
     Callback = function(value)
-        State.RebirthInterval = value
+        State.RebirthInterval =
+            value
     end,
 })
 
@@ -566,7 +569,7 @@ RebirthTab:CreateButton({
         if not button then
             Notify(
                 "Rebirth",
-                "Rebirth button not found.",
+                "Button not found.",
                 3
             )
 
@@ -583,23 +586,20 @@ RebirthTab:CreateButton({
         Notify(
             "Rebirth",
             ok
-                and "Button activated."
-                or "Activation failed.",
+                and "Activated."
+                or "Failed.",
             3
         )
     end,
 })
 
 RebirthTab:CreateButton({
-    Name = "Find Rebirth Button",
+    Name = "Check Rebirth Button",
 
     Callback = function()
-        local button =
-            GetRebirthButton()
-
         Notify(
             "Rebirth",
-            button
+            GetRebirthButton()
                 and "Button found."
                 or "Button not found.",
             3
@@ -623,7 +623,7 @@ local TeleportTab =
     )
 
 --------------------------------------------------
--- XYZ
+-- CUSTOM XYZ
 --------------------------------------------------
 
 TeleportTab:CreateSection(
@@ -653,18 +653,24 @@ TeleportTab:CreateButton({
 
     Callback = function()
         local x =
-            tonumber(xBox:GetText())
+            tonumber(
+                xBox:GetText()
+            )
 
         local y =
-            tonumber(yBox:GetText())
+            tonumber(
+                yBox:GetText()
+            )
 
         local z =
-            tonumber(zBox:GetText())
+            tonumber(
+                zBox:GetText()
+            )
 
         if not (x and y and z) then
             Notify(
                 "Teleport",
-                "Enter valid X, Y and Z values.",
+                "Enter valid coordinates.",
                 3
             )
 
@@ -699,7 +705,7 @@ TeleportTab:CreateButton({
         if not position then
             Notify(
                 "Teleport",
-                "Character root not found.",
+                "Character not found.",
                 3
             )
 
@@ -729,6 +735,16 @@ TeleportTab:CreateButton({
     end,
 })
 
+TeleportTab:CreateButton({
+    Name = "Clear Coordinates",
+
+    Callback = function()
+        xBox:SetText("")
+        yBox:SetText("")
+        zBox:SetText("")
+    end,
+})
+
 --------------------------------------------------
 -- OFFSET
 --------------------------------------------------
@@ -752,7 +768,7 @@ TeleportTab:CreateButton({
 
         if not root then
             Notify(
-                "Teleport",
+                "Offset",
                 "Root part not found.",
                 3
             )
@@ -760,11 +776,8 @@ TeleportTab:CreateButton({
             return
         end
 
-        local text =
-            offsetBox:GetText()
-
         local x, y, z =
-            text:match(
+            offsetBox:GetText():match(
                 "^%s*([%-%d%.]+)%s*,%s*([%-%d%.]+)%s*,%s*([%-%d%.]+)%s*$"
             )
 
@@ -774,23 +787,21 @@ TeleportTab:CreateButton({
 
         if not (x and y and z) then
             Notify(
-                "Teleport",
-                "Use format: X, Y, Z",
+                "Offset",
+                "Format: X, Y, Z",
                 3
             )
 
             return
         end
 
-        SafeCall(function()
-            root.CFrame =
-                root.CFrame
-                + Vector3.new(
-                    x,
-                    y,
-                    z
-                )
-        end)
+        root.CFrame =
+            root.CFrame
+            + Vector3.new(
+                x,
+                y,
+                z
+            )
     end,
 })
 
@@ -875,7 +886,7 @@ TeleportTab:CreateButton({
         if not root then
             Notify(
                 "Locations",
-                "Root part not found.",
+                "Character not found.",
                 3
             )
 
@@ -885,7 +896,7 @@ TeleportTab:CreateButton({
         if name == "" then
             Notify(
                 "Locations",
-                "Enter a location name.",
+                "Enter a name.",
                 3
             )
 
@@ -902,7 +913,7 @@ TeleportTab:CreateButton({
 
         Notify(
             "Locations",
-            "Location saved: " .. name,
+            "Saved: " .. name,
             3
         )
     end,
@@ -946,9 +957,6 @@ TeleportTab:CreateButton({
     Callback = function()
         saveBox:SetText("")
         deleteBox:SetText("")
-        xBox:SetText("")
-        yBox:SetText("")
-        zBox:SetText("")
     end,
 })
 
@@ -975,7 +983,7 @@ ClickTab:CreateSlider({
     Name = "Clicks Per Second",
     Min = 1,
     Max = 100,
-    Default = 10,
+    Default = State.AutoClickerSpeed,
     Flag = "AutoClickerSpeed",
 
     Callback = function(value)
@@ -1013,25 +1021,12 @@ ClickTab:CreateToggle({
             SafeCall(function()
                 AutoClicker.Start(
                     State.AutoClickerSpeed
-                        or 10
                 )
             end)
-
-            Notify(
-                "Auto Clicker",
-                "Started.",
-                2
-            )
         else
             SafeCall(function()
                 AutoClicker.Stop()
             end)
-
-            Notify(
-                "Auto Clicker",
-                "Stopped.",
-                2
-            )
         end
     end,
 })
@@ -1045,7 +1040,6 @@ ClickTab:CreateKeybind({
         SafeCall(function()
             AutoClicker.Toggle(
                 State.AutoClickerSpeed
-                    or 10
             )
         end)
 
@@ -1065,13 +1059,12 @@ ClickTab:CreateButton({
         SafeCall(function()
             AutoClicker.Start(
                 State.AutoClickerSpeed
-                    or 10
             )
         end)
 
         Notify(
             "Auto Clicker",
-            "Started manually.",
+            "Started.",
             2
         )
     end,
@@ -1089,7 +1082,7 @@ ClickTab:CreateButton({
 
         Notify(
             "Auto Clicker",
-            "Stopped manually.",
+            "Stopped.",
             2
         )
     end,
@@ -1107,7 +1100,7 @@ ClickTab:CreateButton({
         end)
 
         Notify(
-            "Clicker Status",
+            "Clicker",
             running
                 and "RUNNING"
                 or "STOPPED",
@@ -1226,12 +1219,12 @@ MogTab:CreateButton({
 MogTab:CreateParagraph({
     Title = "Current Target",
 
-    Content = function()
-        return tostring(
+    Content =
+        "Selected target: "
+        .. tostring(
             State.CurrentTarget
             or "None"
-        )
-    end,
+        ),
 })
 
 SafeCall(function()
@@ -1287,6 +1280,10 @@ ServerTab:CreateButton({
         local username =
             usernameBox:GetText()
 
+        username =
+            tostring(username or "")
+            :match("^%s*(.-)%s*$")
+
         if username == "" then
             Notify(
                 "Server Finder",
@@ -1297,56 +1294,98 @@ ServerTab:CreateButton({
             return
         end
 
-        local result
-        local err
+        local exactMatch = nil
+        local displayMatch = nil
 
-        local ok =
-            pcall(function()
-                result, err =
-                    ServerFinder.Find(
-                        username
-                    )
-            end)
+        for _, player in ipairs(
+            Players:GetPlayers()
+        ) do
+            if
+                string.lower(
+                    player.Name
+                )
+                ==
+                string.lower(username)
+            then
+                exactMatch = player
+                break
+            end
 
-        if not ok then
-            Notify(
-                "Server Finder",
-                "Finder failed.",
-                3
-            )
-
-            return
+            if
+                string.lower(
+                    player.DisplayName
+                )
+                ==
+                string.lower(username)
+            then
+                displayMatch = player
+            end
         end
 
-        Notify(
-            "Server Finder",
-            tostring(
-                result
-                or err
-                or "No result."
-            ),
-            5
-        )
+        local player =
+            exactMatch
+            or displayMatch
+
+        if player then
+            Notify(
+                "Server Finder",
+                "FOUND\n"
+                    .. "Username: "
+                    .. player.Name
+                    .. "\nDisplay: "
+                    .. player.DisplayName
+                    .. "\nUserId: "
+                    .. tostring(
+                        player.UserId
+                    )
+                    .. "\nJobId: "
+                    .. game.JobId,
+                6
+            )
+        else
+            Notify(
+                "Server Finder",
+                "Player is not in this server.",
+                4
+            )
+        end
     end,
 })
 
+ServerTab:CreateSection(
+    "Current Server"
+)
+
 ServerTab:CreateButton({
-    Name = "Show Current Job ID",
+    Name = "Current Server Info",
 
     Callback = function()
         Notify(
             "Current Server",
-            game.JobId,
+            "PlaceId: "
+                .. tostring(
+                    game.PlaceId
+                )
+                .. "\nJobId: "
+                .. tostring(
+                    game.JobId
+                )
+                .. "\nPlayers: "
+                .. tostring(
+                    #Players:GetPlayers()
+                ),
             5
         )
     end,
 })
 
 ServerTab:CreateButton({
-    Name = "Copy Current Job ID",
+    Name = "Copy Job ID",
 
     Callback = function()
-        if SetClipboard(game.JobId) then
+        if SetClipboard(
+            game.JobId
+        ) then
             Notify(
                 "Server Finder",
                 "Job ID copied.",
@@ -1362,23 +1401,103 @@ ServerTab:CreateButton({
     end,
 })
 
+ServerTab:CreateSection(
+    "Players"
+)
+
 ServerTab:CreateButton({
-    Name = "Rejoin Server",
+    Name = "List Players",
+
+    Callback = function()
+        local names = {}
+
+        for _, player in ipairs(
+            Players:GetPlayers()
+        ) do
+            table.insert(
+                names,
+                player.Name
+            )
+        end
+
+        table.sort(names)
+
+        local text =
+            table.concat(
+                names,
+                "\n"
+            )
+
+        if text == "" then
+            text = "No players."
+        end
+
+        Notify(
+            "Players",
+            text,
+            7
+        )
+    end,
+})
+
+ServerTab:CreateButton({
+    Name = "Count Players",
+
+    Callback = function()
+        Notify(
+            "Players",
+            "Current players: "
+                .. tostring(
+                    #Players:GetPlayers()
+                ),
+            3
+        )
+    end,
+})
+
+ServerTab:CreateButton({
+    Name = "Show My Server Data",
+
+    Callback = function()
+        Notify(
+            "Server Data",
+            "User: "
+                .. LocalPlayer.Name
+                .. "\nUserId: "
+                .. tostring(
+                    LocalPlayer.UserId
+                )
+                .. "\nJobId: "
+                .. tostring(
+                    game.JobId
+                ),
+            5
+        )
+    end,
+})
+
+ServerTab:CreateSection(
+    "Server Actions"
+)
+
+ServerTab:CreateButton({
+    Name = "Rejoin Current Server",
 
     Callback = function()
         SafeCall(function()
-            TeleportService:TeleportToPlaceInstance(
-                game.PlaceId,
-                game.JobId,
-                LocalPlayer
-            )
+            TeleportService:
+                TeleportToPlaceInstance(
+                    game.PlaceId,
+                    game.JobId,
+                    LocalPlayer
+                )
         end)
     end,
 })
 
 ServerTab:CreateButton({
-    Name = "Reconnect",
-    
+    Name = "Join Random Server",
+
     Callback = function()
         SafeCall(function()
             TeleportService:Teleport(
@@ -1405,7 +1524,7 @@ local SettingsTab =
     )
 
 --------------------------------------------------
--- UI
+-- INTERFACE
 --------------------------------------------------
 
 SettingsTab:CreateSection(
@@ -1418,12 +1537,16 @@ SettingsTab:CreateKeybind({
     Flag = "UIToggleKey",
 
     Callback = function(key)
-        Window:SetToggleKey(key)
+        Window:SetToggleKey(
+            key
+        )
 
         Notify(
             "Interface",
-            "Toggle key changed to "
-                .. tostring(key.Name),
+            "Toggle key: "
+                .. tostring(
+                    key.Name
+                ),
             2
         )
     end,
@@ -1459,7 +1582,7 @@ SettingsTab:CreateToggle({
 })
 
 --------------------------------------------------
--- PLAYER
+-- PLAYER SETTINGS
 --------------------------------------------------
 
 SettingsTab:CreateSection(
@@ -1474,7 +1597,8 @@ SettingsTab:CreateSlider({
     Flag = "WalkSpeed",
 
     Callback = function(value)
-        State.WalkSpeed = value
+        State.WalkSpeed =
+            value
 
         local humanoid =
             GetHumanoid()
@@ -1494,14 +1618,18 @@ SettingsTab:CreateSlider({
     Flag = "JumpPower",
 
     Callback = function(value)
-        State.JumpPower = value
+        State.JumpPower =
+            value
 
         local humanoid =
             GetHumanoid()
 
         if humanoid then
-            humanoid.UseJumpPower = true
-            humanoid.JumpPower = value
+            humanoid.UseJumpPower =
+                true
+
+            humanoid.JumpPower =
+                value
         end
     end,
 })
@@ -1514,7 +1642,8 @@ SettingsTab:CreateSlider({
     Flag = "HipHeight",
 
     Callback = function(value)
-        State.HipHeight = value
+        State.HipHeight =
+            value
 
         local humanoid =
             GetHumanoid()
@@ -1579,9 +1708,13 @@ SettingsTab:CreateButton({
         humanoid.JumpPower = 50
         humanoid.HipHeight = 2
 
+        State.WalkSpeed = 16
+        State.JumpPower = 50
+        State.HipHeight = 2
+
         Notify(
             "Player",
-            "Default values restored.",
+            "Defaults restored.",
             2
         )
     end,
@@ -1698,7 +1831,8 @@ SettingsTab:CreateButton({
     Name = "Reset Gravity",
 
     Callback = function()
-        Workspace.Gravity = 196.2
+        Workspace.Gravity =
+            196.2
 
         Notify(
             "World",
@@ -1715,16 +1849,6 @@ SettingsTab:CreateButton({
 SettingsTab:CreateSection(
     "Utility"
 )
-
-SettingsTab:CreateButton({
-    Name = "Respawn Character",
-
-    Callback = function()
-        SafeCall(function()
-            LocalPlayer:LoadCharacter()
-        end)
-    end,
-})
 
 SettingsTab:CreateToggle({
     Name = "Anti AFK",
@@ -1761,7 +1885,7 @@ SettingsTab:CreateButton({
     Callback = function()
         Notify(
             "Players",
-            "Players in server: "
+            "Players: "
                 .. tostring(
                     #Players:GetPlayers()
                 ),
@@ -1784,6 +1908,8 @@ SettingsTab:CreateButton({
                 player.Name
             )
         end
+
+        table.sort(names)
 
         Notify(
             "Players",
@@ -1821,9 +1947,8 @@ ConfigTab:CreateParagraph({
     Title = "ZenWare Configs",
 
     Content =
-        "Use the built-in configuration "
-        .. "system to store UI values and "
-        .. "feature preferences.",
+        "Configuration controls are "
+        .. "provided by the UI core.",
 })
 
 ConfigTab:CreateButton({
@@ -1832,20 +1957,8 @@ ConfigTab:CreateButton({
     Callback = function()
         Notify(
             "Configs",
-            "Config folder: ZenWareConfigs",
+            "ZenWareConfigs",
             3
-        )
-    end,
-})
-
-ConfigTab:CreateButton({
-    Name = "Reload Interface",
-
-    Callback = function()
-        Notify(
-            "Configs",
-            "Reload the script to rebuild the interface.",
-            4
         )
     end,
 })
@@ -1869,29 +1982,21 @@ CreditsTab:CreateSection(
     "ZenWare V3"
 )
 
-CreditsTab:CreateImage({
-    Name = "ZenWareLogo",
-
-    Image =
-        "rbxassetid://95816097006870",
-
-    Height = 100,
-})
-
 CreditsTab:CreateParagraph({
     Title = "ZenWare V3",
 
     Content =
         "@ZensMod\n"
-        .. "Powered by the ZenWare core\n"
-        .. "Interface by Obsidian-style UI",
+        .. "ZenWare V3",
 })
 
 CreditsTab:CreateButton({
     Name = "Copy ZenWare Name",
 
     Callback = function()
-        if SetClipboard("ZenWare V3") then
+        if SetClipboard(
+            "ZenWare V3"
+        ) then
             Notify(
                 "Credits",
                 "Copied.",
@@ -1914,7 +2019,7 @@ CreditsTab:CreateButton({
 })
 
 --------------------------------------------------
--- FINAL STATUS
+-- FINALIZE
 --------------------------------------------------
 
 Window:SetAutoSave(true)
