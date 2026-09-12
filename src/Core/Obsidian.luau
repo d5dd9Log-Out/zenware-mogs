@@ -145,6 +145,35 @@ function Obsidian.new(title, configFolder)
                 end
 
                 function self:CreateKeybind(config)
+    config = config or {}
+
+    local defaultKey = config.Default or "RightControl"
+
+    if typeof(defaultKey) == "EnumItem" then
+        defaultKey = defaultKey.Name
+    elseif type(defaultKey) ~= "string" then
+        defaultKey = "RightControl"
+    end
+
+    local label = Group:AddLabel(
+        config.Name or "Keybind"
+    )
+
+    local keybind = label:AddKeyPicker(
+        config.Flag or config.Name or "Keybind",
+        {
+            Default = defaultKey,
+
+            Mode = "Toggle",
+
+            Text = config.Name or "Keybind",
+
+            Callback = config.Callback,
+        }
+    )
+
+    return keybind
+end
                     config = config or {}
 
                     local label = Group:AddLabel(
