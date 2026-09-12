@@ -4,5 +4,8 @@
   "description": "ZenWare Luau project",
   "scripts": {
     "build": "luau-bundler --src src --out dist/ZenWare.lua --entry Main"
+  },
+  "dependencies": {
+    "@oneshot101/luau-bundler": "^0.4.13"
   }
 }

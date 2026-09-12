@@ -2,18 +2,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Remotes = {}
 
-local function getFolder()
+local function folder()
     return ReplicatedStorage:FindFirstChild("ZenWareRemotes")
 end
 
 function Remotes.Get(name)
-    local folder = getFolder()
+    local f = folder()
 
-    if not folder then
+    if not f then
         return nil
     end
 
-    local remote = folder:FindFirstChild(name)
+    local remote = f:FindFirstChild(name)
 
     if remote and remote:IsA("RemoteEvent") then
         return remote
@@ -22,16 +22,22 @@ function Remotes.Get(name)
     return nil
 end
 
-function Remotes.Fire(name, ...)
+function Remotes.Fire(name, arg)
     local remote = Remotes.Get(name)
 
     if not remote then
         return false, "Remote not found: " .. tostring(name)
     end
 
-    return pcall(function()
-        remote:FireServer(...)
+    local ok, err = pcall(function()
+        if arg == nil then
+            remote:FireServer()
+        else
+            remote:FireServer(arg)
+        end
     end)
+
+    return ok, err
 end
 
 return Remotes

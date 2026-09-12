@@ -1,6 +1,6 @@
 
-return (function(oldRequire, ...)
-local _vararg = {...}
+return (function(oldRequire)
+local _vararg = {}
 local _modules = {}
 
 local require = function(path)
@@ -21,7 +21,7 @@ _modules["Core/Config.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local Config = {}
 			
 			Config.Name = "ZenWare"
@@ -61,7 +61,7 @@ _modules["Core/Obsidian.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local Obsidian = {}
 			
 			local REPO = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
@@ -276,7 +276,7 @@ _modules["Core/Remotes.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local ReplicatedStorage = game:GetService("ReplicatedStorage")
 			
 			local Remotes = {}
@@ -328,7 +328,7 @@ _modules["Core/State.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local State = {
 			    AutoWin = false,
 			
@@ -358,7 +358,7 @@ _modules["Core/Utils.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local Utils = {}
 			
 			function Utils.SafeCall(fn, arg)
@@ -418,7 +418,7 @@ _modules["Features/AutoClicker.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local AutoClicker = {}
 			
 			local running = false
@@ -484,7 +484,7 @@ _modules["Features/AutoLoad.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local TeleportService = game:GetService("TeleportService")
 			
 			local AutoLoad = {}
@@ -523,7 +523,7 @@ _modules["Features/AutoMog.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local Players = game:GetService("Players")
 			
 			local AutoMog = {}
@@ -620,7 +620,7 @@ _modules["Features/ServerFinder.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local ServerFinder = {}
 			
 			local findCallback
@@ -673,7 +673,7 @@ _modules["Features/Teleports.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local Players = game:GetService("Players")
 			
 			local Teleports = {}
@@ -787,7 +787,7 @@ _modules["Main.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local State = require("Core/State")
 			local Utils = require("Core/Utils")
 			local Remotes = require("Core/Remotes")
@@ -1282,7 +1282,7 @@ _modules["UI/UI.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function(...)
+		return (function()
 			local Obsidian = require("Core/Obsidian")
 			
 			local UI = {}
@@ -1324,4 +1324,4 @@ _modules["Main"] = _modules["Main.luau"]
 _modules["UI/UI"] = _modules["UI/UI.luau"]
 
 return require("Main")
-end)(require or function() end, ...)
+end)(require or function() end)
