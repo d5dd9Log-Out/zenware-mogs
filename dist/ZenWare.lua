@@ -1179,19 +1179,21 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			local ClickSection = Window:CreateSection("Auto Clicker")
+			
 			local ClickTab = ClickSection:CreateTab(
 			    "Auto Clicker",
 			    "mouse-pointer"
 			)
 			
-			State.AutoClickerSpeed =
-			    State.AutoClickerSpeed or 10
+			local ClickGroup = ClickTab:CreateSection(
+			    "Clicker"
+			)
 			
-			ClickTab:CreateSlider({
+			ClickGroup:CreateSlider({
 			    Name = "Clicks Per Second",
 			    Min = 1,
 			    Max = 100,
-			    Default = State.AutoClickerSpeed,
+			    Default = 10,
 			    Flag = "AutoClickerSpeed",
 			
 			    Callback = function(value)
@@ -1209,7 +1211,7 @@ _modules["Main.luau"] = {
 			    end)
 			end
 			
-			ClickTab:CreateToggle({
+			ClickGroup:CreateToggle({
 			    Name = "Enable Auto Clicker",
 			    Default = false,
 			    Flag = "AutoClicker",
@@ -1219,7 +1221,7 @@ _modules["Main.luau"] = {
 			
 			        if enabled then
 			            AutoClicker.Start(
-			                State.AutoClickerSpeed
+			                State.AutoClickerSpeed or 10
 			            )
 			        else
 			            AutoClicker.Stop()
@@ -1227,14 +1229,14 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			ClickTab:CreateKeybind({
+			ClickGroup:CreateKeybind({
 			    Name = "Pause / Resume",
 			    Default = Enum.KeyCode.F,
 			    Flag = "AutoClickerKey",
 			
 			    Callback = function()
 			        AutoClicker.Toggle(
-			            State.AutoClickerSpeed
+			            State.AutoClickerSpeed or 10
 			        )
 			
 			        State.AutoClicker =
