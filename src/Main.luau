@@ -327,9 +327,11 @@ ClickTab:CreateSlider({
     end,
 })
 
-AutoClicker.SetCallback(function()
-    Remotes.Fire("Click")
-end)
+if AutoClicker and AutoClicker.SetCallback then
+    AutoClicker.SetCallback(function()
+        Remotes.Fire("Click")
+    end)
+end
 
 ClickTab:CreateToggle({
     Name = "Enable Auto Clicker",
