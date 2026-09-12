@@ -6,9 +6,7 @@ local REPO =
 local LOGO = 95816097006870
 
 local function loadLibrary()
-    local source =
-        game:HttpGet(REPO .. "Library.lua")
-
+    local source = game:HttpGet(REPO .. "Library.lua")
     return loadstring(source)()
 end
 
@@ -55,11 +53,10 @@ function Obsidian.new(title, configFolder)
         --------------------------------------------------
 
         function Section:CreateTab(tabName, icon)
-            local Tab =
-                self.Window.Window:AddTab(
-                    tabName,
-                    icon
-                )
+            local Tab = self.Window.Window:AddTab(
+                tabName,
+                icon
+            )
 
             local ZenTab = {
                 Tab = Tab,
@@ -67,341 +64,411 @@ function Obsidian.new(title, configFolder)
             }
 
             --------------------------------------------------
-            -- GROUP
+            -- CREATE SECTION / GROUPBOX
             --------------------------------------------------
 
             function ZenTab:CreateSection(name, icon)
                 local Group
 
                 if icon then
-                    Group =
-                        self.Tab:AddLeftGroupbox(
-                            name,
-                            icon
-                        )
+                    Group = self.Tab:AddLeftGroupbox(
+                        name,
+                        icon
+                    )
                 else
-                    Group =
-                        self.Tab:AddLeftGroupbox(
-                            name
-                        )
+                    Group = self.Tab:AddLeftGroupbox(
+                        name
+                    )
                 end
 
                 self.Group = Group
 
-                --------------------------------------------------
-                -- BUTTON
-                --------------------------------------------------
+                return Group
+            end
 
-                function self:CreateButton(config)
-                    config = config or {}
+            --------------------------------------------------
+            -- GET GROUP
+            --------------------------------------------------
 
-                    return Group:AddButton({
-                        Text =
-                            config.Name
-                            or "Button",
+            local function getGroup(self)
+                return self.Group
+            end
 
-                        Func =
-                            config.Callback,
-                    })
+            --------------------------------------------------
+            -- BUTTON
+            --------------------------------------------------
+
+            function ZenTab:CreateButton(config)
+                config = config or {}
+
+                local Group = getGroup(self)
+
+                if not Group then
+                    return nil
                 end
 
-                --------------------------------------------------
-                -- TOGGLE
-                --------------------------------------------------
+                return Group:AddButton({
+                    Text = config.Name or "Button",
+                    Func = config.Callback,
+                })
+            end
 
-                function self:CreateToggle(config)
-                    config = config or {}
+            --------------------------------------------------
+            -- TOGGLE
+            --------------------------------------------------
 
-                    return Group:AddToggle(
-                        config.Flag
-                            or config.Name
-                            or "Toggle",
+            function ZenTab:CreateToggle(config)
+                config = config or {}
 
-                        {
-                            Text =
-                                config.Name
-                                or "Toggle",
+                local Group = getGroup(self)
 
-                            Default =
-                                config.Default == true,
-
-                            Callback =
-                                config.Callback,
-                        }
-                    )
+                if not Group then
+                    return nil
                 end
 
-                --------------------------------------------------
-                -- SLIDER
-                --------------------------------------------------
+                return Group:AddToggle(
+                    config.Flag
+                        or config.Name
+                        or "Toggle",
+                    {
+                        Text = config.Name or "Toggle",
+                        Default = config.Default == true,
+                        Callback = config.Callback,
+                    }
+                )
+            end
 
-                function self:CreateSlider(config)
-                    config = config or {}
+            --------------------------------------------------
+            -- SLIDER
+            --------------------------------------------------
 
-                    return Group:AddSlider(
-                        config.Flag
-                            or config.Name
-                            or "Slider",
+            function ZenTab:CreateSlider(config)
+                config = config or {}
 
-                        {
-                            Text =
-                                config.Name
-                                or "Slider",
+                local Group = getGroup(self)
 
-                            Default =
-                                config.Default
-                                or 0,
-
-                            Min =
-                                config.Min
-                                or 0,
-
-                            Max =
-                                config.Max
-                                or 100,
-
-                            Rounding =
-                                config.Rounding
-                                or 2,
-
-                            Compact = false,
-
-                            Callback =
-                                config.Callback,
-                        }
-                    )
+                if not Group then
+                    return nil
                 end
 
-                --------------------------------------------------
-                -- TEXT BOX
-                --------------------------------------------------
+                return Group:AddSlider(
+                    config.Flag
+                        or config.Name
+                        or "Slider",
+                    {
+                        Text = config.Name or "Slider",
 
-                function self:CreateTextBox(config)
-                    config = config or {}
+                        Default =
+                            tonumber(config.Default)
+                            or tonumber(config.Min)
+                            or 0,
 
-                    local input =
-                        Group:AddInput(
-                            config.Flag
-                                or config.Name
-                                or "Input",
+                        Min =
+                            tonumber(config.Min)
+                            or 0,
 
-                            {
-                                Text =
-                                    config.Name
-                                    or "Input",
+                        Max =
+                            tonumber(config.Max)
+                            or 100,
 
-                                Placeholder =
-                                    config.Placeholder
-                                    or "",
+                        Rounding =
+                            tonumber(config.Rounding)
+                            or 2,
 
-                                Default =
-                                    config.Default
-                                    or "",
+                        Compact = false,
 
-                                Callback =
-                                    config.Callback,
-                            }
-                        )
+                        Callback = config.Callback,
+                    }
+                )
+            end
 
-                    local api = {}
+            --------------------------------------------------
+            -- TEXT BOX
+            --------------------------------------------------
 
-                    function api:GetText()
-                        if
-                            input
-                            and input.Value ~= nil
-                        then
-                            return tostring(
-                                input.Value
-                            )
-                        end
+            function ZenTab:CreateTextBox(config)
+                config = config or {}
 
-                        return ""
-                    end
+                local Group = getGroup(self)
 
-                    function api:SetText(value)
-                        if
-                            input
-                            and input.SetValue
-                        then
-                            input:SetValue(
-                                tostring(
-                                    value or ""
-                                )
-                            )
-                        end
-                    end
+                if not Group then
+                    return {
+                        GetText = function()
+                            return ""
+                        end,
 
-                    function api:Focus()
-                        if
-                            input
-                            and input.Input
-                        then
-                            input.Input:CaptureFocus()
-                        end
-                    end
+                        SetText = function()
+                        end,
 
-                    return api
+                        Focus = function()
+                        end,
+                    }
                 end
 
-                --------------------------------------------------
-                -- KEYBIND
-                --------------------------------------------------
+                local input = Group:AddInput(
+                    config.Flag
+                        or config.Name
+                        or "Input",
+                    {
+                        Text = config.Name or "Input",
 
-                function self:CreateKeybind(config)
-                    config = config or {}
+                        Placeholder =
+                            config.Placeholder
+                            or "",
 
-                    local defaultKey =
-                        config.Default
-                        or "RightControl"
-
-                    if typeof(defaultKey)
-                        == "EnumItem"
-                    then
-                        defaultKey =
-                            defaultKey.Name
-                    elseif
-                        type(defaultKey)
-                        ~= "string"
-                    then
-                        defaultKey =
-                            "RightControl"
-                    end
-
-                    local label =
-                        Group:AddLabel(
-                            config.Name
-                                or "Keybind"
-                        )
-
-                    local keybind =
-                        label:AddKeyPicker(
-                            config.Flag
-                                or config.Name
-                                or "Keybind",
-
-                            {
-                                Default =
-                                    defaultKey,
-
-                                Mode =
-                                    "Toggle",
-
-                                Text =
-                                    config.Name
-                                    or "Keybind",
-
-                                Callback =
-                                    config.Callback,
-                            }
-                        )
-
-                    return keybind
-                end
-
-                --------------------------------------------------
-                -- COLOR PICKER
-                --------------------------------------------------
-
-                function self:CreateColorPicker(config)
-                    config = config or {}
-
-                    local label =
-                        Group:AddLabel(
-                            config.Name
-                                or "Color"
-                        )
-
-                    return label:AddColorPicker(
-                        config.Flag
-                            or config.Name
-                            or "Color",
-
-                        {
-                            Default =
-                                config.Default,
-
-                            Title =
-                                config.Name
-                                or "Color",
-
-                            Callback =
-                                config.Callback,
-                        }
-                    )
-                end
-
-                --------------------------------------------------
-                -- PARAGRAPH
-                --------------------------------------------------
-
-                function self:CreateParagraph(config)
-                    config = config or {}
-
-                    return Group:AddLabel({
-                        Text =
+                        Default =
                             tostring(
-                                config.Title
-                                or ""
-                            )
-                            .. "\n"
-                            .. tostring(
-                                config.Content
+                                config.Default
                                 or ""
                             ),
 
-                        DoesWrap = true,
-                    })
-                end
+                        Callback =
+                            config.Callback,
+                    }
+                )
 
-                --------------------------------------------------
-                -- IMAGE
-                --------------------------------------------------
+                local api = {}
 
-                function self:CreateImage(config)
-                    config = config or {}
-
-                    if not config.Image then
-                        return nil
+                function api:GetText()
+                    if input and input.Value ~= nil then
+                        return tostring(input.Value)
                     end
 
-                    return Group:AddImage(
-                        config.Flag
-                            or config.Name
-                            or "Image",
+                    return ""
+                end
 
-                        {
-                            Image =
-                                config.Image,
+                function api:SetText(value)
+                    if input and input.SetValue then
+                        input:SetValue(
+                            tostring(value or "")
+                        )
+                    end
+                end
 
-                            Height =
-                                config.Height
-                                or 120,
+                function api:Focus()
+                    if input and input.Input then
+                        input.Input:CaptureFocus()
+                    end
+                end
 
-                            Transparency =
+                return api
+            end
+
+            --------------------------------------------------
+            -- KEYBIND
+            --------------------------------------------------
+
+            function ZenTab:CreateKeybind(config)
+                config = config or {}
+
+                local Group = getGroup(self)
+
+                if not Group then
+                    return nil
+                end
+
+                local defaultKey =
+                    config.Default
+                    or Enum.KeyCode.F
+
+                if typeof(defaultKey) == "EnumItem" then
+                    defaultKey = defaultKey.Name
+                elseif type(defaultKey) ~= "string" then
+                    defaultKey = "F"
+                end
+
+                local label = Group:AddLabel(
+                    config.Name or "Keybind"
+                )
+
+                local keybind = label:AddKeyPicker(
+                    config.Flag
+                        or config.Name
+                        or "Keybind",
+                    {
+                        Default = defaultKey,
+                        Mode = "Toggle",
+                        Text = config.Name or "Keybind",
+                        Callback = config.Callback,
+                    }
+                )
+
+                return keybind
+            end
+
+            --------------------------------------------------
+            -- COLOR PICKER
+            --------------------------------------------------
+
+            function ZenTab:CreateColorPicker(config)
+                config = config or {}
+
+                local Group = getGroup(self)
+
+                if not Group then
+                    return nil
+                end
+
+                local label = Group:AddLabel(
+                    config.Name or "Color"
+                )
+
+                return label:AddColorPicker(
+                    config.Flag
+                        or config.Name
+                        or "Color",
+                    {
+                        Default =
+                            config.Default,
+
+                        Title =
+                            config.Name
+                            or "Color",
+
+                        Callback =
+                            config.Callback,
+                    }
+                )
+            end
+
+            --------------------------------------------------
+            -- PARAGRAPH
+            --------------------------------------------------
+
+            function ZenTab:CreateParagraph(config)
+                config = config or {}
+
+                local Group = getGroup(self)
+
+                if not Group then
+                    return nil
+                end
+
+                local title =
+                    tostring(
+                        config.Title
+                        or ""
+                    )
+
+                local content =
+                    tostring(
+                        config.Content
+                        or ""
+                    )
+
+                local text = title
+
+                if content ~= "" then
+                    text =
+                        title
+                        .. "\n"
+                        .. content
+                end
+
+                return Group:AddLabel({
+                    Text = text,
+                    DoesWrap = true,
+                })
+            end
+
+            --------------------------------------------------
+            -- IMAGE
+            --------------------------------------------------
+
+            function ZenTab:CreateImage(config)
+                config = config or {}
+
+                local Group = getGroup(self)
+
+                if not Group then
+                    return nil
+                end
+
+                if not config.Image then
+                    return nil
+                end
+
+                return Group:AddImage(
+                    config.Flag
+                        or config.Name
+                        or "Image",
+                    {
+                        Image =
+                            config.Image,
+
+                        Height =
+                            tonumber(config.Height)
+                            or 120,
+
+                        Transparency =
+                            tonumber(
                                 config.Transparency
-                                or 0,
+                            )
+                            or 0,
 
-                            Color =
-                                config.Color,
+                        Color =
+                            config.Color,
 
-                            ScaleType =
-                                config.ScaleType
-                                or Enum.ScaleType.Fit,
-                        }
-                    )
+                        ScaleType =
+                            config.ScaleType
+                            or Enum.ScaleType.Fit,
+                    }
+                )
+            end
+
+            --------------------------------------------------
+            -- CONFIG SECTION
+            --------------------------------------------------
+
+            function ZenTab:CreateConfigSection()
+                local Group = getGroup(self)
+
+                if not Group then
+                    return nil
                 end
 
-                --------------------------------------------------
-                -- CONFIG SECTION
-                --------------------------------------------------
-
-                function self:CreateConfigSection()
-                    Group:AddLabel(
-                        "Configuration"
-                    )
-                end
+                Group:AddLabel("Configuration")
 
                 return Group
+            end
+
+            --------------------------------------------------
+            -- DROPDOWN
+            --------------------------------------------------
+
+            function ZenTab:CreateDropdown(config)
+                config = config or {}
+
+                local Group = getGroup(self)
+
+                if not Group then
+                    return nil
+                end
+
+                return Group:AddDropdown(
+                    config.Flag
+                        or config.Name
+                        or "Dropdown",
+                    {
+                        Values =
+                            config.Options
+                            or {},
+
+                        Default =
+                            config.Default,
+
+                        Multi =
+                            config.MultiSelect
+                            == true,
+
+                        Text =
+                            config.Name
+                            or "Dropdown",
+
+                        Callback =
+                            config.Callback,
+                    }
+                )
             end
 
             return ZenTab
@@ -411,7 +478,7 @@ function Obsidian.new(title, configFolder)
     end
 
     --------------------------------------------------
-    -- NOTIFICATION
+    -- NOTIFY
     --------------------------------------------------
 
     function ZenWindow:Notify(config)
@@ -446,25 +513,25 @@ function Obsidian.new(title, configFolder)
     --------------------------------------------------
 
     function ZenWindow:SetToggleKey(key)
+        local keyName = "RightControl"
+
+        if typeof(key) == "EnumItem" then
+            keyName = key.Name
+        elseif type(key) == "string" then
+            keyName = key
+        end
+
         if
             self.Library.Options
             and self.Library.Options.MenuKeybind
             and self.Library.Options.MenuKeybind.SetValue
         then
-            local keyName
-
-            if typeof(key) == "EnumItem" then
-                keyName = key.Name
-            elseif type(key) == "string" then
-                keyName = key
-            else
-                keyName = "RightControl"
-            end
-
-            self.Library.Options.MenuKeybind:SetValue({
-                keyName,
-                "Toggle",
-            })
+            pcall(function()
+                self.Library.Options.MenuKeybind:SetValue({
+                    keyName,
+                    "Toggle",
+                })
+            end)
 
             return
         end
