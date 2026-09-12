@@ -1,6 +1,6 @@
 
-return (function(oldRequire)
-local _vararg = {}
+return (function(oldRequire, ...)
+local _vararg = {...}
 local _modules = {}
 
 local require = function(path)
@@ -21,7 +21,7 @@ _modules["Core/Config.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Config = {}
 			
 			Config.Name = "ZenWare"
@@ -61,13 +61,16 @@ _modules["Core/Obsidian.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Obsidian = {}
 			
 			local REPO = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 			
+			local LOGO = 95816097006870
+			
 			local function loadLibrary()
-			    return loadstring(game:HttpGet(REPO .. "Library.lua"))()
+			    local source = game:HttpGet(REPO .. "Library.lua")
+			    return loadstring(source)()
 			end
 			
 			function Obsidian.new(title, configFolder)
@@ -79,11 +82,17 @@ _modules["Core/Obsidian.luau"] = {
 			    local Window = Library:CreateWindow({
 			        Title = title or "ZenWare V3",
 			        Footer = "ZenWare V3",
+			        Icon = LOGO,
+			
 			        NotifySide = "Right",
+			
 			        ShowCustomCursor = true,
 			        AutoShow = true,
 			        Resizable = true,
 			        Center = true,
+			
+			        Glow = true,
+			        GlobalSearch = true,
 			    })
 			
 			    local ZenWindow = {
@@ -99,19 +108,30 @@ _modules["Core/Obsidian.luau"] = {
 			        }
 			
 			        function Section:CreateTab(tabName, icon)
-			            local Tab = self.Window.Window:AddTab(tabName, icon)
+			            local Tab = self.Window.Window:AddTab(
+			                tabName,
+			                icon
+			            )
 			
 			            local ZenTab = {
 			                Tab = Tab,
 			                Group = nil,
 			            }
 			
-			            function ZenTab:CreateSection(name)
-			                local Group = self.Tab:AddLeftGroupbox(name)
+			            function ZenTab:CreateSection(name, icon)
+			                local Group
+			
+			                if icon then
+			                    Group = self.Tab:AddLeftGroupbox(name, icon)
+			                else
+			                    Group = self.Tab:AddLeftGroupbox(name)
+			                end
 			
 			                self.Group = Group
 			
 			                function self:CreateButton(config)
+			                    config = config or {}
+			
 			                    return Group:AddButton({
 			                        Text = config.Name or "Button",
 			                        Func = config.Callback,
@@ -119,6 +139,8 @@ _modules["Core/Obsidian.luau"] = {
 			                end
 			
 			                function self:CreateToggle(config)
+			                    config = config or {}
+			
 			                    return Group:AddToggle(
 			                        config.Flag or config.Name or "Toggle",
 			                        {
@@ -130,6 +152,8 @@ _modules["Core/Obsidian.luau"] = {
 			                end
 			
 			                function self:CreateSlider(config)
+			                    config = config or {}
+			
 			                    return Group:AddSlider(
 			                        config.Flag or config.Name or "Slider",
 			                        {
@@ -137,19 +161,22 @@ _modules["Core/Obsidian.luau"] = {
 			                            Default = config.Default or 0,
 			                            Min = config.Min or 0,
 			                            Max = config.Max or 100,
-			                            Rounding = 2,
+			                            Rounding = config.Rounding or 2,
+			                            Compact = false,
 			                            Callback = config.Callback,
 			                        }
 			                    )
 			                end
 			
 			                function self:CreateTextBox(config)
+			                    config = config or {}
+			
 			                    local input = Group:AddInput(
-			                        config.Name or "Input",
+			                        config.Flag or config.Name or "Input",
 			                        {
 			                            Text = config.Name or "Input",
 			                            Placeholder = config.Placeholder or "",
-			                            Default = "",
+			                            Default = config.Default or "",
 			                            Callback = config.Callback,
 			                        }
 			                    )
@@ -166,7 +193,15 @@ _modules["Core/Obsidian.luau"] = {
 			
 			                    function api:SetText(value)
 			                        if input and input.SetValue then
-			                            input:SetValue(tostring(value or ""))
+			                            input:SetValue(
+			                                tostring(value or "")
+			                            )
+			                        end
+			                    end
+			
+			                    function api:Focus()
+			                        if input and input.Input then
+			                            input.Input:CaptureFocus()
 			                        end
 			                    end
 			
@@ -174,6 +209,8 @@ _modules["Core/Obsidian.luau"] = {
 			                end
 			
 			                function self:CreateKeybind(config)
+			                    config = config or {}
+			
 			                    local label = Group:AddLabel(
 			                        config.Name or "Keybind"
 			                    )
@@ -192,6 +229,8 @@ _modules["Core/Obsidian.luau"] = {
 			                end
 			
 			                function self:CreateColorPicker(config)
+			                    config = config or {}
+			
 			                    local label = Group:AddLabel(
 			                        config.Name or "Color"
 			                    )
@@ -207,18 +246,47 @@ _modules["Core/Obsidian.luau"] = {
 			                end
 			
 			                function self:CreateParagraph(config)
+			                    config = config or {}
+			
 			                    return Group:AddLabel({
-			                        Text = (
-			                            tostring(config.Title or "") ..
-			                            "\n" ..
-			                            tostring(config.Content or "")
-			                        ),
+			                        Text =
+			                            tostring(config.Title or "")
+			                            .. "\n"
+			                            .. tostring(config.Content or ""),
 			                        DoesWrap = true,
 			                    })
 			                end
 			
+			                function self:CreateImage(config)
+			                    config = config or {}
+			
+			                    if not config.Image then
+			                        return nil
+			                    end
+			
+			                    return Group:AddImage(
+			                        config.Flag
+			                            or config.Name
+			                            or "Image",
+			                        {
+			                            Image = config.Image,
+			
+			                            Height = config.Height or 120,
+			
+			                            Transparency =
+			                                config.Transparency or 0,
+			
+			                            Color = config.Color,
+			
+			                            ScaleType =
+			                                config.ScaleType
+			                                or Enum.ScaleType.Fit,
+			                        }
+			                    )
+			                end
+			
 			                function self:CreateConfigSection()
-			                    Group:AddLabel("Configs")
+			                    Group:AddLabel("Configuration")
 			                end
 			
 			                return Group
@@ -231,18 +299,34 @@ _modules["Core/Obsidian.luau"] = {
 			    end
 			
 			    function ZenWindow:Notify(config)
+			        config = config or {}
+			
 			        self.Library:Notify({
 			            Title = config.Title or "ZenWare V3",
-			            Description = config.Description or "",
-			            Time = config.Duration or 3,
+			
+			            Description =
+			                config.Description or "",
+			
+			            Time =
+			                config.Duration or 3,
+			
+			            Icon =
+			                config.Icon,
+			
+			            BigIcon =
+			                config.BigIcon,
+			
+			            IconColor =
+			                config.IconColor,
 			        })
 			    end
 			
 			    function ZenWindow:SetToggleKey(key)
-			        if self.Library.Options
+			        if
+			            self.Library.Options
 			            and self.Library.Options.MenuKeybind
-			            and self.Library.Options.MenuKeybind.SetValue then
-			
+			            and self.Library.Options.MenuKeybind.SetValue
+			        then
 			            self.Library.Options.MenuKeybind:SetValue({
 			                key.Name,
 			                "Toggle",
@@ -260,7 +344,9 @@ _modules["Core/Obsidian.luau"] = {
 			
 			    function ZenWindow:Destroy()
 			        if self.Library then
-			            self.Library:Unload()
+			            pcall(function()
+			                self.Library:Unload()
+			            end)
 			        end
 			    end
 			
@@ -276,7 +362,7 @@ _modules["Core/Remotes.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local ReplicatedStorage = game:GetService("ReplicatedStorage")
 			
 			local Remotes = {}
@@ -328,7 +414,7 @@ _modules["Core/State.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local State = {
 			    AutoWin = false,
 			
@@ -358,7 +444,7 @@ _modules["Core/Utils.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Utils = {}
 			
 			function Utils.SafeCall(fn, arg)
@@ -418,7 +504,7 @@ _modules["Features/AutoClicker.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local AutoClicker = {}
 			
 			local running = false
@@ -484,7 +570,7 @@ _modules["Features/AutoLoad.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local TeleportService = game:GetService("TeleportService")
 			
 			local AutoLoad = {}
@@ -523,7 +609,7 @@ _modules["Features/AutoMog.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Players = game:GetService("Players")
 			
 			local AutoMog = {}
@@ -620,7 +706,7 @@ _modules["Features/ServerFinder.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local ServerFinder = {}
 			
 			local findCallback
@@ -673,7 +759,7 @@ _modules["Features/Teleports.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Players = game:GetService("Players")
 			
 			local Teleports = {}
@@ -787,7 +873,7 @@ _modules["Main.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local State = require("Core/State")
 			local Utils = require("Core/Utils")
 			local Remotes = require("Core/Remotes")
@@ -805,27 +891,41 @@ _modules["Main.luau"] = {
 			local Window = UI.Create()
 			
 			--------------------------------------------------
-			-- MAIN
+			-- CONSTANTS
+			--------------------------------------------------
+			
+			local LOGO = "rbxassetid://95816097006870"
+			
+			--------------------------------------------------
+			-- MAIN / DASHBOARD
 			--------------------------------------------------
 			
 			local MainSection = Window:CreateSection("Main")
 			local MainTab = MainSection:CreateTab("Main", "home")
 			
-			MainTab:CreateSection("Win")
+			MainTab:CreateSection("ZenWare V3", "sparkles")
 			
-			MainTab:CreateToggle({
-			    Name = "Auto Win (500m)",
-			    Default = false,
-			    Flag = "AutoWin",
-			
-			    Callback = function(enabled)
-			        State.AutoWin = enabled
-			
-			        if enabled then
-			            Teleports.Win()
-			        end
-			    end,
+			MainTab:CreateImage({
+			    Name = "ZenWareLogo",
+			    Image = LOGO,
+			    Height = 110,
 			})
+			
+			MainTab:CreateParagraph({
+			    Title = "ZENWARE V3",
+			    Content =
+			        "Advanced Roblox utility interface\n"
+			        .. "Powered by Obsidian\n\n"
+			        .. "● Status: ONLINE\n"
+			        .. "● Core: ACTIVE\n"
+			        .. "● Version: V3",
+			})
+			
+			--------------------------------------------------
+			-- QUICK ACTIONS
+			--------------------------------------------------
+			
+			MainTab:CreateSection("Quick Actions", "zap")
 			
 			MainTab:CreateButton({
 			    Name = "Teleport to Win",
@@ -843,7 +943,31 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			MainTab:CreateSection("Loops")
+			--------------------------------------------------
+			-- WIN
+			--------------------------------------------------
+			
+			MainTab:CreateSection("Win", "trophy")
+			
+			MainTab:CreateToggle({
+			    Name = "Auto Win (500m)",
+			    Default = false,
+			    Flag = "AutoWin",
+			
+			    Callback = function(enabled)
+			        State.AutoWin = enabled
+			
+			        if enabled then
+			            Teleports.Win()
+			        end
+			    end,
+			})
+			
+			--------------------------------------------------
+			-- LOOPS
+			--------------------------------------------------
+			
+			MainTab:CreateSection("Teleport Loops", "repeat")
 			
 			MainTab:CreateSlider({
 			    Name = "Loop Interval",
@@ -906,8 +1030,14 @@ _modules["Main.luau"] = {
 			-- AUTO REBIRTH
 			--------------------------------------------------
 			
-			local RebirthSection = Window:CreateSection("Auto Rebirth")
-			local RebirthTab = RebirthSection:CreateTab("Auto Rebirth", "refresh-cw")
+			local RebirthSection =
+			    Window:CreateSection("Auto Rebirth")
+			
+			local RebirthTab =
+			    RebirthSection:CreateTab(
+			        "Auto Rebirth",
+			        "refresh-cw"
+			    )
 			
 			State.AutoRebirth = false
 			State.RebirthInterval = 0.25
@@ -915,32 +1045,35 @@ _modules["Main.luau"] = {
 			local rebirthRunning = false
 			
 			local function GetRebirthButton()
-			    local Players = game:GetService("Players")
-			    local player = Players.LocalPlayer
+			    local player = game:GetService("Players").LocalPlayer
 			
 			    if not player then
 			        return nil
 			    end
 			
-			    local playerGui = player:FindFirstChild("PlayerGui")
+			    local playerGui =
+			        player:FindFirstChild("PlayerGui")
 			
 			    if not playerGui then
 			        return nil
 			    end
 			
-			    local mainGui = playerGui:FindFirstChild("MainGui")
+			    local mainGui =
+			        playerGui:FindFirstChild("MainGui")
 			
 			    if not mainGui then
 			        return nil
 			    end
 			
-			    local frames = mainGui:FindFirstChild("Frames")
+			    local frames =
+			        mainGui:FindFirstChild("Frames")
 			
 			    if not frames then
 			        return nil
 			    end
 			
-			    local rebirthFrame = frames:FindFirstChild("Rebirth")
+			    local rebirthFrame =
+			        frames:FindFirstChild("Rebirth")
 			
 			    if not rebirthFrame then
 			        return nil
@@ -949,7 +1082,17 @@ _modules["Main.luau"] = {
 			    return rebirthFrame:FindFirstChild("Rebirth")
 			end
 			
-			RebirthTab:CreateSection("Rebirth")
+			RebirthTab:CreateSection(
+			    "Rebirth",
+			    "refresh-cw"
+			)
+			
+			RebirthTab:CreateParagraph({
+			    Title = "Automatic Rebirth",
+			    Content =
+			        "Automatically activates the Rebirth button\n"
+			        .. "using the selected interval.",
+			})
 			
 			RebirthTab:CreateSlider({
 			    Name = "Rebirth Interval",
@@ -983,16 +1126,25 @@ _modules["Main.luau"] = {
 			        rebirthRunning = true
 			
 			        task.spawn(function()
-			            while State.AutoRebirth and rebirthRunning do
-			                local button = GetRebirthButton()
+			            while
+			                State.AutoRebirth
+			                and rebirthRunning
+			            do
+			                local button =
+			                    GetRebirthButton()
 			
 			                if button then
 			                    pcall(function()
-			                        firesignal(button.MouseButton1Click)
+			                        firesignal(
+			                            button.MouseButton1Click
+			                        )
 			                    end)
 			                end
 			
-			                task.wait(State.RebirthInterval or 0.25)
+			                task.wait(
+			                    State.RebirthInterval
+			                    or 0.25
+			                )
 			            end
 			
 			            rebirthRunning = false
@@ -1004,10 +1156,19 @@ _modules["Main.luau"] = {
 			-- TELEPORTS
 			--------------------------------------------------
 			
-			local TeleportSection = Window:CreateSection("Teleports")
-			local TeleportTab = TeleportSection:CreateTab("Teleports", "map-pin")
+			local TeleportSection =
+			    Window:CreateSection("Teleports")
 			
-			TeleportTab:CreateSection("Custom XYZ")
+			local TeleportTab =
+			    TeleportSection:CreateTab(
+			        "Teleports",
+			        "map-pin"
+			    )
+			
+			TeleportTab:CreateSection(
+			    "Custom XYZ",
+			    "crosshair"
+			)
 			
 			local xBox = TeleportTab:CreateTextBox({
 			    Name = "X",
@@ -1026,19 +1187,36 @@ _modules["Main.luau"] = {
 			
 			TeleportTab:CreateButton({
 			    Name = "Teleport",
-			
 			    Callback = function()
-			        local x = tonumber(xBox:GetText())
-			        local y = tonumber(yBox:GetText())
-			        local z = tonumber(zBox:GetText())
+			        local x =
+			            tonumber(xBox:GetText())
+			
+			        local y =
+			            tonumber(yBox:GetText())
+			
+			        local z =
+			            tonumber(zBox:GetText())
 			
 			        if x and y and z then
-			            Teleports.Teleport(Vector3.new(x, y, z))
+			            Teleports.Teleport(
+			                Vector3.new(
+			                    x,
+			                    y,
+			                    z
+			                )
+			            )
 			        end
 			    end,
 			})
 			
-			TeleportTab:CreateSection("Saved Locations")
+			--------------------------------------------------
+			-- SAVED LOCATIONS
+			--------------------------------------------------
+			
+			TeleportTab:CreateSection(
+			    "Saved Locations",
+			    "bookmark"
+			)
 			
 			local saveBox = TeleportTab:CreateTextBox({
 			    Name = "Location Name",
@@ -1049,25 +1227,36 @@ _modules["Main.luau"] = {
 			    Name = "Save Current Location",
 			
 			    Callback = function()
-			        local root = Utils.GetRoot()
-			        local name = saveBox:GetText()
+			        local root =
+			            Utils.GetRoot()
+			
+			        local name =
+			            saveBox:GetText()
 			
 			        if root and name ~= "" then
-			            Teleports.SaveLocation(name, root.Position, State)
+			            Teleports.SaveLocation(
+			                name,
+			                root.Position,
+			                State
+			            )
 			        end
 			    end,
 			})
 			
-			local deleteBox = TeleportTab:CreateTextBox({
-			    Name = "Delete Location",
-			    Placeholder = "Location Name",
-			})
+			local deleteBox =
+			    TeleportTab:CreateTextBox({
+			        Name = "Delete Location",
+			        Placeholder = "Location Name",
+			    })
 			
 			TeleportTab:CreateButton({
 			    Name = "Delete Saved Location",
 			
 			    Callback = function()
-			        Teleports.DeleteLocation(deleteBox:GetText(), State)
+			        Teleports.DeleteLocation(
+			            deleteBox:GetText(),
+			            State
+			        )
 			    end,
 			})
 			
@@ -1075,8 +1264,26 @@ _modules["Main.luau"] = {
 			-- AUTO CLICKER
 			--------------------------------------------------
 			
-			local ClickSection = Window:CreateSection("Auto Clicker")
-			local ClickTab = ClickSection:CreateTab("Auto Clicker", "mouse-pointer")
+			local ClickSection =
+			    Window:CreateSection("Auto Clicker")
+			
+			local ClickTab =
+			    ClickSection:CreateTab(
+			        "Auto Clicker",
+			        "mouse-pointer"
+			    )
+			
+			ClickTab:CreateSection(
+			    "Clicker",
+			    "mouse-pointer"
+			)
+			
+			ClickTab:CreateParagraph({
+			    Title = "Auto Clicker",
+			    Content =
+			        "Automatically sends the configured click\n"
+			        .. "action while enabled.",
+			})
 			
 			ClickTab:CreateSlider({
 			    Name = "Clicks Per Second",
@@ -1107,7 +1314,9 @@ _modules["Main.luau"] = {
 			        State.AutoClicker = enabled
 			
 			        if enabled then
-			            AutoClicker.Start(State.AutoClickerSpeed)
+			            AutoClicker.Start(
+			                State.AutoClickerSpeed
+			            )
 			        else
 			            AutoClicker.Stop()
 			        end
@@ -1120,8 +1329,12 @@ _modules["Main.luau"] = {
 			    Flag = "AutoClickerKey",
 			
 			    Callback = function()
-			        AutoClicker.Toggle(State.AutoClickerSpeed)
-			        State.AutoClicker = AutoClicker.IsRunning()
+			        AutoClicker.Toggle(
+			            State.AutoClickerSpeed
+			        )
+			
+			        State.AutoClicker =
+			            AutoClicker.IsRunning()
 			    end,
 			})
 			
@@ -1129,24 +1342,44 @@ _modules["Main.luau"] = {
 			-- AUTO MOG
 			--------------------------------------------------
 			
-			local MogSection = Window:CreateSection("Auto Mog")
-			local MogTab = MogSection:CreateTab("Auto Mog", "swords")
+			local MogSection =
+			    Window:CreateSection("Auto Mog")
 			
-			MogTab:CreateSection("Target")
+			local MogTab =
+			    MogSection:CreateTab(
+			        "Auto Mog",
+			        "swords"
+			    )
 			
-			local targetBox = MogTab:CreateTextBox({
-			    Name = "Player",
-			    Placeholder = "Player username",
+			MogTab:CreateSection(
+			    "Target",
+			    "crosshair"
+			)
+			
+			MogTab:CreateParagraph({
+			    Title = "Auto Mog",
+			    Content =
+			        "Select a target player and start the Mog\n"
+			        .. "automation system.",
 			})
+			
+			local targetBox =
+			    MogTab:CreateTextBox({
+			        Name = "Player",
+			        Placeholder = "Player username",
+			    })
 			
 			MogTab:CreateButton({
 			    Name = "Mog Target",
 			
 			    Callback = function()
-			        local username = targetBox:GetText()
+			        local username =
+			            targetBox:GetText()
 			
 			        if username ~= "" then
-			            State.CurrentTarget = username
+			            State.CurrentTarget =
+			                username
+			
 			            State.AutoMog = true
 			
 			            AutoMog.Start(username)
@@ -1159,6 +1392,7 @@ _modules["Main.luau"] = {
 			
 			    Callback = function()
 			        State.AutoMogAll = true
+			
 			        AutoMog.StartAll()
 			    end,
 			})
@@ -1176,7 +1410,10 @@ _modules["Main.luau"] = {
 			
 			AutoMog.SetCallbacks(
 			    function(target)
-			        Remotes.Fire("Mog", target.UserId)
+			        Remotes.Fire(
+			            "Mog",
+			            target.UserId
+			        )
 			    end,
 			
 			    function()
@@ -1188,29 +1425,53 @@ _modules["Main.luau"] = {
 			-- SERVER FINDER
 			--------------------------------------------------
 			
-			local ServerSection = Window:CreateSection("Server Finder")
-			local ServerTab = ServerSection:CreateTab("Server Finder", "server")
+			local ServerSection =
+			    Window:CreateSection("Server Finder")
 			
-			local usernameBox = ServerTab:CreateTextBox({
-			    Name = "Username",
-			    Placeholder = "Player username",
+			local ServerTab =
+			    ServerSection:CreateTab(
+			        "Server Finder",
+			        "server"
+			    )
+			
+			ServerTab:CreateSection(
+			    "Player Search",
+			    "search"
+			)
+			
+			ServerTab:CreateParagraph({
+			    Title = "Server Finder",
+			    Content =
+			        "Find the server associated with a Roblox\n"
+			        .. "username.",
 			})
+			
+			local usernameBox =
+			    ServerTab:CreateTextBox({
+			        Name = "Username",
+			        Placeholder = "Player username",
+			    })
 			
 			ServerTab:CreateButton({
 			    Name = "Find Player",
 			
 			    Callback = function()
-			        local username = usernameBox:GetText()
+			        local username =
+			            usernameBox:GetText()
 			
 			        if username == "" then
 			            return
 			        end
 			
-			        local result, err = ServerFinder.Find(username)
+			        local result, err =
+			            ServerFinder.Find(username)
 			
 			        Window:Notify({
 			            Title = "Server Finder",
-			            Description = tostring(result or err),
+			            Description =
+			                tostring(
+			                    result or err
+			                ),
 			            Duration = 3,
 			        })
 			    end,
@@ -1220,8 +1481,25 @@ _modules["Main.luau"] = {
 			-- CONFIGS
 			--------------------------------------------------
 			
-			local ConfigSection = Window:CreateSection("Configs")
-			local ConfigTab = ConfigSection:CreateTab("Configs", "folder")
+			local ConfigSection =
+			    Window:CreateSection("Configs")
+			
+			local ConfigTab =
+			    ConfigSection:CreateTab(
+			        "Configs",
+			        "folder"
+			    )
+			
+			ConfigTab:CreateSection(
+			    "Configuration",
+			    "folder"
+			)
+			
+			ConfigTab:CreateParagraph({
+			    Title = "ZenWare Configs",
+			    Content =
+			        "Save and load your ZenWare settings.",
+			})
 			
 			ConfigTab:CreateConfigSection()
 			
@@ -1229,10 +1507,25 @@ _modules["Main.luau"] = {
 			-- SETTINGS
 			--------------------------------------------------
 			
-			local SettingsSection = Window:CreateSection("Settings")
-			local SettingsTab = SettingsSection:CreateTab("Settings", "settings")
+			local SettingsSection =
+			    Window:CreateSection("Settings")
 			
-			SettingsTab:CreateSection("General")
+			local SettingsTab =
+			    SettingsSection:CreateTab(
+			        "Settings",
+			        "settings"
+			    )
+			
+			SettingsTab:CreateSection(
+			    "General",
+			    "settings"
+			)
+			
+			SettingsTab:CreateParagraph({
+			    Title = "Interface Settings",
+			    Content =
+			        "Configure ZenWare preferences and controls.",
+			})
 			
 			SettingsTab:CreateKeybind({
 			    Name = "UI Toggle Key",
@@ -1251,6 +1544,7 @@ _modules["Main.luau"] = {
 			
 			    Callback = function(enabled)
 			        State.AutoLoad = enabled
+			
 			        AutoLoad.Set(enabled)
 			    end,
 			})
@@ -1259,12 +1553,31 @@ _modules["Main.luau"] = {
 			-- CREDITS
 			--------------------------------------------------
 			
-			local CreditsSection = Window:CreateSection("Credits")
-			local CreditsTab = CreditsSection:CreateTab("Credits", "heart")
+			local CreditsSection =
+			    Window:CreateSection("Credits")
+			
+			local CreditsTab =
+			    CreditsSection:CreateTab(
+			        "Credits",
+			        "heart"
+			    )
+			
+			CreditsTab:CreateSection(
+			    "ZenWare V3",
+			    "heart"
+			)
+			
+			CreditsTab:CreateImage({
+			    Name = "CreditsLogo",
+			    Image = LOGO,
+			    Height = 95,
+			})
 			
 			CreditsTab:CreateParagraph({
 			    Title = "ZenWare V3",
-			    Content = "@ZensMod",
+			    Content =
+			        "@ZensMod\n\n"
+			        .. "Powered by Obsidian",
 			})
 			
 			--------------------------------------------------
@@ -1272,6 +1585,17 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			Window:SetAutoSave(true)
+			
+			--------------------------------------------------
+			-- READY
+			--------------------------------------------------
+			
+			Window:Notify({
+			    Title = "ZenWare V3",
+			    Description =
+			        "Interface loaded successfully",
+			    Duration = 4,
+			})
 			
 			print("[ZenWare V3] Loaded successfully")
 		end)(unpack(_vararg))
@@ -1282,30 +1606,28 @@ _modules["UI/UI.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
-			local Obsidian = require("Core/Obsidian")
+		return (function(...)
+			local Obsidian = require(
+			    "Core/Obsidian"
+			)
 			
 			local UI = {}
 			
 			function UI.Create()
-			    local Window = Obsidian.new(
-			        "ZenWare V3",
-			        "ZenWareConfigs"
+			    local Window =
+			        Obsidian.new(
+			            "ZenWare V3",
+			            "ZenWareConfigs"
+			        )
+			
+			    Window:SetToggleKey(
+			        Enum.KeyCode.RightControl
 			    )
-			
-			    Window:SetToggleKey(Enum.KeyCode.RightControl)
-			
-			    Window:Notify({
-			        Title = "ZenWare V3",
-			        Description = "Interface loaded successfully",
-			        Duration = 3,
-			    })
 			
 			    return Window
 			end
 			
 			return UI
-
 		end)(unpack(_vararg))
 	end,
 }
@@ -1324,4 +1646,4 @@ _modules["Main"] = _modules["Main.luau"]
 _modules["UI/UI"] = _modules["UI/UI.luau"]
 
 return require("Main")
-end)(require or function() end)
+end)(require or function() end, ...)

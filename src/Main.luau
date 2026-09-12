@@ -15,27 +15,41 @@ print("[ZenWare V3] Starting...")
 local Window = UI.Create()
 
 --------------------------------------------------
--- MAIN
+-- CONSTANTS
+--------------------------------------------------
+
+local LOGO = "rbxassetid://95816097006870"
+
+--------------------------------------------------
+-- MAIN / DASHBOARD
 --------------------------------------------------
 
 local MainSection = Window:CreateSection("Main")
 local MainTab = MainSection:CreateTab("Main", "home")
 
-MainTab:CreateSection("Win")
+MainTab:CreateSection("ZenWare V3", "sparkles")
 
-MainTab:CreateToggle({
-    Name = "Auto Win (500m)",
-    Default = false,
-    Flag = "AutoWin",
-
-    Callback = function(enabled)
-        State.AutoWin = enabled
-
-        if enabled then
-            Teleports.Win()
-        end
-    end,
+MainTab:CreateImage({
+    Name = "ZenWareLogo",
+    Image = LOGO,
+    Height = 110,
 })
+
+MainTab:CreateParagraph({
+    Title = "ZENWARE V3",
+    Content =
+        "Advanced Roblox utility interface\n"
+        .. "Powered by Obsidian\n\n"
+        .. "● Status: ONLINE\n"
+        .. "● Core: ACTIVE\n"
+        .. "● Version: V3",
+})
+
+--------------------------------------------------
+-- QUICK ACTIONS
+--------------------------------------------------
+
+MainTab:CreateSection("Quick Actions", "zap")
 
 MainTab:CreateButton({
     Name = "Teleport to Win",
@@ -53,7 +67,31 @@ MainTab:CreateButton({
     end,
 })
 
-MainTab:CreateSection("Loops")
+--------------------------------------------------
+-- WIN
+--------------------------------------------------
+
+MainTab:CreateSection("Win", "trophy")
+
+MainTab:CreateToggle({
+    Name = "Auto Win (500m)",
+    Default = false,
+    Flag = "AutoWin",
+
+    Callback = function(enabled)
+        State.AutoWin = enabled
+
+        if enabled then
+            Teleports.Win()
+        end
+    end,
+})
+
+--------------------------------------------------
+-- LOOPS
+--------------------------------------------------
+
+MainTab:CreateSection("Teleport Loops", "repeat")
 
 MainTab:CreateSlider({
     Name = "Loop Interval",
@@ -116,8 +154,14 @@ MainTab:CreateToggle({
 -- AUTO REBIRTH
 --------------------------------------------------
 
-local RebirthSection = Window:CreateSection("Auto Rebirth")
-local RebirthTab = RebirthSection:CreateTab("Auto Rebirth", "refresh-cw")
+local RebirthSection =
+    Window:CreateSection("Auto Rebirth")
+
+local RebirthTab =
+    RebirthSection:CreateTab(
+        "Auto Rebirth",
+        "refresh-cw"
+    )
 
 State.AutoRebirth = false
 State.RebirthInterval = 0.25
@@ -125,32 +169,35 @@ State.RebirthInterval = 0.25
 local rebirthRunning = false
 
 local function GetRebirthButton()
-    local Players = game:GetService("Players")
-    local player = Players.LocalPlayer
+    local player = game:GetService("Players").LocalPlayer
 
     if not player then
         return nil
     end
 
-    local playerGui = player:FindFirstChild("PlayerGui")
+    local playerGui =
+        player:FindFirstChild("PlayerGui")
 
     if not playerGui then
         return nil
     end
 
-    local mainGui = playerGui:FindFirstChild("MainGui")
+    local mainGui =
+        playerGui:FindFirstChild("MainGui")
 
     if not mainGui then
         return nil
     end
 
-    local frames = mainGui:FindFirstChild("Frames")
+    local frames =
+        mainGui:FindFirstChild("Frames")
 
     if not frames then
         return nil
     end
 
-    local rebirthFrame = frames:FindFirstChild("Rebirth")
+    local rebirthFrame =
+        frames:FindFirstChild("Rebirth")
 
     if not rebirthFrame then
         return nil
@@ -159,7 +206,17 @@ local function GetRebirthButton()
     return rebirthFrame:FindFirstChild("Rebirth")
 end
 
-RebirthTab:CreateSection("Rebirth")
+RebirthTab:CreateSection(
+    "Rebirth",
+    "refresh-cw"
+)
+
+RebirthTab:CreateParagraph({
+    Title = "Automatic Rebirth",
+    Content =
+        "Automatically activates the Rebirth button\n"
+        .. "using the selected interval.",
+})
 
 RebirthTab:CreateSlider({
     Name = "Rebirth Interval",
@@ -193,16 +250,25 @@ RebirthTab:CreateToggle({
         rebirthRunning = true
 
         task.spawn(function()
-            while State.AutoRebirth and rebirthRunning do
-                local button = GetRebirthButton()
+            while
+                State.AutoRebirth
+                and rebirthRunning
+            do
+                local button =
+                    GetRebirthButton()
 
                 if button then
                     pcall(function()
-                        firesignal(button.MouseButton1Click)
+                        firesignal(
+                            button.MouseButton1Click
+                        )
                     end)
                 end
 
-                task.wait(State.RebirthInterval or 0.25)
+                task.wait(
+                    State.RebirthInterval
+                    or 0.25
+                )
             end
 
             rebirthRunning = false
@@ -214,10 +280,19 @@ RebirthTab:CreateToggle({
 -- TELEPORTS
 --------------------------------------------------
 
-local TeleportSection = Window:CreateSection("Teleports")
-local TeleportTab = TeleportSection:CreateTab("Teleports", "map-pin")
+local TeleportSection =
+    Window:CreateSection("Teleports")
 
-TeleportTab:CreateSection("Custom XYZ")
+local TeleportTab =
+    TeleportSection:CreateTab(
+        "Teleports",
+        "map-pin"
+    )
+
+TeleportTab:CreateSection(
+    "Custom XYZ",
+    "crosshair"
+)
 
 local xBox = TeleportTab:CreateTextBox({
     Name = "X",
@@ -236,19 +311,36 @@ local zBox = TeleportTab:CreateTextBox({
 
 TeleportTab:CreateButton({
     Name = "Teleport",
-
     Callback = function()
-        local x = tonumber(xBox:GetText())
-        local y = tonumber(yBox:GetText())
-        local z = tonumber(zBox:GetText())
+        local x =
+            tonumber(xBox:GetText())
+
+        local y =
+            tonumber(yBox:GetText())
+
+        local z =
+            tonumber(zBox:GetText())
 
         if x and y and z then
-            Teleports.Teleport(Vector3.new(x, y, z))
+            Teleports.Teleport(
+                Vector3.new(
+                    x,
+                    y,
+                    z
+                )
+            )
         end
     end,
 })
 
-TeleportTab:CreateSection("Saved Locations")
+--------------------------------------------------
+-- SAVED LOCATIONS
+--------------------------------------------------
+
+TeleportTab:CreateSection(
+    "Saved Locations",
+    "bookmark"
+)
 
 local saveBox = TeleportTab:CreateTextBox({
     Name = "Location Name",
@@ -259,25 +351,36 @@ TeleportTab:CreateButton({
     Name = "Save Current Location",
 
     Callback = function()
-        local root = Utils.GetRoot()
-        local name = saveBox:GetText()
+        local root =
+            Utils.GetRoot()
+
+        local name =
+            saveBox:GetText()
 
         if root and name ~= "" then
-            Teleports.SaveLocation(name, root.Position, State)
+            Teleports.SaveLocation(
+                name,
+                root.Position,
+                State
+            )
         end
     end,
 })
 
-local deleteBox = TeleportTab:CreateTextBox({
-    Name = "Delete Location",
-    Placeholder = "Location Name",
-})
+local deleteBox =
+    TeleportTab:CreateTextBox({
+        Name = "Delete Location",
+        Placeholder = "Location Name",
+    })
 
 TeleportTab:CreateButton({
     Name = "Delete Saved Location",
 
     Callback = function()
-        Teleports.DeleteLocation(deleteBox:GetText(), State)
+        Teleports.DeleteLocation(
+            deleteBox:GetText(),
+            State
+        )
     end,
 })
 
@@ -285,8 +388,26 @@ TeleportTab:CreateButton({
 -- AUTO CLICKER
 --------------------------------------------------
 
-local ClickSection = Window:CreateSection("Auto Clicker")
-local ClickTab = ClickSection:CreateTab("Auto Clicker", "mouse-pointer")
+local ClickSection =
+    Window:CreateSection("Auto Clicker")
+
+local ClickTab =
+    ClickSection:CreateTab(
+        "Auto Clicker",
+        "mouse-pointer"
+    )
+
+ClickTab:CreateSection(
+    "Clicker",
+    "mouse-pointer"
+)
+
+ClickTab:CreateParagraph({
+    Title = "Auto Clicker",
+    Content =
+        "Automatically sends the configured click\n"
+        .. "action while enabled.",
+})
 
 ClickTab:CreateSlider({
     Name = "Clicks Per Second",
@@ -317,7 +438,9 @@ ClickTab:CreateToggle({
         State.AutoClicker = enabled
 
         if enabled then
-            AutoClicker.Start(State.AutoClickerSpeed)
+            AutoClicker.Start(
+                State.AutoClickerSpeed
+            )
         else
             AutoClicker.Stop()
         end
@@ -330,8 +453,12 @@ ClickTab:CreateKeybind({
     Flag = "AutoClickerKey",
 
     Callback = function()
-        AutoClicker.Toggle(State.AutoClickerSpeed)
-        State.AutoClicker = AutoClicker.IsRunning()
+        AutoClicker.Toggle(
+            State.AutoClickerSpeed
+        )
+
+        State.AutoClicker =
+            AutoClicker.IsRunning()
     end,
 })
 
@@ -339,24 +466,44 @@ ClickTab:CreateKeybind({
 -- AUTO MOG
 --------------------------------------------------
 
-local MogSection = Window:CreateSection("Auto Mog")
-local MogTab = MogSection:CreateTab("Auto Mog", "swords")
+local MogSection =
+    Window:CreateSection("Auto Mog")
 
-MogTab:CreateSection("Target")
+local MogTab =
+    MogSection:CreateTab(
+        "Auto Mog",
+        "swords"
+    )
 
-local targetBox = MogTab:CreateTextBox({
-    Name = "Player",
-    Placeholder = "Player username",
+MogTab:CreateSection(
+    "Target",
+    "crosshair"
+)
+
+MogTab:CreateParagraph({
+    Title = "Auto Mog",
+    Content =
+        "Select a target player and start the Mog\n"
+        .. "automation system.",
 })
+
+local targetBox =
+    MogTab:CreateTextBox({
+        Name = "Player",
+        Placeholder = "Player username",
+    })
 
 MogTab:CreateButton({
     Name = "Mog Target",
 
     Callback = function()
-        local username = targetBox:GetText()
+        local username =
+            targetBox:GetText()
 
         if username ~= "" then
-            State.CurrentTarget = username
+            State.CurrentTarget =
+                username
+
             State.AutoMog = true
 
             AutoMog.Start(username)
@@ -369,6 +516,7 @@ MogTab:CreateButton({
 
     Callback = function()
         State.AutoMogAll = true
+
         AutoMog.StartAll()
     end,
 })
@@ -386,7 +534,10 @@ MogTab:CreateButton({
 
 AutoMog.SetCallbacks(
     function(target)
-        Remotes.Fire("Mog", target.UserId)
+        Remotes.Fire(
+            "Mog",
+            target.UserId
+        )
     end,
 
     function()
@@ -398,29 +549,53 @@ AutoMog.SetCallbacks(
 -- SERVER FINDER
 --------------------------------------------------
 
-local ServerSection = Window:CreateSection("Server Finder")
-local ServerTab = ServerSection:CreateTab("Server Finder", "server")
+local ServerSection =
+    Window:CreateSection("Server Finder")
 
-local usernameBox = ServerTab:CreateTextBox({
-    Name = "Username",
-    Placeholder = "Player username",
+local ServerTab =
+    ServerSection:CreateTab(
+        "Server Finder",
+        "server"
+    )
+
+ServerTab:CreateSection(
+    "Player Search",
+    "search"
+)
+
+ServerTab:CreateParagraph({
+    Title = "Server Finder",
+    Content =
+        "Find the server associated with a Roblox\n"
+        .. "username.",
 })
+
+local usernameBox =
+    ServerTab:CreateTextBox({
+        Name = "Username",
+        Placeholder = "Player username",
+    })
 
 ServerTab:CreateButton({
     Name = "Find Player",
 
     Callback = function()
-        local username = usernameBox:GetText()
+        local username =
+            usernameBox:GetText()
 
         if username == "" then
             return
         end
 
-        local result, err = ServerFinder.Find(username)
+        local result, err =
+            ServerFinder.Find(username)
 
         Window:Notify({
             Title = "Server Finder",
-            Description = tostring(result or err),
+            Description =
+                tostring(
+                    result or err
+                ),
             Duration = 3,
         })
     end,
@@ -430,8 +605,25 @@ ServerTab:CreateButton({
 -- CONFIGS
 --------------------------------------------------
 
-local ConfigSection = Window:CreateSection("Configs")
-local ConfigTab = ConfigSection:CreateTab("Configs", "folder")
+local ConfigSection =
+    Window:CreateSection("Configs")
+
+local ConfigTab =
+    ConfigSection:CreateTab(
+        "Configs",
+        "folder"
+    )
+
+ConfigTab:CreateSection(
+    "Configuration",
+    "folder"
+)
+
+ConfigTab:CreateParagraph({
+    Title = "ZenWare Configs",
+    Content =
+        "Save and load your ZenWare settings.",
+})
 
 ConfigTab:CreateConfigSection()
 
@@ -439,10 +631,25 @@ ConfigTab:CreateConfigSection()
 -- SETTINGS
 --------------------------------------------------
 
-local SettingsSection = Window:CreateSection("Settings")
-local SettingsTab = SettingsSection:CreateTab("Settings", "settings")
+local SettingsSection =
+    Window:CreateSection("Settings")
 
-SettingsTab:CreateSection("General")
+local SettingsTab =
+    SettingsSection:CreateTab(
+        "Settings",
+        "settings"
+    )
+
+SettingsTab:CreateSection(
+    "General",
+    "settings"
+)
+
+SettingsTab:CreateParagraph({
+    Title = "Interface Settings",
+    Content =
+        "Configure ZenWare preferences and controls.",
+})
 
 SettingsTab:CreateKeybind({
     Name = "UI Toggle Key",
@@ -461,6 +668,7 @@ SettingsTab:CreateToggle({
 
     Callback = function(enabled)
         State.AutoLoad = enabled
+
         AutoLoad.Set(enabled)
     end,
 })
@@ -469,12 +677,31 @@ SettingsTab:CreateToggle({
 -- CREDITS
 --------------------------------------------------
 
-local CreditsSection = Window:CreateSection("Credits")
-local CreditsTab = CreditsSection:CreateTab("Credits", "heart")
+local CreditsSection =
+    Window:CreateSection("Credits")
+
+local CreditsTab =
+    CreditsSection:CreateTab(
+        "Credits",
+        "heart"
+    )
+
+CreditsTab:CreateSection(
+    "ZenWare V3",
+    "heart"
+)
+
+CreditsTab:CreateImage({
+    Name = "CreditsLogo",
+    Image = LOGO,
+    Height = 95,
+})
 
 CreditsTab:CreateParagraph({
     Title = "ZenWare V3",
-    Content = "@ZensMod",
+    Content =
+        "@ZensMod\n\n"
+        .. "Powered by Obsidian",
 })
 
 --------------------------------------------------
@@ -482,5 +709,16 @@ CreditsTab:CreateParagraph({
 --------------------------------------------------
 
 Window:SetAutoSave(true)
+
+--------------------------------------------------
+-- READY
+--------------------------------------------------
+
+Window:Notify({
+    Title = "ZenWare V3",
+    Description =
+        "Interface loaded successfully",
+    Duration = 4,
+})
 
 print("[ZenWare V3] Loaded successfully")
