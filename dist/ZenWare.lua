@@ -1,6 +1,6 @@
 
-return (function(oldRequire)
-local _vararg = {}
+return (function(oldRequire, ...)
+local _vararg = {...}
 local _modules = {}
 
 local require = function(path)
@@ -21,7 +21,7 @@ _modules["Core/Config.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Config = {}
 			
 			Config.Name = "ZenWare"
@@ -61,7 +61,7 @@ _modules["Core/Obsidian.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Obsidian = {}
 			
 			local REPO = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
@@ -276,7 +276,7 @@ _modules["Core/Remotes.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local ReplicatedStorage = game:GetService("ReplicatedStorage")
 			
 			local Remotes = {}
@@ -328,7 +328,7 @@ _modules["Core/State.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local State = {
 			    AutoWin = false,
 			
@@ -358,7 +358,7 @@ _modules["Core/Utils.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Utils = {}
 			
 			function Utils.SafeCall(fn, arg)
@@ -418,7 +418,7 @@ _modules["Features/AutoClicker.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local AutoClicker = {}
 			
 			local running = false
@@ -484,7 +484,7 @@ _modules["Features/AutoLoad.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local TeleportService = game:GetService("TeleportService")
 			
 			local AutoLoad = {}
@@ -523,7 +523,7 @@ _modules["Features/AutoMog.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Players = game:GetService("Players")
 			
 			local AutoMog = {}
@@ -620,7 +620,7 @@ _modules["Features/ServerFinder.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local ServerFinder = {}
 			
 			local findCallback
@@ -673,7 +673,7 @@ _modules["Features/Teleports.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Players = game:GetService("Players")
 			
 			local Teleports = {}
@@ -787,7 +787,7 @@ _modules["Main.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local State = require("Core/State")
 			local Utils = require("Core/Utils")
 			local Remotes = require("Core/Remotes")
@@ -809,7 +809,7 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			local MainSection = Window:CreateSection("Main")
-			local MainTab = MainSection:CreateTab("Main")
+			local MainTab = MainSection:CreateTab("Main", "home")
 			
 			MainTab:CreateSection("Win")
 			
@@ -903,11 +903,109 @@ _modules["Main.luau"] = {
 			})
 			
 			--------------------------------------------------
+			-- AUTO REBIRTH
+			--------------------------------------------------
+			
+			local RebirthSection = Window:CreateSection("Auto Rebirth")
+			local RebirthTab = RebirthSection:CreateTab("Auto Rebirth", "refresh-cw")
+			
+			State.AutoRebirth = false
+			State.RebirthInterval = 0.25
+			
+			local rebirthRunning = false
+			
+			local function GetRebirthButton()
+			    local Players = game:GetService("Players")
+			    local player = Players.LocalPlayer
+			
+			    if not player then
+			        return nil
+			    end
+			
+			    local playerGui = player:FindFirstChild("PlayerGui")
+			
+			    if not playerGui then
+			        return nil
+			    end
+			
+			    local mainGui = playerGui:FindFirstChild("MainGui")
+			
+			    if not mainGui then
+			        return nil
+			    end
+			
+			    local frames = mainGui:FindFirstChild("Frames")
+			
+			    if not frames then
+			        return nil
+			    end
+			
+			    local rebirthFrame = frames:FindFirstChild("Rebirth")
+			
+			    if not rebirthFrame then
+			        return nil
+			    end
+			
+			    return rebirthFrame:FindFirstChild("Rebirth")
+			end
+			
+			RebirthTab:CreateSection("Rebirth")
+			
+			RebirthTab:CreateSlider({
+			    Name = "Rebirth Interval",
+			    Min = 0.05,
+			    Max = 2,
+			    Default = 0.25,
+			    Flag = "RebirthInterval",
+			
+			    Callback = function(value)
+			        State.RebirthInterval = value
+			    end,
+			})
+			
+			RebirthTab:CreateToggle({
+			    Name = "Auto Rebirth",
+			    Default = false,
+			    Flag = "AutoRebirth",
+			
+			    Callback = function(enabled)
+			        State.AutoRebirth = enabled
+			
+			        if not enabled then
+			            rebirthRunning = false
+			            return
+			        end
+			
+			        if rebirthRunning then
+			            return
+			        end
+			
+			        rebirthRunning = true
+			
+			        task.spawn(function()
+			            while State.AutoRebirth and rebirthRunning do
+			                local button = GetRebirthButton()
+			
+			                if button then
+			                    pcall(function()
+			                        firesignal(button.MouseButton1Click)
+			                    end)
+			                end
+			
+			                task.wait(State.RebirthInterval or 0.25)
+			            end
+			
+			            rebirthRunning = false
+			        end)
+			    end,
+			})
+			
+			--------------------------------------------------
 			-- TELEPORTS
 			--------------------------------------------------
 			
 			local TeleportSection = Window:CreateSection("Teleports")
-			local TeleportTab = TeleportSection:CreateTab("Teleports")
+			local TeleportTab = TeleportSection:CreateTab("Teleports", "map-pin")
 			
 			TeleportTab:CreateSection("Custom XYZ")
 			
@@ -978,7 +1076,7 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			local ClickSection = Window:CreateSection("Auto Clicker")
-			local ClickTab = ClickSection:CreateTab("Auto Clicker")
+			local ClickTab = ClickSection:CreateTab("Auto Clicker", "mouse-pointer")
 			
 			ClickTab:CreateSlider({
 			    Name = "Clicks Per Second",
@@ -1032,7 +1130,7 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			local MogSection = Window:CreateSection("Auto Mog")
-			local MogTab = MogSection:CreateTab("Auto Mog")
+			local MogTab = MogSection:CreateTab("Auto Mog", "swords")
 			
 			MogTab:CreateSection("Target")
 			
@@ -1091,7 +1189,7 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			local ServerSection = Window:CreateSection("Server Finder")
-			local ServerTab = ServerSection:CreateTab("Server Finder")
+			local ServerTab = ServerSection:CreateTab("Server Finder", "server")
 			
 			local usernameBox = ServerTab:CreateTextBox({
 			    Name = "Username",
@@ -1123,7 +1221,7 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			local ConfigSection = Window:CreateSection("Configs")
-			local ConfigTab = ConfigSection:CreateTab("Configs")
+			local ConfigTab = ConfigSection:CreateTab("Configs", "folder")
 			
 			ConfigTab:CreateConfigSection()
 			
@@ -1132,7 +1230,7 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			local SettingsSection = Window:CreateSection("Settings")
-			local SettingsTab = SettingsSection:CreateTab("Settings")
+			local SettingsTab = SettingsSection:CreateTab("Settings", "settings")
 			
 			SettingsTab:CreateSection("General")
 			
@@ -1162,7 +1260,7 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			local CreditsSection = Window:CreateSection("Credits")
-			local CreditsTab = CreditsSection:CreateTab("Credits")
+			local CreditsTab = CreditsSection:CreateTab("Credits", "heart")
 			
 			CreditsTab:CreateParagraph({
 			    Title = "ZenWare V3",
@@ -1184,7 +1282,7 @@ _modules["UI/UI.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Obsidian = require("Core/Obsidian")
 			
 			local UI = {}
@@ -1226,4 +1324,4 @@ _modules["Main"] = _modules["Main.luau"]
 _modules["UI/UI"] = _modules["UI/UI.luau"]
 
 return require("Main")
-end)(require or function() end)
+end)(require or function() end, ...)
