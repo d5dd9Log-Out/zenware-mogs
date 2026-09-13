@@ -180,195 +180,80 @@ _modules["Core/Obsidian.luau"] = {
 			    })
 			
 			    --------------------------------------------------
-			    -- LILAC IMAGE INSIDE THE MENU ONLY
-			    --
-			    -- IMPORTANT:
-			    -- This is NOT a fullscreen ScreenGui.
-			    -- It is parented to the Obsidian window itself,
-			    -- so it disappears automatically when the menu
-			    -- is hidden.
+			    -- LILAC MENU IMAGE
 			    --------------------------------------------------
 			
-			    local MENU_IMAGE =
-			        "rbxassetid://137423681201950"
+			    local MENU_IMAGE_ID = "137423681201950"
+			    local MENU_IMAGE = "rbxthumb://type=Asset&id=" .. MENU_IMAGE_ID .. "&w=768&h=768"
 			
-			    local MenuRoot =
-			        Window.Window
+			    local MenuRoot = Window.Window
 			
-			    -- Use Obsidian's built-in window artwork system.
+			    -- Obsidian already creates a real BackgroundImage ImageLabel.
+			    -- Set it directly so the artwork is actually rendered by Roblox.
 			    pcall(function()
 			        Window:SetBackgroundImage(MENU_IMAGE)
-			        local BackgroundImage = MenuRoot:FindFirstChild("BackgroundImage")
+			
+			        local BackgroundImage = Window.BackgroundImage
+			            or MenuRoot:FindFirstChild("BackgroundImage")
+			
 			        if BackgroundImage and BackgroundImage:IsA("ImageLabel") then
-			            BackgroundImage.ImageTransparency = 0.68
+			            BackgroundImage.Image = MENU_IMAGE
+			            BackgroundImage.ImageTransparency = 0.35
 			            BackgroundImage.BackgroundTransparency = 1
+			            BackgroundImage.ScaleType = Enum.ScaleType.Crop
+			            BackgroundImage.Visible = true
+			            BackgroundImage.ZIndex = 1
 			        end
 			    end)
 			
 			    --------------------------------------------------
-			    -- FULLSCREEN LILAC BACKGROUND
-			    --
-			    -- This is separate from the menu artwork.
-			    -- It is parented to Obsidian's ScreenGui and follows
-			    -- the actual window Visible state, so hiding the UI
-			    -- hides this background too.
+			    -- FULLSCREEN LILAC IMAGE
 			    --------------------------------------------------
 			
+			    local FULLSCREEN_IMAGE_ID = "99217170570093"
 			    local FULLSCREEN_IMAGE =
-			        "rbxassetid://99217170570093"
+			        "rbxthumb://type=Asset&id=" .. FULLSCREEN_IMAGE_ID .. "&w=1920&h=1080"
 			
 			    local FullscreenLayer
 			
 			    pcall(function()
-			        local ScreenGui =
-			            Library.ScreenGui
+			        local ScreenGui = Library.ScreenGui
 			
 			        if ScreenGui then
-			            local old =
-			                ScreenGui:FindFirstChild(
-			                    "LilacFullscreenBackground"
-			                )
+			            ScreenGui.IgnoreGuiInset = true
 			
+			            local old = ScreenGui:FindFirstChild("LilacFullscreenBackground")
 			            if old then
 			                old:Destroy()
 			            end
 			
-			            FullscreenLayer =
-			                Instance.new(
-			                    "ImageLabel"
-			                )
-			
-			            FullscreenLayer.Name =
-			                "LilacFullscreenBackground"
-			
-			            FullscreenLayer.BackgroundColor3 =
-			                Color3.fromRGB(
-			                    5,
-			                    2,
-			                    8
-			                )
-			
-			            FullscreenLayer.BackgroundTransparency =
-			                0.12
-			
-			            FullscreenLayer.BorderSizePixel =
-			                0
-			
-			            FullscreenLayer.Position =
-			                UDim2.fromScale(
-			                    0,
-			                    0
-			                )
-			
-			            FullscreenLayer.Size =
-			                UDim2.fromScale(
-			                    1,
-			                    1
-			                )
-			
-			            FullscreenLayer.Image =
-			                FULLSCREEN_IMAGE
-			
-			            -- Semi-transparent as requested.
-			            FullscreenLayer.ImageTransparency =
-			                0.58
-			
-			            FullscreenLayer.ScaleType =
-			                Enum.ScaleType.Crop
-			
+			            FullscreenLayer = Instance.new("ImageLabel")
+			            FullscreenLayer.Name = "LilacFullscreenBackground"
+			            FullscreenLayer.AnchorPoint = Vector2.zero
+			            FullscreenLayer.Position = UDim2.fromScale(0, 0)
+			            FullscreenLayer.Size = UDim2.fromScale(1, 1)
+			            FullscreenLayer.BackgroundTransparency = 1
+			            FullscreenLayer.BorderSizePixel = 0
+			            FullscreenLayer.Image = FULLSCREEN_IMAGE
+			            FullscreenLayer.ImageTransparency = 0.28
+			            FullscreenLayer.ScaleType = Enum.ScaleType.Crop
 			            FullscreenLayer.Active = false
 			            FullscreenLayer.Selectable = false
 			            FullscreenLayer.ZIndex = 0
+			            FullscreenLayer.Visible = Library.Toggled == true
+			            FullscreenLayer.Parent = ScreenGui
 			
-			            FullscreenLayer.Visible =
-			                Library.Toggled == true
-			
-			            FullscreenLayer.Parent =
-			                ScreenGui
-			
+			            -- Keep the fullscreen image exactly synced with the Obsidian UI.
 			            task.spawn(function()
 			                while FullscreenLayer and FullscreenLayer.Parent and not Library.Unloaded do
 			                    FullscreenLayer.Visible = Library.Toggled == true
-			                    task.wait(0.05)
+			                    task.wait(0.03)
 			                end
 			            end)
 			
-			            local FullscreenGradient =
-			                Instance.new(
-			                    "UIGradient"
-			                )
-			
-			            FullscreenGradient.Rotation =
-			                25
-			
-			            FullscreenGradient.Color =
-			                ColorSequence.new({
-			                    ColorSequenceKeypoint.new(
-			                        0,
-			                        Color3.fromRGB(
-			                            5,
-			                            1,
-			                            8
-			                        )
-			                    ),
-			
-			                    ColorSequenceKeypoint.new(
-			                        0.35,
-			                        Color3.fromRGB(
-			                            45,
-			                            10,
-			                            58
-			                        )
-			                    ),
-			
-			                    ColorSequenceKeypoint.new(
-			                        0.58,
-			                        Color3.fromRGB(
-			                            93,
-			                            29,
-			                            112
-			                        )
-			                    ),
-			
-			                    ColorSequenceKeypoint.new(
-			                        1,
-			                        Color3.fromRGB(
-			                            5,
-			                            1,
-			                            8
-			                        )
-			                    ),
-			                })
-			
-			            FullscreenGradient.Transparency =
-			                NumberSequence.new({
-			                    NumberSequenceKeypoint.new(
-			                        0,
-			                        0.20
-			                    ),
-			
-			                    NumberSequenceKeypoint.new(
-			                        0.50,
-			                        0.03
-			                    ),
-			
-			                    NumberSequenceKeypoint.new(
-			                        1,
-			                        0.24
-			                    ),
-			                })
-			
-			            FullscreenGradient.Parent =
-			                FullscreenLayer
-			
-			            -- Keep the fullscreen layer synchronized with the real
-			            -- Obsidian window. RightControl / unload / visibility changes
-			            -- therefore do not leave a ghost background behind.
-			            ScreenGui.Destroying:Connect(
-			                function()
-			                    FullscreenLayer = nil
-			                end
-			            )
+			            ScreenGui.Destroying:Connect(function()
+			                FullscreenLayer = nil
+			            end)
 			        end
 			    end)
 			
