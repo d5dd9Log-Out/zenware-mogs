@@ -337,6 +337,8 @@ MainTab:CreateToggle({
 -- ANTI-CHEAT TESTS
 --------------------------------------------------
 
+local TweenService = game:GetService("TweenService")
+
 local DevTests = {
     World1AutoWin = false,
     World2AutoWin = false,
@@ -348,8 +350,219 @@ local DevTests = {
     World2Repeated = false,
 }
 
+local AutoWinState = {
+    World1 = {
+        running = false,
+        part = nil,
+    },
+    World2 = {
+        running = false,
+        part = nil,
+    },
+}
+
+local WorldProfiles = {
+    World1 = {
+        start = Vector3.new(-129, 40, 4944),
+        finish = Vector3.new(-720, 40, 4944),
+        name = "World 1",
+    },
+
+    World2 = {
+        start = Vector3.new(-105, 40, -52),
+        finish = Vector3.new(-700, 40, -51),
+        name = "World 2",
+    },
+}
+
+local function GetDevCharacter()
+    return LocalPlayer.Character
+end
+
+local function GetDevRoot()
+    local character = GetDevCharacter()
+
+    if not character then
+        return nil
+    end
+
+    return character:FindFirstChild("HumanoidRootPart")
+end
+
+local function CreateAutoWinPart(worldName)
+    local profile = WorldProfiles[worldName]
+    local state = AutoWinState[worldName]
+
+    if not profile or not state then
+        return nil
+    end
+
+    if state.part and state.part.Parent then
+        return state.part
+    end
+
+    local part = Instance.new("Part")
+    part.Name = "ZenWare_" .. worldName .. "_AutoWin"
+    part.Size = Vector3.new(7, 1, 7)
+    part.CFrame = CFrame.new(profile.start)
+    part.Anchored = true
+    part.CanCollide = true
+    part.CanTouch = false
+    part.CanQuery = false
+    part.Transparency = 0.5
+    part.Parent = workspace
+
+    state.part = part
+
+    return part
+end
+
+local function RemoveAutoWinPart(worldName)
+    local state = AutoWinState[worldName]
+
+    if not state then
+        return
+    end
+
+    if state.part then
+        pcall(function()
+            state.part:Destroy()
+        end)
+    end
+
+    state.part = nil
+end
+
+local function StopAutoWinTest(worldName)
+    local state = AutoWinState[worldName]
+
+    if not state then
+        return
+    end
+
+    state.running = false
+end
+
+local function RunAutoWinCycle(worldName)
+    local profile = WorldProfiles[worldName]
+    local state = AutoWinState[worldName]
+
+    if not profile or not state then
+        return
+    end
+
+    local character = GetDevCharacter()
+
+    if not character then
+        return
+    end
+
+    local part = CreateAutoWinPart(worldName)
+
+    if not part then
+        return
+    end
+
+    character:PivotTo(
+        part.CFrame + Vector3.new(0, 3, 0)
+    )
+
+    task.wait(0.5)
+
+    if not state.running then
+        return
+    end
+
+    local driver = Instance.new("CFrameValue")
+    driver.Value = character:GetPivot()
+
+    local connection =
+        driver:GetPropertyChangedSignal("Value"):Connect(function()
+            if character.Parent then
+                character:PivotTo(driver.Value)
+            end
+        end)
+
+    local tween = TweenService:Create(
+        driver,
+        TweenInfo.new(
+            1,
+            Enum.EasingStyle.Linear,
+            Enum.EasingDirection.InOut
+        ),
+        {
+            Value = CFrame.new(profile.finish),
+        }
+    )
+
+    tween:Play()
+    tween.Completed:Wait()
+
+    connection:Disconnect()
+    driver:Destroy()
+
+    if character.Parent then
+        character:PivotTo(CFrame.new(profile.finish))
+    end
+
+    task.wait(1)
+end
+
+local function StartAutoWinTest(worldName)
+    local state = AutoWinState[worldName]
+
+    if not state or state.running then
+        return
+    end
+
+    state.running = true
+    CreateAutoWinPart(worldName)
+
+    Notify(
+        "Anti-Cheat Tests",
+        WorldProfiles[worldName].name .. " Auto Win started.",
+        3
+    )
+
+    task.spawn(function()
+        while state.running do
+            local ok, err = pcall(function()
+                RunAutoWinCycle(worldName)
+            end)
+
+            if not ok then
+                warn("[ZenWare AC TEST]", err)
+                task.wait(1)
+            end
+        end
+    end)
+end
+
+local function StopAllDevTests()
+    for name in pairs(DevTests) do
+        DevTests[name] = false
+    end
+
+    StopAutoWinTest("World1")
+    StopAutoWinTest("World2")
+end
+
 local function SetDevTest(name, enabled)
     DevTests[name] = enabled == true
+
+    if name == "World1AutoWin" then
+        if enabled then
+            StartAutoWinTest("World1")
+        else
+            StopAutoWinTest("World1")
+        end
+    elseif name == "World2AutoWin" then
+        if enabled then
+            StartAutoWinTest("World2")
+        else
+            StopAutoWinTest("World2")
+        end
+    end
 
     Notify(
         "Anti-Cheat Tests",
@@ -367,11 +580,10 @@ MainTab:CreateParagraph({
     Title = "Client Test Controls",
 
     Content =
-        "Checkbox-based test controls.\n"
-        .. "No server test object is required.\n"
-        .. "Use these toggles to keep the selected "
-        .. "test profile active while you inspect "
-        .. "your client-side telemetry and logs.",
+        "Local developer test harness.\n"
+        .. "World Auto Win tests create a visible test part,\n"
+        .. "move the whole character with a timed tween,\n"
+        .. "and repeat so movement validation can be observed.",
 })
 
 MainTab:CreateSection(
@@ -384,10 +596,7 @@ MainTab:CreateToggle({
     Flag = "World1AutoWinTest",
 
     Callback = function(enabled)
-        SetDevTest(
-            "World1AutoWin",
-            enabled
-        )
+        SetDevTest("World1AutoWin", enabled)
     end,
 })
 
@@ -397,10 +606,7 @@ MainTab:CreateToggle({
     Flag = "World1SpeedTest",
 
     Callback = function(enabled)
-        SetDevTest(
-            "World1Speed",
-            enabled
-        )
+        SetDevTest("World1Speed", enabled)
     end,
 })
 
@@ -410,10 +616,7 @@ MainTab:CreateToggle({
     Flag = "World1TeleportTest",
 
     Callback = function(enabled)
-        SetDevTest(
-            "World1Teleport",
-            enabled
-        )
+        SetDevTest("World1Teleport", enabled)
     end,
 })
 
@@ -423,10 +626,7 @@ MainTab:CreateToggle({
     Flag = "World1RepeatedTest",
 
     Callback = function(enabled)
-        SetDevTest(
-            "World1Repeated",
-            enabled
-        )
+        SetDevTest("World1Repeated", enabled)
     end,
 })
 
@@ -440,10 +640,7 @@ MainTab:CreateToggle({
     Flag = "World2AutoWinTest",
 
     Callback = function(enabled)
-        SetDevTest(
-            "World2AutoWin",
-            enabled
-        )
+        SetDevTest("World2AutoWin", enabled)
     end,
 })
 
@@ -453,10 +650,7 @@ MainTab:CreateToggle({
     Flag = "World2SpeedTest",
 
     Callback = function(enabled)
-        SetDevTest(
-            "World2Speed",
-            enabled
-        )
+        SetDevTest("World2Speed", enabled)
     end,
 })
 
@@ -466,10 +660,7 @@ MainTab:CreateToggle({
     Flag = "World2TeleportTest",
 
     Callback = function(enabled)
-        SetDevTest(
-            "World2Teleport",
-            enabled
-        )
+        SetDevTest("World2Teleport", enabled)
     end,
 })
 
@@ -479,10 +670,7 @@ MainTab:CreateToggle({
     Flag = "World2RepeatedTest",
 
     Callback = function(enabled)
-        SetDevTest(
-            "World2Repeated",
-            enabled
-        )
+        SetDevTest("World2Repeated", enabled)
     end,
 })
 
@@ -496,14 +684,10 @@ MainTab:CreateButton({
     Callback = function()
         Notify(
             "World 1 Tests",
-            "Auto Win: "
-                .. tostring(DevTests.World1AutoWin)
-                .. "\nSpeed: "
-                .. tostring(DevTests.World1Speed)
-                .. "\nTeleport: "
-                .. tostring(DevTests.World1Teleport)
-                .. "\nRepeated: "
-                .. tostring(DevTests.World1Repeated),
+            "Auto Win: " .. tostring(DevTests.World1AutoWin)
+                .. "\nSpeed: " .. tostring(DevTests.World1Speed)
+                .. "\nTeleport: " .. tostring(DevTests.World1Teleport)
+                .. "\nRepeated: " .. tostring(DevTests.World1Repeated),
             5
         )
     end,
@@ -515,14 +699,10 @@ MainTab:CreateButton({
     Callback = function()
         Notify(
             "World 2 Tests",
-            "Auto Win: "
-                .. tostring(DevTests.World2AutoWin)
-                .. "\nSpeed: "
-                .. tostring(DevTests.World2Speed)
-                .. "\nTeleport: "
-                .. tostring(DevTests.World2Teleport)
-                .. "\nRepeated: "
-                .. tostring(DevTests.World2Repeated),
+            "Auto Win: " .. tostring(DevTests.World2AutoWin)
+                .. "\nSpeed: " .. tostring(DevTests.World2Speed)
+                .. "\nTeleport: " .. tostring(DevTests.World2Teleport)
+                .. "\nRepeated: " .. tostring(DevTests.World2Repeated),
             5
         )
     end,
@@ -532,9 +712,7 @@ MainTab:CreateButton({
     Name = "Disable All Tests",
 
     Callback = function()
-        for name in pairs(DevTests) do
-            DevTests[name] = false
-        end
+        StopAllDevTests()
 
         Notify(
             "Anti-Cheat Tests",
