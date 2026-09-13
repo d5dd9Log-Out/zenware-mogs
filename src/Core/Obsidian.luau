@@ -18,429 +18,64 @@ function Obsidian.new(title, configFolder)
     Library.ForceCheckbox = false
     Library.ShowToggleFrameInKeybinds = true
 
-    local Window = Library:CreateWindow({
-        Title = title or "ZenWare V3",
-        Footer = "ZenWare V3",
-        Icon = LOGO,
-
-        NotifySide = "Right",
-
-        ShowCustomCursor = true,
-        AutoShow = true,
-        Resizable = true,
-        Center = true,
-
-        Glow = true,
-        GlobalSearch = true,
-    })
-
-    local ZenWindow = {
-        Library = Library,
-        Window = Window,
-        Sections = {},
-    }
-
     --------------------------------------------------
-    -- LILAC V1488 VISUAL LAYER
-    --------------------------------------------------
-
-    local LILAC_IMAGE =
-        "rbxassetid://91469127281628"
-
-    local LILAC_PURPLE =
-        Color3.fromRGB(
-            164,
-            76,
-            204
-        )
-
-    local LILAC_LIGHT =
-        Color3.fromRGB(
-            222,
-            153,
-            244
-        )
-
-    local LILAC_DARK =
-        Color3.fromRGB(
-            6,
-            2,
-            10
-        )
-
-    pcall(function()
-        local CoreGui =
-            game:GetService(
-                "CoreGui"
-            )
-
-        local old =
-            CoreGui:FindFirstChild(
-                "LilacV1488Backdrop"
-            )
-
-        if old then
-            old:Destroy()
-        end
-
-        local Backdrop =
-            Instance.new(
-                "ScreenGui"
-            )
-
-        Backdrop.Name =
-            "LilacV1488Backdrop"
-
-        Backdrop.IgnoreGuiInset =
-            true
-
-        Backdrop.ResetOnSpawn =
-            false
-
-        Backdrop.DisplayOrder =
-            -1000
-
-        Backdrop.ZIndexBehavior =
-            Enum.ZIndexBehavior.Global
-
-        Backdrop.Parent =
-            CoreGui
-
-        --------------------------------------------------
-        -- IMAGE
-        --------------------------------------------------
-
-        local Image =
-            Instance.new(
-                "ImageLabel"
-            )
-
-        Image.Name =
-            "LilacArtwork"
-
-        Image.BackgroundTransparency =
-            1
-
-        Image.BorderSizePixel =
-            0
-
-        Image.Position =
-            UDim2.fromScale(
-                0,
-                0
-            )
-
-        Image.Size =
-            UDim2.fromScale(
-                1,
-                1
-            )
-
-        Image.Image =
-            LILAC_IMAGE
-
-        Image.ImageTransparency =
-            0.32
-
-        Image.ScaleType =
-            Enum.ScaleType.Crop
-
-        Image.ZIndex =
-            1
-
-        Image.Parent =
-            Backdrop
-
-        --------------------------------------------------
-        -- IMAGE TINT
-        --------------------------------------------------
-
-        local ImageGradient =
-            Instance.new(
-                "UIGradient"
-            )
-
-        ImageGradient.Rotation =
-            25
-
-        ImageGradient.Color =
-            ColorSequence.new({
-                ColorSequenceKeypoint.new(
-                    0,
-                    LILAC_DARK
-                ),
-
-                ColorSequenceKeypoint.new(
-                    0.30,
-                    LILAC_PURPLE
-                ),
-
-                ColorSequenceKeypoint.new(
-                    0.52,
-                    LILAC_LIGHT
-                ),
-
-                ColorSequenceKeypoint.new(
-                    0.76,
-                    LILAC_PURPLE
-                ),
-
-                ColorSequenceKeypoint.new(
-                    1,
-                    LILAC_DARK
-                ),
-            })
-
-        ImageGradient.Transparency =
-            NumberSequence.new({
-                NumberSequenceKeypoint.new(
-                    0,
-                    0.22
-                ),
-
-                NumberSequenceKeypoint.new(
-                    0.25,
-                    0.05
-                ),
-
-                NumberSequenceKeypoint.new(
-                    0.50,
-                    0
-                ),
-
-                NumberSequenceKeypoint.new(
-                    0.78,
-                    0.08
-                ),
-
-                NumberSequenceKeypoint.new(
-                    1,
-                    0.26
-                ),
-            })
-
-        ImageGradient.Parent =
-            Image
-
-        --------------------------------------------------
-        -- GLASS / PURPLE OVERLAY
-        --------------------------------------------------
-
-        local Overlay =
-            Instance.new(
-                "Frame"
-            )
-
-        Overlay.Name =
-            "LilacOverlay"
-
-        Overlay.BackgroundColor3 =
-            Color3.fromRGB(
-                14,
-                5,
-                20
-            )
-
-        Overlay.BackgroundTransparency =
-            0.34
-
-        Overlay.BorderSizePixel =
-            0
-
-        Overlay.Size =
-            UDim2.fromScale(
-                1,
-                1
-            )
-
-        Overlay.ZIndex =
-            2
-
-        Overlay.Parent =
-            Backdrop
-
-        local OverlayGradient =
-            Instance.new(
-                "UIGradient"
-            )
-
-        OverlayGradient.Rotation =
-            135
-
-        OverlayGradient.Color =
-            ColorSequence.new({
-                ColorSequenceKeypoint.new(
-                    0,
-                    Color3.fromRGB(
-                        8,
-                        2,
-                        12
-                    )
-                ),
-
-                ColorSequenceKeypoint.new(
-                    0.38,
-                    Color3.fromRGB(
-                        63,
-                        21,
-                        78
-                    )
-                ),
-
-                ColorSequenceKeypoint.new(
-                    0.58,
-                    Color3.fromRGB(
-                        104,
-                        43,
-                        126
-                    )
-                ),
-
-                ColorSequenceKeypoint.new(
-                    1,
-                    Color3.fromRGB(
-                        5,
-                        2,
-                        9
-                    )
-                ),
-            })
-
-        OverlayGradient.Transparency =
-            NumberSequence.new({
-                NumberSequenceKeypoint.new(
-                    0,
-                    0.25
-                ),
-
-                NumberSequenceKeypoint.new(
-                    0.48,
-                    0.02
-                ),
-
-                NumberSequenceKeypoint.new(
-                    1,
-                    0.34
-                ),
-            })
-
-        OverlayGradient.Parent =
-            Overlay
-
-        --------------------------------------------------
-        -- SOFT CENTER GLOW
-        --------------------------------------------------
-
-        local Glow =
-            Instance.new(
-                "Frame"
-            )
-
-        Glow.Name =
-            "CenterGlow"
-
-        Glow.BackgroundColor3 =
-            LILAC_PURPLE
-
-        Glow.BackgroundTransparency =
-            0.90
-
-        Glow.BorderSizePixel =
-            0
-
-        Glow.AnchorPoint =
-            Vector2.new(
-                0.5,
-                0.5
-            )
-
-        Glow.Position =
-            UDim2.fromScale(
-                0.5,
-                0.5
-            )
-
-        Glow.Size =
-            UDim2.fromScale(
-                0.75,
-                0.72
-            )
-
-        Glow.ZIndex =
-            3
-
-        Glow.Parent =
-            Backdrop
-
-        local GlowCorner =
-            Instance.new(
-                "UICorner"
-            )
-
-        GlowCorner.CornerRadius =
-            UDim.new(
-                0.16,
-                0
-            )
-
-        GlowCorner.Parent =
-            Glow
-    end)
-
-    --------------------------------------------------
-    -- LILAC WINDOW PALETTE
+    -- LILAC V1488 PALETTE
     --------------------------------------------------
 
     pcall(function()
-        local Scheme =
-            Library.Scheme
+        local Scheme = Library.Scheme
 
         Scheme.FontColor =
             Color3.fromRGB(
-                244,
+                245,
                 235,
-                249
-            )
-
-        Scheme.MainColor =
-            Color3.fromRGB(
-                20,
-                9,
-                27
-            )
-
-        Scheme.AccentColor =
-            Color3.fromRGB(
-                192,
-                94,
-                224
+                250
             )
 
         Scheme.BackgroundColor =
             Color3.fromRGB(
-                7,
+                8,
                 3,
-                10
+                12
+            )
+
+        Scheme.MainColor =
+            Color3.fromRGB(
+                22,
+                8,
+                30
+            )
+
+        Scheme.AccentColor =
+            Color3.fromRGB(
+                194,
+                91,
+                230
             )
 
         Scheme.OutlineColor =
             Color3.fromRGB(
-                86,
-                41,
-                105
+                92,
+                42,
+                112
+            )
+
+        Scheme.Font =
+            Font.fromEnum(
+                Enum.Font.Gotham
             )
 
         Scheme.RedColor =
             Color3.fromRGB(
                 255,
-                91,
+                92,
                 121
             )
 
         Scheme.DestructiveColor =
             Color3.fromRGB(
                 225,
-                62,
+                63,
                 94
             )
 
@@ -459,6 +94,461 @@ function Obsidian.new(title, configFolder)
             )
     end)
 
+    local Window = Library:CreateWindow({
+        Title =
+            title
+            or "🌸 Lilac v1488",
+
+        Footer =
+            "zenware",
+
+        Icon = LOGO,
+
+        NotifySide = "Right",
+
+        ShowCustomCursor = true,
+        AutoShow = true,
+        Resizable = true,
+        Center = true,
+
+        Glow = true,
+        GlobalSearch = true,
+    })
+
+    --------------------------------------------------
+    -- LILAC IMAGE INSIDE THE MENU ONLY
+    --
+    -- IMPORTANT:
+    -- This is NOT a fullscreen ScreenGui.
+    -- It is parented to the Obsidian window itself,
+    -- so it disappears automatically when the menu
+    -- is hidden.
+    --------------------------------------------------
+
+    local MENU_IMAGE =
+        "rbxassetid://99661080845947"
+
+    local MenuRoot =
+        Window.Window
+
+    --------------------------------------------------
+    -- FULLSCREEN LILAC BACKGROUND
+    --
+    -- This is separate from the menu artwork.
+    -- It is parented to Obsidian's ScreenGui and follows
+    -- the actual window Visible state, so hiding the UI
+    -- hides this background too.
+    --------------------------------------------------
+
+    local FULLSCREEN_IMAGE =
+        "rbxassetid://99217170570093"
+
+    local FullscreenLayer
+
+    pcall(function()
+        local ScreenGui =
+            Library.ScreenGui
+
+        if ScreenGui then
+            local old =
+                ScreenGui:FindFirstChild(
+                    "LilacFullscreenBackground"
+                )
+
+            if old then
+                old:Destroy()
+            end
+
+            FullscreenLayer =
+                Instance.new(
+                    "ImageLabel"
+                )
+
+            FullscreenLayer.Name =
+                "LilacFullscreenBackground"
+
+            FullscreenLayer.BackgroundColor3 =
+                Color3.fromRGB(
+                    5,
+                    2,
+                    8
+                )
+
+            FullscreenLayer.BackgroundTransparency =
+                0.12
+
+            FullscreenLayer.BorderSizePixel =
+                0
+
+            FullscreenLayer.Position =
+                UDim2.fromScale(
+                    0,
+                    0
+                )
+
+            FullscreenLayer.Size =
+                UDim2.fromScale(
+                    1,
+                    1
+                )
+
+            FullscreenLayer.Image =
+                FULLSCREEN_IMAGE
+
+            -- Semi-transparent as requested.
+            FullscreenLayer.ImageTransparency =
+                0.58
+
+            FullscreenLayer.ScaleType =
+                Enum.ScaleType.Crop
+
+            FullscreenLayer.ZIndex =
+                0
+
+            FullscreenLayer.Visible =
+                MenuRoot.Visible
+
+            FullscreenLayer.Parent =
+                ScreenGui
+
+            local FullscreenGradient =
+                Instance.new(
+                    "UIGradient"
+                )
+
+            FullscreenGradient.Rotation =
+                25
+
+            FullscreenGradient.Color =
+                ColorSequence.new({
+                    ColorSequenceKeypoint.new(
+                        0,
+                        Color3.fromRGB(
+                            5,
+                            1,
+                            8
+                        )
+                    ),
+
+                    ColorSequenceKeypoint.new(
+                        0.35,
+                        Color3.fromRGB(
+                            45,
+                            10,
+                            58
+                        )
+                    ),
+
+                    ColorSequenceKeypoint.new(
+                        0.58,
+                        Color3.fromRGB(
+                            93,
+                            29,
+                            112
+                        )
+                    ),
+
+                    ColorSequenceKeypoint.new(
+                        1,
+                        Color3.fromRGB(
+                            5,
+                            1,
+                            8
+                        )
+                    ),
+                })
+
+            FullscreenGradient.Transparency =
+                NumberSequence.new({
+                    NumberSequenceKeypoint.new(
+                        0,
+                        0.20
+                    ),
+
+                    NumberSequenceKeypoint.new(
+                        0.50,
+                        0.03
+                    ),
+
+                    NumberSequenceKeypoint.new(
+                        1,
+                        0.24
+                    ),
+                })
+
+            FullscreenGradient.Parent =
+                FullscreenLayer
+
+            -- Keep the fullscreen layer synchronized with the real
+            -- Obsidian window. RightControl / unload / visibility changes
+            -- therefore do not leave a ghost background behind.
+            MenuRoot:GetPropertyChangedSignal(
+                "Visible"
+            ):Connect(function()
+                if FullscreenLayer then
+                    FullscreenLayer.Visible =
+                        MenuRoot.Visible
+                end
+            end)
+
+            ScreenGui.Destroying:Connect(
+                function()
+                    FullscreenLayer = nil
+                end
+            )
+        end
+    end)
+
+    pcall(function()
+        MenuRoot.BackgroundTransparency =
+            0.10
+    end)
+
+    pcall(function()
+        local old =
+            MenuRoot:FindFirstChild(
+                "LilacMenuArtwork"
+            )
+
+        if old then
+            old:Destroy()
+        end
+
+        local Artwork =
+            Instance.new(
+                "ImageLabel"
+            )
+
+        Artwork.Name =
+            "LilacMenuArtwork"
+
+        Artwork.BackgroundTransparency =
+            1
+
+        Artwork.BorderSizePixel =
+            0
+
+        Artwork.Position =
+            UDim2.fromScale(
+                0,
+                0
+            )
+
+        Artwork.Size =
+            UDim2.fromScale(
+                1,
+                1
+            )
+
+        Artwork.Image =
+            MENU_IMAGE
+
+        Artwork.ImageTransparency =
+            0.24
+
+        Artwork.ScaleType =
+            Enum.ScaleType.Crop
+
+        Artwork.ZIndex =
+            0
+
+        Artwork.Parent =
+            MenuRoot
+
+        --------------------------------------------------
+        -- DARK PURPLE GLASS OVER THE ARTWORK
+        --------------------------------------------------
+
+        local Glass =
+            Instance.new(
+                "Frame"
+            )
+
+        Glass.Name =
+            "LilacMenuGlass"
+
+        Glass.BackgroundColor3 =
+            Color3.fromRGB(
+                10,
+                3,
+                15
+            )
+
+        Glass.BackgroundTransparency =
+            0.42
+
+        Glass.BorderSizePixel =
+            0
+
+        Glass.Position =
+            UDim2.fromScale(
+                0,
+                0
+            )
+
+        Glass.Size =
+            UDim2.fromScale(
+                1,
+                1
+            )
+
+        Glass.ZIndex =
+            0
+
+        Glass.Parent =
+            MenuRoot
+
+        --------------------------------------------------
+        -- PURPLE GRADIENT
+        --------------------------------------------------
+
+        local Gradient =
+            Instance.new(
+                "UIGradient"
+            )
+
+        Gradient.Rotation =
+            25
+
+        Gradient.Color =
+            ColorSequence.new({
+                ColorSequenceKeypoint.new(
+                    0,
+                    Color3.fromRGB(
+                        6,
+                        2,
+                        10
+                    )
+                ),
+
+                ColorSequenceKeypoint.new(
+                    0.28,
+                    Color3.fromRGB(
+                        45,
+                        13,
+                        57
+                    )
+                ),
+
+                ColorSequenceKeypoint.new(
+                    0.52,
+                    Color3.fromRGB(
+                        116,
+                        43,
+                        142
+                    )
+                ),
+
+                ColorSequenceKeypoint.new(
+                    0.76,
+                    Color3.fromRGB(
+                        55,
+                        16,
+                        70
+                    )
+                ),
+
+                ColorSequenceKeypoint.new(
+                    1,
+                    Color3.fromRGB(
+                        7,
+                        2,
+                        11
+                    )
+                ),
+            })
+
+        Gradient.Transparency =
+            NumberSequence.new({
+                NumberSequenceKeypoint.new(
+                    0,
+                    0.15
+                ),
+
+                NumberSequenceKeypoint.new(
+                    0.30,
+                    0.05
+                ),
+
+                NumberSequenceKeypoint.new(
+                    0.52,
+                    0.00
+                ),
+
+                NumberSequenceKeypoint.new(
+                    0.75,
+                    0.08
+                ),
+
+                NumberSequenceKeypoint.new(
+                    1,
+                    0.18
+                ),
+            })
+
+        Gradient.Parent =
+            Glass
+
+        --------------------------------------------------
+        -- SOFT PURPLE EDGE
+        --------------------------------------------------
+
+        local Edge =
+            Instance.new(
+                "Frame"
+            )
+
+        Edge.Name =
+            "LilacEdgeGlow"
+
+        Edge.BackgroundTransparency =
+            1
+
+        Edge.BorderSizePixel =
+            0
+
+        Edge.Position =
+            UDim2.fromOffset(
+                1,
+                1
+            )
+
+        Edge.Size =
+            UDim2.new(
+                1,
+                -2,
+                1,
+                -2
+            )
+
+        Edge.ZIndex =
+            0
+
+        Edge.Parent =
+            MenuRoot
+
+        local EdgeStroke =
+            Instance.new(
+                "UIStroke"
+            )
+
+        EdgeStroke.Color =
+            Color3.fromRGB(
+                156,
+                70,
+                188
+            )
+
+        EdgeStroke.Transparency =
+            0.45
+
+        EdgeStroke.Thickness =
+            1
+
+        EdgeStroke.Parent =
+            Edge
+    end)
+
     pcall(function()
         Window:SetFooter(
             "zenware"
@@ -472,6 +562,12 @@ function Obsidian.new(title, configFolder)
             9
         )
     end)
+
+    local ZenWindow = {
+        Library = Library,
+        Window = Window,
+        Sections = {},
+    }
 
     --------------------------------------------------
     -- SECTION
@@ -903,6 +999,59 @@ function Obsidian.new(title, configFolder)
         end
 
         self.ToggleKey = key
+    end
+
+    --------------------------------------------------
+    -- LILAC THEME HELPER
+    --------------------------------------------------
+
+    function ZenWindow:SetLilacBackgroundVisible(visible)
+        if FullscreenLayer then
+            FullscreenLayer.Visible =
+                visible == true
+        end
+    end
+
+    function ZenWindow:ApplyLilacTheme()
+        pcall(function()
+            local Scheme =
+                self.Library.Scheme
+
+            Scheme.FontColor =
+                Color3.fromRGB(
+                    245,
+                    235,
+                    250
+                )
+
+            Scheme.BackgroundColor =
+                Color3.fromRGB(
+                    8,
+                    3,
+                    12
+                )
+
+            Scheme.MainColor =
+                Color3.fromRGB(
+                    22,
+                    8,
+                    30
+                )
+
+            Scheme.AccentColor =
+                Color3.fromRGB(
+                    194,
+                    91,
+                    230
+                )
+
+            Scheme.OutlineColor =
+                Color3.fromRGB(
+                    92,
+                    42,
+                    112
+                )
+        end)
     end
 
     --------------------------------------------------
