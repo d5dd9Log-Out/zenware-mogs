@@ -131,6 +131,16 @@ function Obsidian.new(title, configFolder)
     local MenuRoot =
         Window.Window
 
+    -- Use Obsidian's built-in window artwork system.
+    pcall(function()
+        Window:SetBackgroundImage(MENU_IMAGE)
+        local BackgroundImage = MenuRoot:FindFirstChild("BackgroundImage")
+        if BackgroundImage and BackgroundImage:IsA("ImageLabel") then
+            BackgroundImage.ImageTransparency = 0.68
+            BackgroundImage.BackgroundTransparency = 1
+        end
+    end)
+
     --------------------------------------------------
     -- FULLSCREEN LILAC BACKGROUND
     --
@@ -202,14 +212,22 @@ function Obsidian.new(title, configFolder)
             FullscreenLayer.ScaleType =
                 Enum.ScaleType.Crop
 
-            FullscreenLayer.ZIndex =
-                0
+            FullscreenLayer.Active = false
+            FullscreenLayer.Selectable = false
+            FullscreenLayer.ZIndex = 0
 
             FullscreenLayer.Visible =
-                MenuRoot.Visible
+                Library.Toggled == true
 
             FullscreenLayer.Parent =
                 ScreenGui
+
+            task.spawn(function()
+                while FullscreenLayer and FullscreenLayer.Parent and not Library.Unloaded do
+                    FullscreenLayer.Visible = Library.Toggled == true
+                    task.wait(0.05)
+                end
+            end)
 
             local FullscreenGradient =
                 Instance.new(
@@ -282,15 +300,6 @@ function Obsidian.new(title, configFolder)
             -- Keep the fullscreen layer synchronized with the real
             -- Obsidian window. RightControl / unload / visibility changes
             -- therefore do not leave a ghost background behind.
-            MenuRoot:GetPropertyChangedSignal(
-                "Visible"
-            ):Connect(function()
-                if FullscreenLayer then
-                    FullscreenLayer.Visible =
-                        MenuRoot.Visible
-                end
-            end)
-
             ScreenGui.Destroying:Connect(
                 function()
                     FullscreenLayer = nil
@@ -302,251 +311,6 @@ function Obsidian.new(title, configFolder)
     pcall(function()
         MenuRoot.BackgroundTransparency =
             0.10
-    end)
-
-    pcall(function()
-        local old =
-            MenuRoot:FindFirstChild(
-                "LilacMenuArtwork"
-            )
-
-        if old then
-            old:Destroy()
-        end
-
-        local Artwork =
-            Instance.new(
-                "ImageLabel"
-            )
-
-        Artwork.Name =
-            "LilacMenuArtwork"
-
-        Artwork.BackgroundTransparency =
-            1
-
-        Artwork.BorderSizePixel =
-            0
-
-        Artwork.Position =
-            UDim2.fromScale(
-                0,
-                0
-            )
-
-        Artwork.Size =
-            UDim2.fromScale(
-                1,
-                1
-            )
-
-        Artwork.Image =
-            MENU_IMAGE
-
-        Artwork.ImageTransparency =
-            0.24
-
-        Artwork.ScaleType =
-            Enum.ScaleType.Crop
-
-        Artwork.ZIndex =
-            0
-
-        Artwork.Parent =
-            MenuRoot
-
-        --------------------------------------------------
-        -- DARK PURPLE GLASS OVER THE ARTWORK
-        --------------------------------------------------
-
-        local Glass =
-            Instance.new(
-                "Frame"
-            )
-
-        Glass.Name =
-            "LilacMenuGlass"
-
-        Glass.BackgroundColor3 =
-            Color3.fromRGB(
-                10,
-                3,
-                15
-            )
-
-        Glass.BackgroundTransparency =
-            0.42
-
-        Glass.BorderSizePixel =
-            0
-
-        Glass.Position =
-            UDim2.fromScale(
-                0,
-                0
-            )
-
-        Glass.Size =
-            UDim2.fromScale(
-                1,
-                1
-            )
-
-        Glass.ZIndex =
-            0
-
-        Glass.Parent =
-            MenuRoot
-
-        --------------------------------------------------
-        -- PURPLE GRADIENT
-        --------------------------------------------------
-
-        local Gradient =
-            Instance.new(
-                "UIGradient"
-            )
-
-        Gradient.Rotation =
-            25
-
-        Gradient.Color =
-            ColorSequence.new({
-                ColorSequenceKeypoint.new(
-                    0,
-                    Color3.fromRGB(
-                        6,
-                        2,
-                        10
-                    )
-                ),
-
-                ColorSequenceKeypoint.new(
-                    0.28,
-                    Color3.fromRGB(
-                        45,
-                        13,
-                        57
-                    )
-                ),
-
-                ColorSequenceKeypoint.new(
-                    0.52,
-                    Color3.fromRGB(
-                        116,
-                        43,
-                        142
-                    )
-                ),
-
-                ColorSequenceKeypoint.new(
-                    0.76,
-                    Color3.fromRGB(
-                        55,
-                        16,
-                        70
-                    )
-                ),
-
-                ColorSequenceKeypoint.new(
-                    1,
-                    Color3.fromRGB(
-                        7,
-                        2,
-                        11
-                    )
-                ),
-            })
-
-        Gradient.Transparency =
-            NumberSequence.new({
-                NumberSequenceKeypoint.new(
-                    0,
-                    0.15
-                ),
-
-                NumberSequenceKeypoint.new(
-                    0.30,
-                    0.05
-                ),
-
-                NumberSequenceKeypoint.new(
-                    0.52,
-                    0.00
-                ),
-
-                NumberSequenceKeypoint.new(
-                    0.75,
-                    0.08
-                ),
-
-                NumberSequenceKeypoint.new(
-                    1,
-                    0.18
-                ),
-            })
-
-        Gradient.Parent =
-            Glass
-
-        --------------------------------------------------
-        -- SOFT PURPLE EDGE
-        --------------------------------------------------
-
-        local Edge =
-            Instance.new(
-                "Frame"
-            )
-
-        Edge.Name =
-            "LilacEdgeGlow"
-
-        Edge.BackgroundTransparency =
-            1
-
-        Edge.BorderSizePixel =
-            0
-
-        Edge.Position =
-            UDim2.fromOffset(
-                1,
-                1
-            )
-
-        Edge.Size =
-            UDim2.new(
-                1,
-                -2,
-                1,
-                -2
-            )
-
-        Edge.ZIndex =
-            0
-
-        Edge.Parent =
-            MenuRoot
-
-        local EdgeStroke =
-            Instance.new(
-                "UIStroke"
-            )
-
-        EdgeStroke.Color =
-            Color3.fromRGB(
-                156,
-                70,
-                188
-            )
-
-        EdgeStroke.Transparency =
-            0.45
-
-        EdgeStroke.Thickness =
-            1
-
-        EdgeStroke.Parent =
-            Edge
     end)
 
     pcall(function()
