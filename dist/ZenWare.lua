@@ -1635,49 +1635,120 @@ _modules["Main.luau"] = {
 			end
 			
 			--------------------------------------------------
-			-- GET REAL WORLD 2 WIN PART
+			-- WORLD 2 AUTO WIN TEST
 			--------------------------------------------------
 			
-			local function GetWorld2WinPart()
-			    local world2 =
-			        workspace:FindFirstChild(
-			            "World2"
-			        )
+			local RunService = game:GetService("RunService")
 			
-			    if not world2 then
-			        return nil
-			    end
+			local World2Running = false
+			local World2NoclipConnection = nil
+			local World2TestPart = nil
 			
-			    local winPads =
-			        world2:FindFirstChild(
-			            "WinPads"
-			        )
-			
-			    if not winPads then
-			        return nil
-			    end
-			
-			    local double =
-			        winPads:FindFirstChild(
-			            "Double"
-			        )
-			
-			    if not double then
-			        return nil
-			    end
-			
-			    local pad15 =
-			        double:FindFirstChild(
-			            "15"
-			        )
-			
-			    if not pad15 then
-			        return nil
-			    end
-			
-			    return pad15:FindFirstChild(
-			        "Win"
+			local WORLD2_TEST_POSITION =
+			    Vector3.new(
+			        -682,
+			        40,
+			        4921
 			    )
+			
+			local WORLD2_FINISH_POSITION =
+			    Vector3.new(
+			        -720,
+			        8,
+			        4944
+			    )
+			
+			local WORLD2_TEST_SIZE =
+			    Vector3.new(
+			        2,
+			        2,
+			        2
+			    )
+			
+			--------------------------------------------------
+			-- CREATE TEST PART
+			--------------------------------------------------
+			
+			local function CreateWorld2TestPart()
+			    if
+			        World2TestPart
+			        and World2TestPart.Parent
+			    then
+			        return World2TestPart
+			    end
+			
+			    local existing =
+			        workspace:FindFirstChild(
+			            "ZenWare_World2_Win"
+			        )
+			
+			    if existing
+			        and existing:IsA("BasePart")
+			    then
+			        World2TestPart =
+			            existing
+			
+			        return existing
+			    end
+			
+			    local part =
+			        Instance.new("Part")
+			
+			    part.Name =
+			        "ZenWare_World2_Win"
+			
+			    part.Size =
+			        WORLD2_TEST_SIZE
+			
+			    part.Position =
+			        WORLD2_TEST_POSITION
+			
+			    part.Anchored =
+			        true
+			
+			    part.CanCollide =
+			        false
+			
+			    part.CanTouch =
+			        false
+			
+			    part.CanQuery =
+			        false
+			
+			    part.Transparency =
+			        1
+			
+			    part.Parent =
+			        workspace
+			
+			    World2TestPart =
+			        part
+			
+			    return part
+			end
+			
+			--------------------------------------------------
+			-- GET TORSO
+			--------------------------------------------------
+			
+			local function GetWorld2Torso()
+			    local character =
+			        LocalPlayer.Character
+			
+			    if not character then
+			        return nil
+			    end
+			
+			    return
+			        character:FindFirstChild(
+			            "UpperTorso"
+			        )
+			        or character:FindFirstChild(
+			            "Torso"
+			        )
+			        or character:FindFirstChild(
+			            "HumanoidRootPart"
+			        )
 			end
 			
 			--------------------------------------------------
@@ -1718,7 +1789,9 @@ _modules["Main.luau"] = {
 			local function StopWorld2Noclip()
 			    if World2NoclipConnection then
 			        World2NoclipConnection:Disconnect()
-			        World2NoclipConnection = nil
+			
+			        World2NoclipConnection =
+			            nil
 			    end
 			end
 			
@@ -1742,27 +1815,8 @@ _modules["Main.luau"] = {
 			    end
 			
 			    --------------------------------------------------
-			    -- FIND REAL WIN
-			    --------------------------------------------------
-			
-			    local winPart =
-			        GetWorld2WinPart()
-			
-			    if not winPart then
-			        Notify(
-			            "World 2 Auto Win",
-			            'Could not find World2.WinPads.Double["15"].Win',
-			            4
-			        )
-			
-			        task.wait(1)
-			
-			        return
-			    end
-			
-			    --------------------------------------------------
-			    -- STEP 1
-			    -- TORSO -> CUSTOM TEST PART
+			    -- FIRST TELEPORT
+			    -- TORSO -> TEST PART
 			    --------------------------------------------------
 			
 			    torso.CFrame =
@@ -1771,20 +1825,25 @@ _modules["Main.luau"] = {
 			    task.wait(0.5)
 			
 			    --------------------------------------------------
-			    -- STEP 2
-			    -- TORSO -> REAL WIN PART
+			    -- SECOND TELEPORT
+			    -- TORSO -> FINISH COORDINATES
 			    --------------------------------------------------
 			
-			    if torso.Parent
-			        and winPart.Parent
-			    then
+			    if torso.Parent then
 			        torso.CFrame =
-			            winPart.CFrame
+			            CFrame.new(
+			                WORLD2_FINISH_POSITION
+			            )
 			    end
 			
 			    --------------------------------------------------
-			    -- IMPORTANT:
-			    -- DO NOT RETURN TORSO
+			    -- STAY THERE
+			    --------------------------------------------------
+			
+			    task.wait(0.5)
+			
+			    --------------------------------------------------
+			    -- WAIT 1 SECOND AFTER LAST TELEPORT
 			    --------------------------------------------------
 			
 			    task.wait(1)
@@ -1814,7 +1873,6 @@ _modules["Main.luau"] = {
 			    task.spawn(
 			        function()
 			            while World2Running do
-			
 			                local ok, err =
 			                    pcall(
 			                        RunWorld2AutoWinCycle
@@ -1863,9 +1921,12 @@ _modules["Main.luau"] = {
 			        "World 2",
 			
 			    Content =
-			        "Test part: -682, 40, 4921\n"
-			        .. 'Target: World2 > WinPads > Double > 15 > Win\n'
-			        .. "0.5s on test part → Win → 1s wait.",
+			        "Step 1: -682, 40, 4921\n"
+			        .. "Wait: 0.5s\n"
+			        .. "Step 2: -720, 8, 4944\n"
+			        .. "Wait: 0.5s\n"
+			        .. "Final wait: 1s\n"
+			        .. "Then repeat.",
 			})
 			
 			MainTab:CreateToggle({
@@ -1880,13 +1941,11 @@ _modules["Main.luau"] = {
 			
 			    Callback =
 			        function(enabled)
-			
 			            if enabled then
 			                StartWorld2AutoWin()
 			            else
 			                StopWorld2AutoWin()
 			            end
-			
 			        end,
 			})
 			
@@ -1896,11 +1955,9 @@ _modules["Main.luau"] = {
 			
 			    Callback =
 			        function()
-			
 			            task.spawn(
 			                RunWorld2AutoWinCycle
 			            )
-			
 			        end,
 			})
 			
@@ -1910,39 +1967,13 @@ _modules["Main.luau"] = {
 			
 			    Callback =
 			        function()
-			
 			            CreateWorld2TestPart()
 			
 			            Notify(
 			                "World 2",
-			                "Test part created.",
+			                "Part created at -682, 40, 4921.",
 			                3
 			            )
-			
-			        end,
-			})
-			
-			MainTab:CreateButton({
-			    Name =
-			        "Check Win Part",
-			
-			    Callback =
-			        function()
-			
-			            local win =
-			                GetWorld2WinPart()
-			
-			            Notify(
-			                "World 2",
-			                win
-			                    and (
-			                        "Found: "
-			                        .. win:GetFullName()
-			                    )
-			                    or "Win part not found.",
-			                4
-			            )
-			
 			        end,
 			})
 			
@@ -1952,7 +1983,6 @@ _modules["Main.luau"] = {
 			
 			    Callback =
 			        function()
-			
 			            World2Running =
 			                false
 			
@@ -1960,7 +1990,9 @@ _modules["Main.luau"] = {
 			
 			            if World2TestPart then
 			                World2TestPart:Destroy()
-			                World2TestPart = nil
+			
+			                World2TestPart =
+			                    nil
 			            end
 			
 			            Notify(
@@ -1968,7 +2000,6 @@ _modules["Main.luau"] = {
 			                "Test part removed.",
 			                3
 			            )
-			
 			        end,
 			})
 			
