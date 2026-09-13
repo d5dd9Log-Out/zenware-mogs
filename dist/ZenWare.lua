@@ -1210,6 +1210,7 @@ _modules["Main.luau"] = {
 			local TeleportService = game:GetService("TeleportService")
 			local VirtualUser = game:GetService("VirtualUser")
 			local Workspace = game:GetService("Workspace")
+			local ReplicatedStorage = game:GetService("ReplicatedStorage")
 			
 			local LocalPlayer = Players.LocalPlayer
 			
@@ -1540,158 +1541,159 @@ _modules["Main.luau"] = {
 			})
 			
 			--------------------------------------------------
-			-- WORLD 2 CLIENT AUTO WIN
+			-- WORLD 2 CLIENT ANTI-CHEAT TEST
 			--------------------------------------------------
 			
+			local TweenService = game:GetService("TweenService")
 			local RunService = game:GetService("RunService")
 			
 			local World2Running = false
-			local World2NoclipConnection = nil
-			local World2TestPart = nil
+			local World2Part = nil
 			
-			local WORLD2_TEST_POSITION =
+			local WORLD2_START_POSITION =
 			    Vector3.new(
-			        -682,
+			        -105,
 			        40,
-			        4921
+			        -52
 			    )
 			
-			local WORLD2_TEST_SIZE =
+			local WORLD2_END_POSITION =
 			    Vector3.new(
-			        2,
-			        2,
-			        2
+			        -700,
+			        40,
+			        -51
 			    )
 			
+			local WORLD2_PART_SIZE =
+			    Vector3.new(
+			        7,
+			        1,
+			        7
+			    )
+			
+			local WORLD2_TWEEN_TIME = 1
+			local WORLD2_FALL_Y = 8
+			local WORLD2_FINAL_WAIT = 1
+			
 			--------------------------------------------------
-			-- CREATE TEST PART
+			-- CREATE START PART
 			--------------------------------------------------
 			
-			local function CreateWorld2TestPart()
+			local function CreateWorld2Part()
 			    if
-			        World2TestPart
-			        and World2TestPart.Parent
+			        World2Part
+			        and World2Part.Parent
 			    then
-			        return World2TestPart
+			        return World2Part
+			    end
+			
+			    local existing =
+			        workspace:FindFirstChild(
+			            "ZenWare_World2_Start"
+			        )
+			
+			    if existing
+			        and existing:IsA("BasePart")
+			    then
+			        World2Part = existing
+			        return existing
 			    end
 			
 			    local part =
 			        Instance.new("Part")
 			
 			    part.Name =
-			        "ZenWare_World2_Test"
+			        "ZenWare_World2_Start"
 			
 			    part.Size =
-			        WORLD2_TEST_SIZE
+			        WORLD2_PART_SIZE
 			
 			    part.CFrame =
 			        CFrame.new(
-			            WORLD2_TEST_POSITION
+			            WORLD2_START_POSITION
 			        )
 			
-			    part.Anchored =
-			        true
+			    part.Anchored = true
+			    part.CanCollide = true
+			    part.CanTouch = false
+			    part.CanQuery = false
+			    part.Transparency = 0.5
 			
-			    part.CanCollide =
-			        false
+			    part.Parent = workspace
 			
-			    part.CanTouch =
-			        false
-			
-			    part.CanQuery =
-			        false
-			
-			    part.Transparency =
-			        1
-			
-			    part.Parent =
-			        workspace
-			
-			    World2TestPart =
-			        part
+			    World2Part = part
 			
 			    return part
 			end
 			
 			--------------------------------------------------
-			-- GET TORSO
+			-- CHARACTER
 			--------------------------------------------------
 			
-			local function GetWorld2Torso()
+			local function GetWorld2Character()
+			    return LocalPlayer.Character
+			end
+			
+			local function GetWorld2Humanoid()
 			    local character =
-			        LocalPlayer.Character
+			        GetWorld2Character()
 			
 			    if not character then
 			        return nil
 			    end
 			
-			    return
-			        character:FindFirstChild(
-			            "UpperTorso"
-			        )
-			        or character:FindFirstChild(
-			            "Torso"
-			        )
+			    return character:FindFirstChildOfClass(
+			        "Humanoid"
+			    )
 			end
 			
 			--------------------------------------------------
-			-- WORLD 2 CLIENT TEST
+			-- MOVE WHOLE CHARACTER
 			--------------------------------------------------
 			
-			local TweenService = game:GetService("TweenService")
-			
-			local World2Running = false
-			local World2Part = nil
-			
-			local WORLD2_START =
-			    CFrame.new(-129, 37, 4944)
-			
-			local WORLD2_END =
-			    CFrame.new(-720, 40, 4944)
-			
-			local function GetCharacter()
-			    return LocalPlayer.Character
-			end
-			
-			local function CreateWorld2Part()
-			    if World2Part and World2Part.Parent then
-			        return World2Part
-			    end
-			
-			    World2Part = Instance.new("Part")
-			    World2Part.Name = "ZenWare_World2_Test"
-			    World2Part.Size = Vector3.new(7, 1, 7)
-			    World2Part.CFrame = WORLD2_START
-			    World2Part.Anchored = true
-			    World2Part.CanCollide = true
-			    World2Part.Transparency = 0.5
-			    World2Part.Parent = workspace
-			
-			    return World2Part
-			end
-			
-			local function RunWorld2Cycle()
-			    local character = GetCharacter()
+			local function PivotCharacter(cframe)
+			    local character =
+			        GetWorld2Character()
 			
 			    if not character then
-			        return
+			        return false
 			    end
 			
-			    local part = CreateWorld2Part()
+			    if not character.Parent then
+			        return false
+			    end
 			
-			    character:PivotTo(
-			        part.CFrame + Vector3.new(0, 3, 0)
-			    )
+			    character:PivotTo(cframe)
 			
-			    task.wait(0.5)
+			    return true
+			end
 			
-			    local driver = Instance.new("CFrameValue")
-			    driver.Value = character:GetPivot()
+			--------------------------------------------------
+			-- TWEEN WHOLE CHARACTER
+			--------------------------------------------------
+			
+			local function TweenCharacterTo(targetCFrame)
+			    local character =
+			        GetWorld2Character()
+			
+			    if not character then
+			        return false
+			    end
+			
+			    local driver =
+			        Instance.new("CFrameValue")
+			
+			    driver.Value =
+			        character:GetPivot()
 			
 			    local connection =
-			        driver:GetPropertyChangedSignal("Value"):Connect(function()
+			        driver:GetPropertyChangedSignal(
+			            "Value"
+			        ):Connect(function()
 			            if character.Parent then
-			                character:PivotTo(driver.Value)
+			                character:PivotTo(
+			                    driver.Value
+			                )
 			            end
 			        end)
 			
@@ -1699,11 +1701,12 @@ _modules["Main.luau"] = {
 			        TweenService:Create(
 			            driver,
 			            TweenInfo.new(
-			                1,
-			                Enum.EasingStyle.Linear
+			                WORLD2_TWEEN_TIME,
+			                Enum.EasingStyle.Linear,
+			                Enum.EasingDirection.Out
 			            ),
 			            {
-			                Value = WORLD2_END
+			                Value = targetCFrame,
 			            }
 			        )
 			
@@ -1713,31 +1716,139 @@ _modules["Main.luau"] = {
 			    connection:Disconnect()
 			    driver:Destroy()
 			
-			    task.wait(1)
+			    return true
 			end
 			
-			local function StartWorld2()
+			--------------------------------------------------
+			-- WAIT FOR FALL
+			--------------------------------------------------
+			
+			local function WaitForWorld2Fall()
+			    local character =
+			        GetWorld2Character()
+			
+			    local humanoid =
+			        GetWorld2Humanoid()
+			
+			    if not character or not humanoid then
+			        return
+			    end
+			
+			    pcall(function()
+			        humanoid:ChangeState(
+			            Enum.HumanoidStateType.Freefall
+			        )
+			    end)
+			
+			    local timeout =
+			        os.clock() + 5
+			
+			    while
+			        World2Running
+			        and character.Parent
+			        and os.clock() < timeout
+			    do
+			        local pivot =
+			            character:GetPivot()
+			
+			        if pivot.Position.Y <= WORLD2_FALL_Y then
+			            break
+			        end
+			
+			        RunService.Heartbeat:Wait()
+			    end
+			end
+			
+			--------------------------------------------------
+			-- ONE WORLD 2 TEST CYCLE
+			--------------------------------------------------
+			
+			local function RunWorld2Cycle()
+			    local character =
+			        GetWorld2Character()
+			
+			    if not character then
+			        return
+			    end
+			
+			    local part =
+			        CreateWorld2Part()
+			
+			    if not part then
+			        return
+			    end
+			
+			    --------------------------------------------------
+			    -- STEP 1: START ON PART
+			    --------------------------------------------------
+			
+			    local startCFrame =
+			        CFrame.new(
+			            WORLD2_START_POSITION
+			            + Vector3.new(0, 3, 0)
+			        )
+			
+			    PivotCharacter(startCFrame)
+			
+			    task.wait(0.5)
+			
+			    --------------------------------------------------
+			    -- STEP 2: 1 SECOND TWEEN
+			    --------------------------------------------------
+			
+			    local endCFrame =
+			        CFrame.new(
+			            WORLD2_END_POSITION
+			        )
+			
+			    TweenCharacterTo(
+			        endCFrame
+			    )
+			
+			    --------------------------------------------------
+			    -- STEP 3: STOP TWEEN / FALL
+			    --------------------------------------------------
+			
+			    WaitForWorld2Fall()
+			
+			    --------------------------------------------------
+			    -- STEP 4: WAIT BEFORE NEXT CYCLE
+			    --------------------------------------------------
+			
+			    task.wait(
+			        WORLD2_FINAL_WAIT
+			    )
+			end
+			
+			--------------------------------------------------
+			-- START / STOP
+			--------------------------------------------------
+			
+			local function StartWorld2Test()
 			    if World2Running then
 			        return
 			    end
 			
 			    World2Running = true
+			
 			    CreateWorld2Part()
 			
 			    Notify(
-			        "World 2",
-			        "Test started.",
+			        "World 2 Anti-Cheat",
+			        "Client movement test started.",
 			        3
 			    )
 			
 			    task.spawn(function()
 			        while World2Running do
 			            local ok, err =
-			                pcall(RunWorld2Cycle)
+			                pcall(
+			                    RunWorld2Cycle
+			                )
 			
 			            if not ok then
 			                warn(
-			                    "[ZenWare World2]",
+			                    "[ZenWare World2 Test]",
 			                    err
 			                )
 			
@@ -1747,36 +1858,57 @@ _modules["Main.luau"] = {
 			    end)
 			end
 			
-			local function StopWorld2()
+			local function StopWorld2Test()
 			    World2Running = false
 			
 			    Notify(
-			        "World 2",
-			        "Test stopped.",
+			        "World 2 Anti-Cheat",
+			        "Client movement test stopped.",
 			        3
 			    )
 			end
+			
+			--------------------------------------------------
+			-- WORLD 2 UI
+			--------------------------------------------------
 			
 			MainTab:CreateSection(
 			    "World 2 Anti-Cheat"
 			)
 			
+			MainTab:CreateParagraph({
+			    Title = "Client Movement Test",
+			
+			    Content =
+			        "Start: -105, 40, -52\n"
+			        .. "Wait: 0.5s\n"
+			        .. "Tween: 1 second\n"
+			        .. "End: -700, 40, -51\n"
+			        .. "Then fall to Y <= 8\n"
+			        .. "Wait 1 second and repeat.",
+			})
+			
 			MainTab:CreateToggle({
-			    Name = "World 2 Auto Win Test",
+			    Name =
+			        "World 2 Auto Win Test",
+			
 			    Default = false,
-			    Flag = "World2AutoWinTest",
+			
+			    Flag =
+			        "World2AutoWinTest",
 			
 			    Callback = function(enabled)
 			        if enabled then
-			            StartWorld2()
+			            StartWorld2Test()
 			        else
-			            StopWorld2()
+			            StopWorld2Test()
 			        end
 			    end,
 			})
 			
 			MainTab:CreateButton({
-			    Name = "Run One Cycle",
+			    Name =
+			        "Run One World 2 Cycle",
 			
 			    Callback = function()
 			        task.spawn(
@@ -1786,15 +1918,23 @@ _modules["Main.luau"] = {
 			})
 			
 			MainTab:CreateButton({
-			    Name = "Create Start Part",
+			    Name =
+			        "Create Start Part",
 			
 			    Callback = function()
 			        CreateWorld2Part()
+			
+			        Notify(
+			            "World 2",
+			            "Start part created at -105, 40, -52.",
+			            3
+			        )
 			    end,
 			})
 			
 			MainTab:CreateButton({
-			    Name = "Remove Start Part",
+			    Name =
+			        "Remove Start Part",
 			
 			    Callback = function()
 			        World2Running = false
@@ -1803,12 +1943,19 @@ _modules["Main.luau"] = {
 			            World2Part:Destroy()
 			            World2Part = nil
 			        end
+			
+			        Notify(
+			            "World 2",
+			            "Start part removed.",
+			            3
+			        )
 			    end,
 			})
 			
 			--------------------------------------------------
 			-- AUTO REBIRTH
 			--------------------------------------------------
+			
 			
 			local RebirthSection =
 			    Window:CreateSection(
