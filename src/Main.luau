@@ -334,236 +334,507 @@ MainTab:CreateToggle({
 })
 
 --------------------------------------------------
--- WORLD 2 ANTI-CHEAT TESTS
+-- AUTO WIN TESTS - TWO WORLDS
 --------------------------------------------------
 
-MainTab:CreateSection(
-    "World 2 Anti-Cheat Tests"
-)
+local TweenService = game:GetService("TweenService")
 
-MainTab:CreateParagraph({
-    Title = "Developer Test Suite",
+local AutoWinTests = {
+    World1 = {
+        Name = "World 1",
 
-    Content =
-        "Local test tools for checking World 2 "
-        .. "movement validation and logging.",
-})
+        Start =
+            Vector3.new(
+                -129,
+                40,
+                4944
+            ),
 
-local World2TestRunning = false
+        Finish =
+            Vector3.new(
+                -720,
+                40,
+                4944
+            ),
+    },
 
-local function GetWorld2TestRoot()
-    local character =
-        LocalPlayer.Character
+    World2 = {
+        Name = "World 2",
 
-    if not character then
+        Start =
+            Vector3.new(
+                -105,
+                40,
+                -52
+            ),
+
+        Finish =
+            Vector3.new(
+                -700,
+                40,
+                -51
+            ),
+    },
+}
+
+local AutoWinRunning = {
+    World1 = false,
+    World2 = false,
+}
+
+local AutoWinParts = {}
+
+--------------------------------------------------
+-- CREATE PART
+--------------------------------------------------
+
+local function CreateAutoWinPart(worldName)
+    local data =
+        AutoWinTests[worldName]
+
+    if not data then
         return nil
     end
 
-    return character:FindFirstChild(
-        "HumanoidRootPart"
-    )
-end
+    if
+        AutoWinParts[worldName]
+        and AutoWinParts[worldName].Parent
+    then
+        return AutoWinParts[worldName]
+    end
 
-local function GetWorld2TestHumanoid()
-    return GetHumanoid()
-end
+    local part =
+        Instance.new("Part")
 
-local function RunSafeTest(name, callback)
-    Notify(
-        "Anti-Cheat Test",
-        name .. " started.",
-        2
-    )
+    part.Name =
+        "ZenWare_" .. worldName .. "_AutoWin"
 
-    local ok, err =
-        SafeCall(callback)
-
-    if ok then
-        Notify(
-            "Anti-Cheat Test",
-            name .. " finished.",
-            2
+    part.Size =
+        Vector3.new(
+            7,
+            1,
+            7
         )
-    else
-        Notify(
-            "Anti-Cheat Test",
-            name .. " failed: " .. tostring(err),
-            4
+
+    part.CFrame =
+        CFrame.new(
+            data.Start
+        )
+
+    part.Anchored =
+        true
+
+    part.CanCollide =
+        true
+
+    part.CanTouch =
+        false
+
+    part.CanQuery =
+        false
+
+    part.Transparency =
+        0.5
+
+    part.Parent =
+        workspace
+
+    AutoWinParts[worldName] =
+        part
+
+    return part
+end
+
+--------------------------------------------------
+-- GET CHARACTER
+--------------------------------------------------
+
+local function GetAutoWinCharacter()
+    return LocalPlayer.Character
+end
+
+--------------------------------------------------
+-- RUN ONE CYCLE
+--------------------------------------------------
+
+local function RunAutoWinCycle(worldName)
+    local data =
+        AutoWinTests[worldName]
+
+    if not data then
+        return
+    end
+
+    local character =
+        GetAutoWinCharacter()
+
+    if not character then
+        return
+    end
+
+    local part =
+        CreateAutoWinPart(
+            worldName
+        )
+
+    if not part then
+        return
+    end
+
+    --------------------------------------------------
+    -- START
+    --------------------------------------------------
+
+    character:PivotTo(
+        part.CFrame
+        + Vector3.new(
+            0,
+            3,
+            0
+        )
+    )
+
+    task.wait(0.5)
+
+    --------------------------------------------------
+    -- TWEEN
+    --------------------------------------------------
+
+    local driver =
+        Instance.new(
+            "CFrameValue"
+        )
+
+    driver.Value =
+        character:GetPivot()
+
+    local connection =
+        driver:GetPropertyChangedSignal(
+            "Value"
+        ):Connect(
+            function()
+                if
+                    character.Parent
+                then
+                    character:PivotTo(
+                        driver.Value
+                    )
+                end
+            end
+        )
+
+    local tween =
+        TweenService:Create(
+            driver,
+
+            TweenInfo.new(
+                1,
+                Enum.EasingStyle.Linear,
+                Enum.EasingDirection.InOut
+            ),
+
+            {
+                Value =
+                    CFrame.new(
+                        data.Finish
+                    ),
+            }
+        )
+
+    tween:Play()
+
+    tween.Completed:Wait()
+
+    connection:Disconnect()
+    driver:Destroy()
+
+    --------------------------------------------------
+    -- STAY AT FINISH
+    --------------------------------------------------
+
+    if character.Parent then
+        character:PivotTo(
+            CFrame.new(
+                data.Finish
+            )
         )
     end
+
+    task.wait(1)
 end
 
-MainTab:CreateButton({
-    Name = "Test World 2 Position",
+--------------------------------------------------
+-- START LOOP
+--------------------------------------------------
 
-    Callback = function()
-        RunSafeTest(
-            "World 2 Position",
-            function()
-                local root =
-                    GetWorld2TestRoot()
+local function StartAutoWin(worldName)
+    if AutoWinRunning[worldName] then
+        return
+    end
 
-                if not root then
-                    error("Character root not found")
-                end
+    AutoWinRunning[worldName] =
+        true
 
-                print(
-                    "[AC TEST] Position:",
-                    FormatVector3(root.Position)
-                )
-            end
-        )
-    end,
-})
+    CreateAutoWinPart(
+        worldName
+    )
 
-MainTab:CreateButton({
-    Name = "Test World 2 Speed",
+    Notify(
+        "Auto Win Test",
+        AutoWinTests[worldName].Name
+            .. " started.",
+        3
+    )
 
-    Callback = function()
-        RunSafeTest(
-            "World 2 Speed",
-            function()
-                local humanoid =
-                    GetWorld2TestHumanoid()
+    task.spawn(
+        function()
 
-                if not humanoid then
-                    error("Humanoid not found")
-                end
+            while
+                AutoWinRunning[worldName]
+            do
 
-                local old =
-                    humanoid.WalkSpeed
+                local ok, err =
+                    pcall(
+                        function()
+                            RunAutoWinCycle(
+                                worldName
+                            )
+                        end
+                    )
 
-                humanoid.WalkSpeed = 40
+                if not ok then
+                    warn(
+                        "[ZenWare Auto Win]",
+                        err
+                    )
 
-                task.wait(1)
-
-                if humanoid.Parent then
-                    humanoid.WalkSpeed = old
-                end
-            end
-        )
-    end,
-})
-
-MainTab:CreateButton({
-    Name = "Test World 2 Jump",
-
-    Callback = function()
-        RunSafeTest(
-            "World 2 Jump",
-            function()
-                local humanoid =
-                    GetWorld2TestHumanoid()
-
-                if not humanoid then
-                    error("Humanoid not found")
-                end
-
-                local oldUse =
-                    humanoid.UseJumpPower
-
-                local oldPower =
-                    humanoid.JumpPower
-
-                humanoid.UseJumpPower = true
-                humanoid.JumpPower = 100
-
-                task.wait(1)
-
-                if humanoid.Parent then
-                    humanoid.UseJumpPower = oldUse
-                    humanoid.JumpPower = oldPower
+                    task.wait(1)
                 end
             end
-        )
-    end,
-})
+        end
+    )
+end
 
-MainTab:CreateButton({
-    Name = "Test World 2 Snapshot",
+--------------------------------------------------
+-- STOP LOOP
+--------------------------------------------------
 
-    Callback = function()
-        RunSafeTest(
-            "World 2 Snapshot",
-            function()
-                local root =
-                    GetWorld2TestRoot()
+local function StopAutoWin(worldName)
+    AutoWinRunning[worldName] =
+        false
 
-                if not root then
-                    error("Character root not found")
-                end
+    Notify(
+        "Auto Win Test",
+        AutoWinTests[worldName].Name
+            .. " stopped.",
+        3
+    )
+end
 
-                local position = root.Position
+--------------------------------------------------
+-- WORLD 1
+--------------------------------------------------
 
-                print(
-                    "[AC TEST] World2 snapshot:",
-                    FormatVector3(position),
-                    "PlaceId:",
-                    game.PlaceId,
-                    "JobId:",
-                    game.JobId
-                )
-            end
-        )
-    end,
+MainTab:CreateSection(
+    "World 1 Auto Win Test"
+)
+
+MainTab:CreateParagraph({
+    Title =
+        "World 1",
+
+    Content =
+        "Start: -129, 40, 4944\n"
+        .. "Tween: 1 second\n"
+        .. "Finish: -720, 40, 4944\n"
+        .. "Wait: 1 second",
 })
 
 MainTab:CreateToggle({
-    Name = "World 2 Test Monitor",
+    Name =
+        "World 1 Auto Win",
 
-    Default = false,
+    Default =
+        false,
 
-    Flag = "World2TestMonitor",
+    Flag =
+        "World1AutoWinTest",
 
-    Callback = function(enabled)
-        World2TestRunning = enabled
+    Callback =
+        function(enabled)
 
-        if not enabled then
-            Notify(
-                "Anti-Cheat Test",
-                "World 2 monitor stopped.",
-                2
-            )
-
-            return
-        end
-
-        Notify(
-            "Anti-Cheat Test",
-            "World 2 monitor started.",
-            2
-        )
-
-        task.spawn(function()
-            while World2TestRunning do
-                local root =
-                    GetWorld2TestRoot()
-
-                if root then
-                    print(
-                        "[AC TEST] World2 position:",
-                        FormatVector3(root.Position)
-                    )
-                end
-
-                task.wait(1)
+            if enabled then
+                StartAutoWin(
+                    "World1"
+                )
+            else
+                StopAutoWin(
+                    "World1"
+                )
             end
-        end)
-    end,
+
+        end,
 })
 
 MainTab:CreateButton({
-    Name = "World 2 Test Info",
+    Name =
+        "World 1 - One Test",
 
-    Callback = function()
-        Notify(
-            "World 2",
-            "Use the buttons above to generate controlled "
-                .. "client-side state changes for your "
-                .. "anti-cheat logs.",
-            5
-        )
-    end,
+    Callback =
+        function()
+
+            task.spawn(
+                function()
+                    RunAutoWinCycle(
+                        "World1"
+                    )
+                end
+            )
+
+        end,
+})
+
+MainTab:CreateButton({
+    Name =
+        "World 1 - Create Part",
+
+    Callback =
+        function()
+
+            CreateAutoWinPart(
+                "World1"
+            )
+
+            Notify(
+                "World 1",
+                "Part created.",
+                2
+            )
+
+        end,
+})
+
+--------------------------------------------------
+-- WORLD 2
+--------------------------------------------------
+
+MainTab:CreateSection(
+    "World 2 Auto Win Test"
+)
+
+MainTab:CreateParagraph({
+    Title =
+        "World 2",
+
+    Content =
+        "Start: -105, 40, -52\n"
+        .. "Tween: 1 second\n"
+        .. "Finish: -700, 40, -51\n"
+        .. "Wait: 1 second",
+})
+
+MainTab:CreateToggle({
+    Name =
+        "World 2 Auto Win",
+
+    Default =
+        false,
+
+    Flag =
+        "World2AutoWinTest",
+
+    Callback =
+        function(enabled)
+
+            if enabled then
+                StartAutoWin(
+                    "World2"
+                )
+            else
+                StopAutoWin(
+                    "World2"
+                )
+            end
+
+        end,
+})
+
+MainTab:CreateButton({
+    Name =
+        "World 2 - One Test",
+
+    Callback =
+        function()
+
+            task.spawn(
+                function()
+                    RunAutoWinCycle(
+                        "World2"
+                    )
+                end
+            )
+
+        end,
+})
+
+MainTab:CreateButton({
+    Name =
+        "World 2 - Create Part",
+
+    Callback =
+        function()
+
+            CreateAutoWinPart(
+                "World2"
+            )
+
+            Notify(
+                "World 2",
+                "Part created.",
+                2
+            )
+
+        end,
+})
+
+--------------------------------------------------
+-- REMOVE PARTS
+--------------------------------------------------
+
+MainTab:CreateButton({
+    Name =
+        "Remove Auto Win Parts",
+
+    Callback =
+        function()
+
+            AutoWinRunning.World1 =
+                false
+
+            AutoWinRunning.World2 =
+                false
+
+            for worldName, part in pairs(
+                AutoWinParts
+            ) do
+
+                if part
+                    and part.Parent
+                then
+                    part:Destroy()
+                end
+
+                AutoWinParts[worldName] =
+                    nil
+            end
+
+            Notify(
+                "Auto Win Test",
+                "All test parts removed.",
+                3
+            )
+
+        end,
 })
 
 --------------------------------------------------
