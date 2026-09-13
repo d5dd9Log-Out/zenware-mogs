@@ -83,10 +83,7 @@ _modules["Core/Obsidian.luau"] = {
 			    Library.ShowToggleFrameInKeybinds = true
 			
 			    --------------------------------------------------
-			    -- LILAC PALETTE
-			    -- Change only real Color3/Font fields on Scheme.
-			    -- Background image is applied through the official API
-			    -- after the window exists.
+			    -- LILAC V1488 THEME
 			    --------------------------------------------------
 			
 			    pcall(function()
@@ -94,38 +91,37 @@ _modules["Core/Obsidian.luau"] = {
 			
 			        Scheme.FontColor =
 			            Color3.fromRGB(
-			                242,
-			                232,
-			                248
+			                244,
+			                234,
+			                250
 			            )
 			
 			        Scheme.BackgroundColor =
 			            Color3.fromRGB(
-			                5,
+			                4,
 			                2,
-			                8
+			                7
 			            )
 			
 			        Scheme.MainColor =
 			            Color3.fromRGB(
-			                18,
+			                16,
 			                8,
-			                24
+			                22
 			            )
 			
-			        -- Dark-to-lilac feel: dark main + brighter accent.
 			        Scheme.AccentColor =
 			            Color3.fromRGB(
-			                192,
-			                104,
-			                226
+			                190,
+			                103,
+			                228
 			            )
 			
 			        Scheme.OutlineColor =
 			            Color3.fromRGB(
-			                76,
-			                38,
-			                92
+			                74,
+			                37,
+			                91
 			            )
 			
 			        Scheme.Font =
@@ -142,9 +138,9 @@ _modules["Core/Obsidian.luau"] = {
 			
 			        Scheme.DestructiveColor =
 			            Color3.fromRGB(
-			                224,
-			                66,
-			                92
+			                220,
+			                60,
+			                90
 			            )
 			
 			        Scheme.DarkColor =
@@ -184,12 +180,14 @@ _modules["Core/Obsidian.luau"] = {
 			    })
 			
 			    --------------------------------------------------
-			    -- LILAC BACKGROUND
+			    -- BACKGROUND IMAGE
+			    -- Obsidian's current API accepts an asset id
+			    -- directly on the Library object.
 			    --------------------------------------------------
 			
 			    pcall(function()
 			        Library:SetBackgroundImage(
-			            "rbxassetid://83486595661123"
+			            83486595661123
 			        )
 			
 			        Library:SetBackgroundImageEnabled(
@@ -201,15 +199,11 @@ _modules["Core/Obsidian.luau"] = {
 			        Window:SetFooter(
 			            "zenware"
 			        )
-			    end)
 			
-			    pcall(function()
 			        Window:ChangeTitle(
 			            "🌸 Lilac v1488"
 			        )
-			    end)
 			
-			    pcall(function()
 			        Window:SetCornerRadius(
 			            9
 			        )
@@ -676,37 +670,37 @@ _modules["Core/Obsidian.luau"] = {
 			
 			            Scheme.FontColor =
 			                Color3.fromRGB(
-			                    242,
-			                    232,
-			                    248
+			                    244,
+			                    234,
+			                    250
 			                )
 			
 			            Scheme.BackgroundColor =
 			                Color3.fromRGB(
-			                    5,
+			                    4,
 			                    2,
-			                    8
+			                    7
 			                )
 			
 			            Scheme.MainColor =
 			                Color3.fromRGB(
-			                    18,
+			                    16,
 			                    8,
-			                    24
+			                    22
 			                )
 			
 			            Scheme.AccentColor =
 			                Color3.fromRGB(
-			                    192,
-			                    104,
-			                    226
+			                    190,
+			                    103,
+			                    228
 			                )
 			
 			            Scheme.OutlineColor =
 			                Color3.fromRGB(
-			                    76,
-			                    38,
-			                    92
+			                    74,
+			                    37,
+			                    91
 			                )
 			
 			            Scheme.Font =
@@ -715,7 +709,7 @@ _modules["Core/Obsidian.luau"] = {
 			                )
 			
 			            self.Library:SetBackgroundImage(
-			                "rbxassetid://83486595661123"
+			                83486595661123
 			            )
 			
 			            self.Library:SetBackgroundImageEnabled(
