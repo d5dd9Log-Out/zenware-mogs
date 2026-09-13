@@ -1,6 +1,6 @@
 
-return (function(oldRequire)
-local _vararg = {}
+return (function(oldRequire, ...)
+local _vararg = {...}
 local _modules = {}
 
 local require = function(path)
@@ -21,7 +21,7 @@ _modules["Core/Config.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Config = {}
 			
 			Config.Name = "ZenWare"
@@ -61,7 +61,7 @@ _modules["Core/Obsidian.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Obsidian = {}
 			
 			local REPO =
@@ -693,7 +693,7 @@ _modules["Core/Remotes.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local ReplicatedStorage = game:GetService("ReplicatedStorage")
 			
 			local Remotes = {}
@@ -745,7 +745,7 @@ _modules["Core/State.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local State = {
 			    AutoWin = false,
 			
@@ -775,7 +775,7 @@ _modules["Core/Utils.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Utils = {}
 			
 			function Utils.SafeCall(fn, arg)
@@ -835,7 +835,7 @@ _modules["Features/AutoClicker.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local AutoClicker = {}
 			
 			local running = false
@@ -901,7 +901,7 @@ _modules["Features/AutoLoad.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local TeleportService = game:GetService("TeleportService")
 			
 			local AutoLoad = {}
@@ -940,7 +940,7 @@ _modules["Features/AutoMog.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Players = game:GetService("Players")
 			
 			local AutoMog = {}
@@ -1037,7 +1037,7 @@ _modules["Features/ServerFinder.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local ServerFinder = {}
 			
 			local findCallback
@@ -1090,7 +1090,7 @@ _modules["Features/Teleports.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Players = game:GetService("Players")
 			
 			local Teleports = {}
@@ -1204,12 +1204,13 @@ _modules["Main.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Players = game:GetService("Players")
 			local Lighting = game:GetService("Lighting")
 			local TeleportService = game:GetService("TeleportService")
 			local VirtualUser = game:GetService("VirtualUser")
 			local Workspace = game:GetService("Workspace")
+			local ReplicatedStorage = game:GetService("ReplicatedStorage")
 			
 			local LocalPlayer = Players.LocalPlayer
 			
@@ -1250,7 +1251,10 @@ _modules["Main.luau"] = {
 			    local ok, result = pcall(callback)
 			
 			    if not ok then
-			        warn("[ZenWare V3] " .. tostring(result))
+			        warn(
+			            "[ZenWare V3]",
+			            tostring(result)
+			        )
 			    end
 			
 			    return ok, result
@@ -1267,7 +1271,9 @@ _modules["Main.luau"] = {
 			        return nil
 			    end
 			
-			    return character:FindFirstChildOfClass("Humanoid")
+			    return character:FindFirstChildOfClass(
+			        "Humanoid"
+			    )
 			end
 			
 			local function GetRoot()
@@ -1306,15 +1312,15 @@ _modules["Main.luau"] = {
 			        return false
 			    end
 			
-			    local ok = pcall(function()
-			        setclipboard(tostring(value))
+			    return pcall(function()
+			        setclipboard(
+			            tostring(value)
+			        )
 			    end)
-			
-			    return ok
 			end
 			
 			--------------------------------------------------
-			-- STATE DEFAULTS
+			-- STATE
 			--------------------------------------------------
 			
 			State.AutoWin =
@@ -1327,7 +1333,9 @@ _modules["Main.luau"] = {
 			    State.TreadmillLoop or false
 			
 			State.TeleportInterval =
-			    tonumber(State.TeleportInterval)
+			    tonumber(
+			        State.TeleportInterval
+			    )
 			    or 0.5
 			
 			State.AutoRebirth = false
@@ -1335,22 +1343,30 @@ _modules["Main.luau"] = {
 			
 			State.AutoClicker = false
 			State.AutoClickerSpeed =
-			    tonumber(State.AutoClickerSpeed)
+			    tonumber(
+			        State.AutoClickerSpeed
+			    )
 			    or 10
 			
 			State.AutoMog = false
 			State.AutoMogAll = false
 			
 			State.WalkSpeed =
-			    tonumber(State.WalkSpeed)
+			    tonumber(
+			        State.WalkSpeed
+			    )
 			    or 16
 			
 			State.JumpPower =
-			    tonumber(State.JumpPower)
+			    tonumber(
+			        State.JumpPower
+			    )
 			    or 50
 			
 			State.HipHeight =
-			    tonumber(State.HipHeight)
+			    tonumber(
+			        State.HipHeight
+			    )
 			    or 2
 			
 			State.AntiAFK = false
@@ -1360,7 +1376,9 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			local MainSection =
-			    Window:CreateSection("Main")
+			    Window:CreateSection(
+			        "Main"
+			    )
 			
 			local MainTab =
 			    MainSection:CreateTab(
@@ -1372,11 +1390,15 @@ _modules["Main.luau"] = {
 			-- WIN
 			--------------------------------------------------
 			
-			MainTab:CreateSection("Win")
+			MainTab:CreateSection(
+			    "Win"
+			)
 			
 			MainTab:CreateToggle({
 			    Name = "Auto Win (500m)",
+			
 			    Default = false,
+			
 			    Flag = "AutoWin",
 			
 			    Callback = function(enabled)
@@ -1409,12 +1431,6 @@ _modules["Main.luau"] = {
 			        SafeCall(function()
 			            Teleports.Win()
 			        end)
-			
-			        Notify(
-			            "Teleport",
-			            "Win teleport requested.",
-			            2
-			        )
 			    end,
 			})
 			
@@ -1425,12 +1441,6 @@ _modules["Main.luau"] = {
 			        SafeCall(function()
 			            Teleports.Treadmill()
 			        end)
-			
-			        Notify(
-			            "Teleport",
-			            "Treadmill teleport requested.",
-			            2
-			        )
 			    end,
 			})
 			
@@ -1445,7 +1455,7 @@ _modules["Main.luau"] = {
 			})
 			
 			--------------------------------------------------
-			-- TELEPORT LOOPS
+			-- LOOPS
 			--------------------------------------------------
 			
 			MainTab:CreateSection(
@@ -1454,13 +1464,18 @@ _modules["Main.luau"] = {
 			
 			MainTab:CreateSlider({
 			    Name = "Loop Interval",
+			
 			    Min = 0.01,
 			    Max = 5,
-			    Default = State.TeleportInterval,
+			
+			    Default =
+			        State.TeleportInterval,
+			
 			    Flag = "TeleportInterval",
 			
 			    Callback = function(value)
-			        State.TeleportInterval = value
+			        State.TeleportInterval =
+			            value
 			
 			        if State.TeleportLoop then
 			            SafeCall(function()
@@ -1475,11 +1490,14 @@ _modules["Main.luau"] = {
 			
 			MainTab:CreateToggle({
 			    Name = "Loop Win Teleport",
+			
 			    Default = false,
+			
 			    Flag = "TeleportLoop",
 			
 			    Callback = function(enabled)
-			        State.TeleportLoop = enabled
+			        State.TeleportLoop =
+			            enabled
 			
 			        if enabled then
 			            SafeCall(function()
@@ -1488,33 +1506,24 @@ _modules["Main.luau"] = {
 			                    State.TeleportInterval
 			                )
 			            end)
-			
-			            Notify(
-			                "Teleport Loop",
-			                "Win loop enabled.",
-			                2
-			            )
 			        else
 			            SafeCall(function()
 			                Teleports.StopLoop()
 			            end)
-			
-			            Notify(
-			                "Teleport Loop",
-			                "Stopped.",
-			                2
-			            )
 			        end
 			    end,
 			})
 			
 			MainTab:CreateToggle({
 			    Name = "Loop Treadmill Teleport",
+			
 			    Default = false,
+			
 			    Flag = "TreadmillLoop",
 			
 			    Callback = function(enabled)
-			        State.TreadmillLoop = enabled
+			        State.TreadmillLoop =
+			            enabled
 			
 			        if enabled then
 			            SafeCall(function()
@@ -1523,95 +1532,246 @@ _modules["Main.luau"] = {
 			                    State.TeleportInterval
 			                )
 			            end)
-			
-			            Notify(
-			                "Teleport Loop",
-			                "Treadmill loop enabled.",
-			                2
-			            )
 			        else
 			            SafeCall(function()
 			                Teleports.StopLoop()
 			            end)
-			
-			            Notify(
-			                "Teleport Loop",
-			                "Stopped.",
-			                2
-			            )
 			        end
 			    end,
 			})
 			
 			--------------------------------------------------
-			-- PLAYER INFORMATION
+			-- WORLD 2 ANTI-CHEAT TEST
 			--------------------------------------------------
 			
 			MainTab:CreateSection(
-			    "Player Information"
+			    "World 2 Anti-Cheat Test"
 			)
 			
 			MainTab:CreateParagraph({
-			    Title = "Current Player",
+			    Title = "Developer Test",
 			
 			    Content =
-			        "Username: "
-			        .. tostring(LocalPlayer.Name)
-			        .. "\nDisplay: "
-			        .. tostring(LocalPlayer.DisplayName)
-			        .. "\nUserId: "
-			        .. tostring(LocalPlayer.UserId)
-			        .. "\nJobId: "
-			        .. tostring(game.JobId),
+			        "Runs controlled server-side "
+			        .. "movement simulations so you "
+			        .. "can verify that World 2 anti-cheat "
+			        .. "rules detect and log them.",
 			})
 			
+			local testRemote =
+			    ReplicatedStorage:
+			    FindFirstChild(
+			        "ZenWareAntiCheatTest"
+			    )
+			
 			MainTab:CreateButton({
-			    Name = "Show Position",
+			    Name = "Test World 2 Position",
 			
 			    Callback = function()
+			        if not testRemote then
+			            Notify(
+			                "Anti-Cheat Test",
+			                "ZenWareAntiCheatTest not found.",
+			                4
+			            )
+			
+			            return
+			        end
+			
+			        SafeCall(function()
+			            testRemote:FireServer(
+			                "World2Position"
+			            )
+			        end)
+			
 			        Notify(
-			            "Position",
-			            FormatVector3(
-			                GetPosition()
-			            ),
-			            4
+			            "Anti-Cheat Test",
+			            "World 2 position test requested.",
+			            3
 			        )
 			    end,
 			})
 			
 			MainTab:CreateButton({
-			    Name = "Copy Job ID",
+			    Name = "Test World 2 Speed",
 			
 			    Callback = function()
-			        if SetClipboard(game.JobId) then
+			        if not testRemote then
 			            Notify(
-			                "Clipboard",
-			                "Job ID copied.",
-			                2
+			                "Anti-Cheat Test",
+			                "Test RemoteEvent not found.",
+			                4
 			            )
-			        else
-			            Notify(
-			                "Clipboard",
-			                "Clipboard unavailable.",
-			                3
-			            )
+			
+			            return
 			        end
+			
+			        SafeCall(function()
+			            testRemote:FireServer(
+			                "World2Speed"
+			            )
+			        end)
+			
+			        Notify(
+			            "Anti-Cheat Test",
+			            "World 2 speed test requested.",
+			            3
+			        )
 			    end,
 			})
 			
 			MainTab:CreateButton({
-			    Name = "Copy User ID",
+			    Name = "Test World 2 Teleport",
 			
 			    Callback = function()
-			        if SetClipboard(
-			            LocalPlayer.UserId
-			        ) then
+			        if not testRemote then
 			            Notify(
-			                "Clipboard",
-			                "User ID copied.",
+			                "Anti-Cheat Test",
+			                "Test RemoteEvent not found.",
+			                4
+			            )
+			
+			            return
+			        end
+			
+			        SafeCall(function()
+			            testRemote:FireServer(
+			                "World2Teleport"
+			            )
+			        end)
+			
+			        Notify(
+			            "Anti-Cheat Test",
+			            "World 2 teleport test requested.",
+			            3
+			        )
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "Test World 2 Repeated",
+			
+			    Callback = function()
+			        if not testRemote then
+			            Notify(
+			                "Anti-Cheat Test",
+			                "Test RemoteEvent not found.",
+			                4
+			            )
+			
+			            return
+			        end
+			
+			        task.spawn(function()
+			            for i = 1, 10 do
+			                SafeCall(function()
+			                    testRemote:FireServer(
+			                        "World2Repeated"
+			                    )
+			                end)
+			
+			                task.wait(0.5)
+			            end
+			        end)
+			
+			        Notify(
+			            "Anti-Cheat Test",
+			            "Repeated test started.",
+			            3
+			        )
+			    end,
+			})
+			
+			--------------------------------------------------
+			-- WORLD 2 AUTO WIN TEST
+			--------------------------------------------------
+			
+			local world2AutoWinTestRunning = false
+			
+			MainTab:CreateToggle({
+			    Name = "World 2 Auto Win Test",
+			    Default = false,
+			    Flag = "World2AutoWinTest",
+			
+			    Callback = function(enabled)
+			        world2AutoWinTestRunning = enabled
+			
+			        if not enabled then
+			            Notify(
+			                "Anti-Cheat Test",
+			                "World 2 Auto Win test stopped.",
 			                2
 			            )
+			
+			            return
 			        end
+			
+			        if not testRemote then
+			            world2AutoWinTestRunning = false
+			
+			            Notify(
+			                "Anti-Cheat Test",
+			                "ZenWareAntiCheatTest not found.",
+			                4
+			            )
+			
+			            return
+			        end
+			
+			        Notify(
+			            "Anti-Cheat Test",
+			            "World 2 Auto Win simulation started.",
+			            3
+			        )
+			
+			        task.spawn(function()
+			            while world2AutoWinTestRunning do
+			                local ok, err = pcall(function()
+			                    testRemote:FireServer(
+			                        "World2AutoWin"
+			                    )
+			                end)
+			
+			                if not ok then
+			                    warn(
+			                        "[ZenWare V3] World2AutoWin test:",
+			                        err
+			                    )
+			                end
+			
+			                task.wait(1.5)
+			            end
+			        end)
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "Test World 2 Auto Win Once",
+			
+			    Callback = function()
+			        if not testRemote then
+			            Notify(
+			                "Anti-Cheat Test",
+			                "ZenWareAntiCheatTest not found.",
+			                4
+			            )
+			
+			            return
+			        end
+			
+			        local ok, err = pcall(function()
+			            testRemote:FireServer(
+			                "World2AutoWin"
+			            )
+			        end)
+			
+			        Notify(
+			            "Anti-Cheat Test",
+			            ok
+			                and "World 2 Auto Win simulation requested."
+			                or ("Request failed: " .. tostring(err)),
+			            3
+			        )
 			    end,
 			})
 			
@@ -1685,19 +1845,14 @@ _modules["Main.luau"] = {
 			    "Rebirth"
 			)
 			
-			RebirthTab:CreateParagraph({
-			    Title = "Automatic Rebirth",
-			
-			    Content =
-			        "Automatically activates the "
-			        .. "Rebirth button.",
-			})
-			
 			RebirthTab:CreateSlider({
 			    Name = "Rebirth Interval",
+			
 			    Min = 0.05,
 			    Max = 2,
+			
 			    Default = 0.25,
+			
 			    Flag = "RebirthInterval",
 			
 			    Callback = function(value)
@@ -1708,20 +1863,18 @@ _modules["Main.luau"] = {
 			
 			RebirthTab:CreateToggle({
 			    Name = "Auto Rebirth",
+			
 			    Default = false,
+			
 			    Flag = "AutoRebirth",
 			
 			    Callback = function(enabled)
-			        State.AutoRebirth = enabled
+			        State.AutoRebirth =
+			            enabled
 			
 			        if not enabled then
-			            rebirthRunning = false
-			
-			            Notify(
-			                "Auto Rebirth",
-			                "Stopped.",
-			                2
-			            )
+			            rebirthRunning =
+			                false
 			
 			            return
 			        end
@@ -1730,13 +1883,8 @@ _modules["Main.luau"] = {
 			            return
 			        end
 			
-			        rebirthRunning = true
-			
-			        Notify(
-			            "Auto Rebirth",
-			            "Started.",
-			            2
-			        )
+			        rebirthRunning =
+			            true
 			
 			        task.spawn(function()
 			            while
@@ -1760,7 +1908,8 @@ _modules["Main.luau"] = {
 			                )
 			            end
 			
-			            rebirthRunning = false
+			            rebirthRunning =
+			                false
 			        end)
 			    end,
 			})
@@ -1782,34 +1931,11 @@ _modules["Main.luau"] = {
 			            return
 			        end
 			
-			        local ok =
-			            pcall(function()
-			                firesignal(
-			                    button.MouseButton1Click
-			                )
-			            end)
-			
-			        Notify(
-			            "Rebirth",
-			            ok
-			                and "Activated."
-			                or "Failed.",
-			            3
-			        )
-			    end,
-			})
-			
-			RebirthTab:CreateButton({
-			    Name = "Check Rebirth Button",
-			
-			    Callback = function()
-			        Notify(
-			            "Rebirth",
-			            GetRebirthButton()
-			                and "Button found."
-			                or "Button not found.",
-			            3
-			        )
+			        pcall(function()
+			            firesignal(
+			                button.MouseButton1Click
+			            )
+			        end)
 			    end,
 			})
 			
@@ -1855,18 +1981,28 @@ _modules["Main.luau"] = {
 			
 			    Callback = function()
 			        local x =
-			            tonumber(xBox:GetText())
+			            tonumber(
+			                xBox:GetText()
+			            )
 			
 			        local y =
-			            tonumber(yBox:GetText())
+			            tonumber(
+			                yBox:GetText()
+			            )
 			
 			        local z =
-			            tonumber(zBox:GetText())
+			            tonumber(
+			                zBox:GetText()
+			            )
 			
-			        if not (x and y and z) then
+			        if not (
+			            x
+			            and y
+			            and z
+			        ) then
 			            Notify(
 			                "Teleport",
-			                "Enter valid coordinates.",
+			                "Invalid coordinates.",
 			                3
 			            )
 			
@@ -1882,12 +2018,6 @@ _modules["Main.luau"] = {
 			                )
 			            )
 			        end)
-			
-			        Notify(
-			            "Teleport",
-			            "Teleport requested.",
-			            2
-			        )
 			    end,
 			})
 			
@@ -1899,33 +2029,30 @@ _modules["Main.luau"] = {
 			            GetPosition()
 			
 			        if not position then
-			            Notify(
-			                "Teleport",
-			                "Character not found.",
-			                3
-			            )
-			
 			            return
 			        end
 			
 			        xBox:SetText(
-			            string.format(
-			                "%.2f",
-			                position.X
+			            tostring(
+			                math.floor(
+			                    position.X
+			                )
 			            )
 			        )
 			
 			        yBox:SetText(
-			            string.format(
-			                "%.2f",
-			                position.Y
+			            tostring(
+			                math.floor(
+			                    position.Y
+			                )
 			            )
 			        )
 			
 			        zBox:SetText(
-			            string.format(
-			                "%.2f",
-			                position.Z
+			            tostring(
+			                math.floor(
+			                    position.Z
+			                )
 			            )
 			        )
 			    end,
@@ -1938,110 +2065,6 @@ _modules["Main.luau"] = {
 			        xBox:SetText("")
 			        yBox:SetText("")
 			        zBox:SetText("")
-			    end,
-			})
-			
-			TeleportTab:CreateSection(
-			    "Position Offset"
-			)
-			
-			local offsetBox =
-			    TeleportTab:CreateTextBox({
-			        Name = "Offset",
-			        Placeholder = "10, 0, 0",
-			    })
-			
-			TeleportTab:CreateButton({
-			    Name = "Apply Offset",
-			
-			    Callback = function()
-			        local root =
-			            GetRoot()
-			
-			        if not root then
-			            return
-			        end
-			
-			        local x, y, z =
-			            offsetBox:GetText():match(
-			                "^%s*([%-%d%.]+)%s*,%s*([%-%d%.]+)%s*,%s*([%-%d%.]+)%s*$"
-			            )
-			
-			        x = tonumber(x)
-			        y = tonumber(y)
-			        z = tonumber(z)
-			
-			        if not (x and y and z) then
-			            Notify(
-			                "Offset",
-			                "Format: X, Y, Z",
-			                3
-			            )
-			
-			            return
-			        end
-			
-			        root.CFrame =
-			            root.CFrame
-			            + Vector3.new(
-			                x,
-			                y,
-			                z
-			            )
-			    end,
-			})
-			
-			TeleportTab:CreateButton({
-			    Name = "Move +10 X",
-			
-			    Callback = function()
-			        local root = GetRoot()
-			
-			        if root then
-			            root.CFrame =
-			                root.CFrame
-			                + Vector3.new(
-			                    10,
-			                    0,
-			                    0
-			                )
-			        end
-			    end,
-			})
-			
-			TeleportTab:CreateButton({
-			    Name = "Move +10 Y",
-			
-			    Callback = function()
-			        local root = GetRoot()
-			
-			        if root then
-			            root.CFrame =
-			                root.CFrame
-			                + Vector3.new(
-			                    0,
-			                    10,
-			                    0
-			                )
-			        end
-			    end,
-			})
-			
-			TeleportTab:CreateButton({
-			    Name = "Move +10 Z",
-			
-			    Callback = function()
-			        local root = GetRoot()
-			
-			        if root then
-			            root.CFrame =
-			                root.CFrame
-			                + Vector3.new(
-			                    0,
-			                    0,
-			                    10
-			                )
-			        end
 			    end,
 			})
 			
@@ -2065,39 +2088,18 @@ _modules["Main.luau"] = {
 			        local name =
 			            saveBox:GetText()
 			
-			        if not root then
-			            Notify(
-			                "Locations",
-			                "Character not found.",
-			                3
-			            )
-			
-			            return
+			        if
+			            root
+			            and name ~= ""
+			        then
+			            SafeCall(function()
+			                Teleports.SaveLocation(
+			                    name,
+			                    root.Position,
+			                    State
+			                )
+			            end)
 			        end
-			
-			        if name == "" then
-			            Notify(
-			                "Locations",
-			                "Enter a name.",
-			                3
-			            )
-			
-			            return
-			        end
-			
-			        SafeCall(function()
-			            Teleports.SaveLocation(
-			                name,
-			                root.Position,
-			                State
-			            )
-			        end)
-			
-			        Notify(
-			            "Locations",
-			            "Saved: " .. name,
-			            3
-			        )
 			    end,
 			})
 			
@@ -2124,21 +2126,6 @@ _modules["Main.luau"] = {
 			                State
 			            )
 			        end)
-			
-			        Notify(
-			            "Locations",
-			            "Delete requested.",
-			            3
-			        )
-			    end,
-			})
-			
-			TeleportTab:CreateButton({
-			    Name = "Clear Location Inputs",
-			
-			    Callback = function()
-			        saveBox:SetText("")
-			        deleteBox:SetText("")
 			    end,
 			})
 			
@@ -2163,9 +2150,13 @@ _modules["Main.luau"] = {
 			
 			ClickTab:CreateSlider({
 			    Name = "Clicks Per Second",
+			
 			    Min = 1,
 			    Max = 100,
-			    Default = State.AutoClickerSpeed,
+			
+			    Default =
+			        State.AutoClickerSpeed,
+			
 			    Flag = "AutoClickerSpeed",
 			
 			    Callback = function(value)
@@ -2185,14 +2176,18 @@ _modules["Main.luau"] = {
 			SafeCall(function()
 			    AutoClicker.SetCallback(
 			        function()
-			            Remotes.Fire("Click")
+			            Remotes.Fire(
+			                "Click"
+			            )
 			        end
 			    )
 			end)
 			
 			ClickTab:CreateToggle({
 			    Name = "Enable Auto Clicker",
+			
 			    Default = false,
+			
 			    Flag = "AutoClicker",
 			
 			    Callback = function(enabled)
@@ -2215,7 +2210,9 @@ _modules["Main.luau"] = {
 			
 			ClickTab:CreateKeybind({
 			    Name = "Pause / Resume",
+			
 			    Default = Enum.KeyCode.F,
+			
 			    Flag = "AutoClickerKey",
 			
 			    Callback = function()
@@ -2236,19 +2233,14 @@ _modules["Main.luau"] = {
 			    Name = "Start Clicker",
 			
 			    Callback = function()
-			        State.AutoClicker = true
+			        State.AutoClicker =
+			            true
 			
 			        SafeCall(function()
 			            AutoClicker.Start(
 			                State.AutoClickerSpeed
 			            )
 			        end)
-			
-			        Notify(
-			            "Auto Clicker",
-			            "Started.",
-			            2
-			        )
 			    end,
 			})
 			
@@ -2256,38 +2248,12 @@ _modules["Main.luau"] = {
 			    Name = "Stop Clicker",
 			
 			    Callback = function()
-			        State.AutoClicker = false
+			        State.AutoClicker =
+			            false
 			
 			        SafeCall(function()
 			            AutoClicker.Stop()
 			        end)
-			
-			        Notify(
-			            "Auto Clicker",
-			            "Stopped.",
-			            2
-			        )
-			    end,
-			})
-			
-			ClickTab:CreateButton({
-			    Name = "Check Clicker Status",
-			
-			    Callback = function()
-			        local running = false
-			
-			        SafeCall(function()
-			            running =
-			                AutoClicker.IsRunning()
-			        end)
-			
-			        Notify(
-			            "Clicker",
-			            running
-			                and "RUNNING"
-			                or "STOPPED",
-			            3
-			        )
 			    end,
 			})
 			
@@ -2324,31 +2290,20 @@ _modules["Main.luau"] = {
 			            targetBox:GetText()
 			
 			        if username == "" then
-			            Notify(
-			                "Auto Mog",
-			                "Enter a username.",
-			                3
-			            )
-			
 			            return
 			        end
 			
 			        State.CurrentTarget =
 			            username
 			
-			        State.AutoMog = true
+			        State.AutoMog =
+			            true
 			
 			        SafeCall(function()
 			            AutoMog.Start(
 			                username
 			            )
 			        end)
-			
-			        Notify(
-			            "Auto Mog",
-			            "Target: " .. username,
-			            3
-			        )
 			    end,
 			})
 			
@@ -2356,17 +2311,12 @@ _modules["Main.luau"] = {
 			    Name = "Auto Mog All",
 			
 			    Callback = function()
-			        State.AutoMogAll = true
+			        State.AutoMogAll =
+			            true
 			
 			        SafeCall(function()
 			            AutoMog.StartAll()
 			        end)
-			
-			        Notify(
-			            "Auto Mog",
-			            "All-target mode started.",
-			            3
-			        )
 			    end,
 			})
 			
@@ -2374,18 +2324,15 @@ _modules["Main.luau"] = {
 			    Name = "Stop Mog",
 			
 			    Callback = function()
-			        State.AutoMog = false
-			        State.AutoMogAll = false
+			        State.AutoMog =
+			            false
+			
+			        State.AutoMogAll =
+			            false
 			
 			        SafeCall(function()
 			            AutoMog.Stop()
 			        end)
-			
-			        Notify(
-			            "Auto Mog",
-			            "Stopped.",
-			            2
-			        )
 			    end,
 			})
 			
@@ -2394,19 +2341,9 @@ _modules["Main.luau"] = {
 			
 			    Callback = function()
 			        targetBox:SetText("")
-			        State.CurrentTarget = nil
+			        State.CurrentTarget =
+			            nil
 			    end,
-			})
-			
-			MogTab:CreateParagraph({
-			    Title = "Current Target",
-			
-			    Content =
-			        "Selected target: "
-			        .. tostring(
-			            State.CurrentTarget
-			            or "None"
-			        ),
 			})
 			
 			SafeCall(function()
@@ -2445,10 +2382,8 @@ _modules["Main.luau"] = {
 			        "server"
 			    )
 			
-			local serverFinderRunning = false
-			
 			ServerTab:CreateSection(
-			    "Find Player Server"
+			    "Current Server"
 			)
 			
 			local usernameBox =
@@ -2458,276 +2393,66 @@ _modules["Main.luau"] = {
 			    })
 			
 			ServerTab:CreateButton({
-			    Name = "Find & Join Player",
+			    Name = "Find Player",
 			
 			    Callback = function()
-			        if serverFinderRunning then
-			            Notify(
-			                "Server Finder",
-			                "A search is already running.",
-			                3
-			            )
-			
-			            return
-			        end
-			
 			        local username =
 			            usernameBox:GetText()
 			
 			        username =
-			            tostring(username or "")
-			            :match("^%s*(.-)%s*$")
-			
-			        if username == "" then
-			            Notify(
-			                "Server Finder",
-			                "Enter a username.",
-			                3
+			            tostring(
+			                username
+			                or ""
+			            )
+			            :match(
+			                "^%s*(.-)%s*$"
 			            )
 			
+			        if username == "" then
 			            return
 			        end
 			
-			        serverFinderRunning = true
+			        local found = nil
 			
-			        Notify(
-			            "Server Finder",
-			            "Looking up @" .. username .. "...",
-			            3
-			        )
-			
-			        task.spawn(function()
-			
-			            local ok, err =
-			                pcall(function()
-			
-			                    --------------------------------------------------
-			                    -- USERNAME -> USER ID
-			                    --------------------------------------------------
-			
-			                    local userId =
-			                        Players:GetUserIdFromNameAsync(
-			                            username
-			                        )
-			
-			                    if not userId then
-			                        error(
-			                            "User could not be resolved."
-			                        )
-			                    end
-			
-			                    Notify(
-			                        "Server Finder",
-			                        "User found. Checking server...",
-			                        3
-			                    )
-			
-			                    --------------------------------------------------
-			                    -- PLAYER -> SERVER
-			                    --------------------------------------------------
-			
-			                    local success
-			                    local currentInstance
-			                    local errorMessage
-			                    local placeId
-			                    local jobId
-			
-			                    success,
-			                    currentInstance,
-			                    errorMessage,
-			                    placeId,
-			                    jobId =
-			                        pcall(function()
-			                            return
-			                                TeleportService:
-			                                GetPlayerPlaceInstanceAsync(
-			                                    userId
-			                                )
-			                        end)
-			
-			                    if not success then
-			                        error(
-			                            tostring(
-			                                currentInstance
-			                                or errorMessage
-			                                or "Presence lookup failed."
-			                            )
-			                        )
-			                    end
-			
-			                    --------------------------------------------------
-			                    -- ROBLOX RETURNS INSTANCE INFO
-			                    --------------------------------------------------
-			
-			                    if
-			                        not placeId
-			                        or not jobId
-			                    then
-			                        error(
-			                            "Player is not currently in a joinable server."
-			                        )
-			                    end
-			
-			                    --------------------------------------------------
-			                    -- ALREADY IN SERVER
-			                    --------------------------------------------------
-			
-			                    if
-			                        placeId == game.PlaceId
-			                        and jobId == game.JobId
-			                    then
-			                        Notify(
-			                            "Server Finder",
-			                            "Player is already in your server.",
-			                            4
-			                        )
-			
-			                        return
-			                    end
-			
-			                    --------------------------------------------------
-			                    -- FOUND
-			                    --------------------------------------------------
-			
-			                    Notify(
-			                        "Server Finder",
-			                        "Server found!\n"
-			                            .. "PlaceId: "
-			                            .. tostring(placeId)
-			                            .. "\nJobId: "
-			                            .. tostring(jobId)
-			                            .. "\nJoining...",
-			
-			                        5
-			                    )
-			
-			                    task.wait(0.5)
-			
-			                    --------------------------------------------------
-			                    -- JOIN
-			                    --------------------------------------------------
-			
-			                    TeleportService:
-			                        TeleportToPlaceInstance(
-			                            placeId,
-			                            jobId,
-			                            LocalPlayer
-			                        )
-			                end)
-			
-			            serverFinderRunning = false
-			
-			            if not ok then
-			                Notify(
-			                    "Server Finder",
-			                    tostring(err),
-			                    5
+			        for _, player in ipairs(
+			            Players:GetPlayers()
+			        ) do
+			            if
+			                string.lower(
+			                    player.Name
 			                )
+			                ==
+			                string.lower(
+			                    username
+			                )
+			            then
+			                found = player
+			                break
 			            end
-			        end)
-			    end,
-			})
-			
-			ServerTab:CreateButton({
-			    Name = "Check Player Only",
-			
-			    Callback = function()
-			        local username =
-			            usernameBox:GetText()
-			
-			        username =
-			            tostring(username or "")
-			            :match("^%s*(.-)%s*$")
-			
-			        if username == "" then
-			            Notify(
-			                "Server Finder",
-			                "Enter a username.",
-			                3
-			            )
-			
-			            return
 			        end
 			
-			        task.spawn(function()
-			
-			            local ok, result =
-			                pcall(function()
-			
-			                    local userId =
-			                        Players:GetUserIdFromNameAsync(
-			                            username
-			                        )
-			
-			                    local success
-			                    local currentInstance
-			                    local errorMessage
-			                    local placeId
-			                    local jobId
-			
-			                    success,
-			                    currentInstance,
-			                    errorMessage,
-			                    placeId,
-			                    jobId =
-			                        pcall(function()
-			                            return
-			                                TeleportService:
-			                                GetPlayerPlaceInstanceAsync(
-			                                    userId
-			                                )
-			                        end)
-			
-			                    if not success then
-			                        error(
-			                            tostring(
-			                                currentInstance
-			                                or errorMessage
-			                                or "Lookup failed."
-			                            )
-			                        )
-			                    end
-			
-			                    if
-			                        not placeId
-			                        or not jobId
-			                    then
-			                        return
-			                            "User found, but no joinable server was returned."
-			                    end
-			
-			                    return
-			                        "ONLINE\n"
-			                        .. "Username: "
-			                        .. username
-			                        .. "\nUserId: "
-			                        .. tostring(userId)
-			                        .. "\nPlaceId: "
-			                        .. tostring(placeId)
-			                        .. "\nJobId: "
-			                        .. tostring(jobId)
-			                end)
-			
+			        if found then
 			            Notify(
 			                "Server Finder",
-			                tostring(result),
-			                6
+			                "FOUND\n"
+			                    .. found.Name
+			                    .. "\nUserId: "
+			                    .. tostring(
+			                        found.UserId
+			                    )
+			                    .. "\nJobId: "
+			                    .. game.JobId,
+			                5
 			            )
-			        end)
+			        else
+			            Notify(
+			                "Server Finder",
+			                "Player is not in this server.",
+			                4
+			            )
+			        end
 			    end,
 			})
-			
-			ServerTab:CreateButton({
-			    Name = "Clear Username",
-			
-			    Callback = function()
-			        usernameBox:SetText("")
-			    end,
-			})
-			
-			ServerTab:CreateSection(
-			    "Current Server"
-			)
 			
 			ServerTab:CreateButton({
 			    Name = "Server Information",
@@ -2736,9 +2461,13 @@ _modules["Main.luau"] = {
 			        Notify(
 			            "Current Server",
 			            "PlaceId: "
-			                .. tostring(game.PlaceId)
+			                .. tostring(
+			                    game.PlaceId
+			                )
 			                .. "\nJobId: "
-			                .. tostring(game.JobId)
+			                .. tostring(
+			                    game.JobId
+			                )
 			                .. "\nPlayers: "
 			                .. tostring(
 			                    #Players:GetPlayers()
@@ -2752,79 +2481,44 @@ _modules["Main.luau"] = {
 			    Name = "Copy Job ID",
 			
 			    Callback = function()
-			        if SetClipboard(game.JobId) then
+			        if SetClipboard(
+			            game.JobId
+			        ) then
 			            Notify(
 			                "Server Finder",
 			                "Job ID copied.",
 			                2
 			            )
-			        else
-			            Notify(
-			                "Server Finder",
-			                "Clipboard unavailable.",
-			                3
-			            )
 			        end
 			    end,
 			})
 			
 			ServerTab:CreateButton({
-			    Name = "Copy Place ID",
+			    Name = "List Players",
 			
 			    Callback = function()
-			        if SetClipboard(
-			            tostring(game.PlaceId)
-			        ) then
-			            Notify(
-			                "Server Finder",
-			                "Place ID copied.",
-			                2
+			        local names = {}
+			
+			        for _, player in ipairs(
+			            Players:GetPlayers()
+			        ) do
+			            table.insert(
+			                names,
+			                player.Name
 			            )
 			        end
+			
+			        table.sort(names)
+			
+			        Notify(
+			            "Players",
+			            table.concat(
+			                names,
+			                ", "
+			            ),
+			            6
+			        )
 			    end,
-			})
-			
-			ServerTab:CreateSection(
-			    "Server Actions"
-			)
-			
-			ServerTab:CreateButton({
-			    Name = "Rejoin Current Server",
-			
-			    Callback = function()
-			        SafeCall(function()
-			            TeleportService:
-			                TeleportToPlaceInstance(
-			                    game.PlaceId,
-			                    game.JobId,
-			                    LocalPlayer
-			                )
-			        end)
-			    end,
-			})
-			
-			ServerTab:CreateButton({
-			    Name = "Join Public Server",
-			
-			    Callback = function()
-			        SafeCall(function()
-			            TeleportService:Teleport(
-			                game.PlaceId,
-			                LocalPlayer
-			            )
-			        end)
-			    end,
-			})
-			
-			ServerTab:CreateParagraph({
-			    Title = "How it works",
-			
-			    Content =
-			        "Enter a Roblox username.\n"
-			        .. "ZenWare resolves the account, "
-			        .. "looks up the player's current "
-			        .. "PlaceId and JobId, then attempts "
-			        .. "to join that specific instance.",
 			})
 			
 			--------------------------------------------------
@@ -2842,47 +2536,56 @@ _modules["Main.luau"] = {
 			        "settings"
 			    )
 			
+			--------------------------------------------------
+			-- INTERFACE
+			--------------------------------------------------
+			
 			SettingsTab:CreateSection(
 			    "Interface"
 			)
 			
 			SettingsTab:CreateKeybind({
 			    Name = "UI Toggle Key",
-			    Default = Enum.KeyCode.RightControl,
-			    Flag = "UIToggleKey",
+			
+			    Default =
+			        Enum.KeyCode.RightControl,
+			
+			    Flag =
+			        "UIToggleKey",
 			
 			    Callback = function(key)
-			        Window:SetToggleKey(key)
-			
-			        Notify(
-			            "Interface",
-			            "Toggle key: "
-			                .. tostring(
-			                    key.Name
-			                ),
-			            2
+			        Window:SetToggleKey(
+			            key
 			        )
 			    end,
 			})
 			
 			SettingsTab:CreateToggle({
 			    Name = "Auto Load",
-			    Default = AutoLoad.Get(true),
-			    Flag = "AutoLoad",
+			
+			    Default =
+			        AutoLoad.Get(true),
+			
+			    Flag =
+			        "AutoLoad",
 			
 			    Callback = function(enabled)
 			        State.AutoLoad =
 			            enabled
 			
 			        SafeCall(function()
-			            AutoLoad.Set(enabled)
+			            AutoLoad.Set(
+			                enabled
+			            )
 			        end)
 			    end,
 			})
 			
 			SettingsTab:CreateToggle({
 			    Name = "Auto Save",
+			
 			    Default = true,
+			
 			    Flag = "AutoSave",
 			
 			    Callback = function(enabled)
@@ -2902,13 +2605,19 @@ _modules["Main.luau"] = {
 			
 			SettingsTab:CreateSlider({
 			    Name = "Walk Speed",
+			
 			    Min = 0,
 			    Max = 100,
-			    Default = State.WalkSpeed,
-			    Flag = "WalkSpeed",
+			
+			    Default =
+			        State.WalkSpeed,
+			
+			    Flag =
+			        "WalkSpeed",
 			
 			    Callback = function(value)
-			        State.WalkSpeed = value
+			        State.WalkSpeed =
+			            value
 			
 			        local humanoid =
 			            GetHumanoid()
@@ -2922,33 +2631,48 @@ _modules["Main.luau"] = {
 			
 			SettingsTab:CreateSlider({
 			    Name = "Jump Power",
+			
 			    Min = 0,
 			    Max = 150,
-			    Default = State.JumpPower,
-			    Flag = "JumpPower",
+			
+			    Default =
+			        State.JumpPower,
+			
+			    Flag =
+			        "JumpPower",
 			
 			    Callback = function(value)
-			        State.JumpPower = value
+			        State.JumpPower =
+			            value
 			
 			        local humanoid =
 			            GetHumanoid()
 			
 			        if humanoid then
-			            humanoid.UseJumpPower = true
-			            humanoid.JumpPower = value
+			            humanoid.UseJumpPower =
+			                true
+			
+			            humanoid.JumpPower =
+			                value
 			        end
 			    end,
 			})
 			
 			SettingsTab:CreateSlider({
 			    Name = "Hip Height",
+			
 			    Min = 0,
 			    Max = 10,
-			    Default = State.HipHeight,
-			    Flag = "HipHeight",
+			
+			    Default =
+			        State.HipHeight,
+			
+			    Flag =
+			        "HipHeight",
 			
 			    Callback = function(value)
-			        State.HipHeight = value
+			        State.HipHeight =
+			            value
 			
 			        local humanoid =
 			            GetHumanoid()
@@ -2968,12 +2692,6 @@ _modules["Main.luau"] = {
 			            GetHumanoid()
 			
 			        if not humanoid then
-			            Notify(
-			                "Player",
-			                "Humanoid not found.",
-			                3
-			            )
-			
 			            return
 			        end
 			
@@ -2988,12 +2706,6 @@ _modules["Main.luau"] = {
 			
 			        humanoid.HipHeight =
 			            State.HipHeight
-			
-			        Notify(
-			            "Player",
-			            "Settings applied.",
-			            2
-			        )
 			    end,
 			})
 			
@@ -3008,20 +2720,26 @@ _modules["Main.luau"] = {
 			            return
 			        end
 			
-			        humanoid.WalkSpeed = 16
-			        humanoid.UseJumpPower = true
-			        humanoid.JumpPower = 50
-			        humanoid.HipHeight = 2
+			        humanoid.WalkSpeed =
+			            16
 			
-			        State.WalkSpeed = 16
-			        State.JumpPower = 50
-			        State.HipHeight = 2
+			        humanoid.UseJumpPower =
+			            true
 			
-			        Notify(
-			            "Player",
-			            "Defaults restored.",
+			        humanoid.JumpPower =
+			            50
+			
+			        humanoid.HipHeight =
 			            2
-			        )
+			
+			        State.WalkSpeed =
+			            16
+			
+			        State.JumpPower =
+			            50
+			
+			        State.HipHeight =
+			            2
 			    end,
 			})
 			
@@ -3035,9 +2753,12 @@ _modules["Main.luau"] = {
 			
 			SettingsTab:CreateSlider({
 			    Name = "Field Of View",
+			
 			    Min = 40,
 			    Max = 120,
+			
 			    Default = 70,
+			
 			    Flag = "CameraFOV",
 			
 			    Callback = function(value)
@@ -3059,36 +2780,9 @@ _modules["Main.luau"] = {
 			            GetCamera()
 			
 			        if camera then
-			            camera.FieldOfView = 70
+			            camera.FieldOfView =
+			                70
 			        end
-			    end,
-			})
-			
-			SettingsTab:CreateButton({
-			    Name = "Camera Information",
-			
-			    Callback = function()
-			        local camera =
-			            GetCamera()
-			
-			        if not camera then
-			            return
-			        end
-			
-			        Notify(
-			            "Camera",
-			            "FOV: "
-			                .. tostring(
-			                    math.floor(
-			                        camera.FieldOfView
-			                    )
-			                )
-			                .. "\nType: "
-			                .. tostring(
-			                    camera.CameraType
-			                ),
-			            4
-			        )
 			    end,
 			})
 			
@@ -3102,29 +2796,49 @@ _modules["Main.luau"] = {
 			
 			SettingsTab:CreateToggle({
 			    Name = "Full Bright",
+			
 			    Default = false,
-			    Flag = "FullBright",
+			
+			    Flag =
+			        "FullBright",
 			
 			    Callback = function(enabled)
 			        if enabled then
-			            Lighting.Brightness = 2
-			            Lighting.ClockTime = 14
-			            Lighting.FogEnd = 100000
-			            Lighting.GlobalShadows = false
+			            Lighting.Brightness =
+			                2
+			
+			            Lighting.ClockTime =
+			                14
+			
+			            Lighting.FogEnd =
+			                100000
+			
+			            Lighting.GlobalShadows =
+			                false
 			        else
-			            Lighting.Brightness = 1
-			            Lighting.FogEnd = 1000
-			            Lighting.GlobalShadows = true
+			            Lighting.Brightness =
+			                1
+			
+			            Lighting.FogEnd =
+			                1000
+			
+			            Lighting.GlobalShadows =
+			                true
 			        end
 			    end,
 			})
 			
 			SettingsTab:CreateSlider({
 			    Name = "Gravity",
+			
 			    Min = 0,
 			    Max = 300,
-			    Default = Workspace.Gravity,
-			    Flag = "Gravity",
+			
+			    Default =
+			        Workspace.Gravity,
+			
+			    Flag =
+			        "Gravity",
 			
 			    Callback = function(value)
 			        Workspace.Gravity =
@@ -3138,12 +2852,6 @@ _modules["Main.luau"] = {
 			    Callback = function()
 			        Workspace.Gravity =
 			            196.2
-			
-			        Notify(
-			            "World",
-			            "Gravity reset.",
-			            2
-			        )
 			    end,
 			})
 			
@@ -3157,8 +2865,11 @@ _modules["Main.luau"] = {
 			
 			SettingsTab:CreateToggle({
 			    Name = "Anti AFK",
+			
 			    Default = false,
-			    Flag = "AntiAFK",
+			
+			    Flag =
+			        "AntiAFK",
 			
 			    Callback = function(enabled)
 			        State.AntiAFK =
@@ -3171,14 +2882,18 @@ _modules["Main.luau"] = {
 			        task.spawn(function()
 			            while State.AntiAFK do
 			                pcall(function()
-			                    VirtualUser:CaptureController()
+			                    VirtualUser:
+			                        CaptureController()
 			
-			                    VirtualUser:ClickButton2(
-			                        Vector2.new()
-			                    )
+			                    VirtualUser:
+			                        ClickButton2(
+			                            Vector2.new()
+			                        )
 			                end)
 			
-			                task.wait(60)
+			                task.wait(
+			                    60
+			                )
 			            end
 			        end)
 			    end,
@@ -3190,10 +2905,9 @@ _modules["Main.luau"] = {
 			    Callback = function()
 			        Notify(
 			            "Players",
-			            "Players: "
-			                .. tostring(
-			                    #Players:GetPlayers()
-			                ),
+			            tostring(
+			                #Players:GetPlayers()
+			            ),
 			            3
 			        )
 			    end,
@@ -3214,7 +2928,9 @@ _modules["Main.luau"] = {
 			            )
 			        end
 			
-			        table.sort(names)
+			        table.sort(
+			            names
+			        )
 			
 			        Notify(
 			            "Players",
@@ -3249,11 +2965,12 @@ _modules["Main.luau"] = {
 			ConfigTab:CreateConfigSection()
 			
 			ConfigTab:CreateParagraph({
-			    Title = "ZenWare Configs",
+			    Title =
+			        "ZenWare Configs",
 			
 			    Content =
-			        "Configuration controls are "
-			        .. "provided by the UI core.",
+			        "Configuration controls "
+			        .. "are provided by the UI core.",
 			})
 			
 			ConfigTab:CreateButton({
@@ -3288,7 +3005,8 @@ _modules["Main.luau"] = {
 			)
 			
 			CreditsTab:CreateParagraph({
-			    Title = "ZenWare V3",
+			    Title =
+			        "ZenWare V3",
 			
 			    Content =
 			        "@ZensMod\n"
@@ -3327,7 +3045,9 @@ _modules["Main.luau"] = {
 			-- FINALIZE
 			--------------------------------------------------
 			
-			Window:SetAutoSave(true)
+			Window:SetAutoSave(
+			    true
+			)
 			
 			Notify(
 			    "ZenWare V3",
@@ -3346,7 +3066,7 @@ _modules["UI/UI.luau"] = {
 	cached = false,
 	value = nil,
 	load = function()
-		return (function()
+		return (function(...)
 			local Obsidian = require(
 			    "Core/Obsidian"
 			)
@@ -3386,4 +3106,4 @@ _modules["Main"] = _modules["Main.luau"]
 _modules["UI/UI"] = _modules["UI/UI.luau"]
 
 return require("Main")
-end)(require or function() end)
+end)(require or function() end, ...)
