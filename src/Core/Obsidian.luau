@@ -19,7 +19,7 @@ function Obsidian.new(title, configFolder)
     Library.ShowToggleFrameInKeybinds = true
 
     --------------------------------------------------
-    -- LILAC V1488 PALETTE
+    -- LILAC V1488 COLORS
     --------------------------------------------------
 
     pcall(function()
@@ -34,63 +34,30 @@ function Obsidian.new(title, configFolder)
 
         Scheme.BackgroundColor =
             Color3.fromRGB(
-                8,
+                7,
                 3,
-                12
+                10
             )
 
         Scheme.MainColor =
             Color3.fromRGB(
-                22,
+                21,
                 8,
-                30
+                29
             )
 
         Scheme.AccentColor =
             Color3.fromRGB(
                 194,
-                91,
+                94,
                 230
             )
 
         Scheme.OutlineColor =
             Color3.fromRGB(
-                92,
-                42,
-                112
-            )
-
-        Scheme.Font =
-            Font.fromEnum(
-                Enum.Font.Gotham
-            )
-
-        Scheme.RedColor =
-            Color3.fromRGB(
-                255,
-                92,
-                121
-            )
-
-        Scheme.DestructiveColor =
-            Color3.fromRGB(
-                225,
-                63,
-                94
-            )
-
-        Scheme.DarkColor =
-            Color3.fromRGB(
-                2,
-                1,
-                4
-            )
-
-        Scheme.WhiteColor =
-            Color3.fromRGB(
-                255,
-                250,
-                255
+                88,
+                40,
+                108
             )
     end)
 
@@ -116,86 +83,20 @@ function Obsidian.new(title, configFolder)
     })
 
     --------------------------------------------------
-    -- LILAC MENU IMAGE
+    -- OFFICIAL OBSIDIAN WINDOW BACKGROUND
+    --
+    -- The current Obsidian API accepts either a string
+    -- or number and writes it into Window.BackgroundImage.
     --------------------------------------------------
 
-    local MENU_IMAGE_ID = "137423681201950"
-    local MENU_IMAGE = "rbxthumb://type=Asset&id=" .. MENU_IMAGE_ID .. "&w=768&h=768"
-
-    local MenuRoot = Window.Window
-
-    -- Obsidian already creates a real BackgroundImage ImageLabel.
-    -- Set it directly so the artwork is actually rendered by Roblox.
     pcall(function()
-        Window:SetBackgroundImage(MENU_IMAGE)
+        Window:SetBackgroundImage(
+            "rbxassetid://137423681201950"
+        )
 
-        local BackgroundImage = Window.BackgroundImage
-            or MenuRoot:FindFirstChild("BackgroundImage")
-
-        if BackgroundImage and BackgroundImage:IsA("ImageLabel") then
-            BackgroundImage.Image = MENU_IMAGE
-            BackgroundImage.ImageTransparency = 0.35
-            BackgroundImage.BackgroundTransparency = 1
-            BackgroundImage.ScaleType = Enum.ScaleType.Crop
-            BackgroundImage.Visible = true
-            BackgroundImage.ZIndex = 1
-        end
-    end)
-
-    --------------------------------------------------
-    -- FULLSCREEN LILAC IMAGE
-    --------------------------------------------------
-
-    local FULLSCREEN_IMAGE_ID = "99217170570093"
-    local FULLSCREEN_IMAGE =
-        "rbxthumb://type=Asset&id=" .. FULLSCREEN_IMAGE_ID .. "&w=1920&h=1080"
-
-    local FullscreenLayer
-
-    pcall(function()
-        local ScreenGui = Library.ScreenGui
-
-        if ScreenGui then
-            ScreenGui.IgnoreGuiInset = true
-
-            local old = ScreenGui:FindFirstChild("LilacFullscreenBackground")
-            if old then
-                old:Destroy()
-            end
-
-            FullscreenLayer = Instance.new("ImageLabel")
-            FullscreenLayer.Name = "LilacFullscreenBackground"
-            FullscreenLayer.AnchorPoint = Vector2.zero
-            FullscreenLayer.Position = UDim2.fromScale(0, 0)
-            FullscreenLayer.Size = UDim2.fromScale(1, 1)
-            FullscreenLayer.BackgroundTransparency = 1
-            FullscreenLayer.BorderSizePixel = 0
-            FullscreenLayer.Image = FULLSCREEN_IMAGE
-            FullscreenLayer.ImageTransparency = 0.28
-            FullscreenLayer.ScaleType = Enum.ScaleType.Crop
-            FullscreenLayer.Active = false
-            FullscreenLayer.Selectable = false
-            FullscreenLayer.ZIndex = 0
-            FullscreenLayer.Visible = Library.Toggled == true
-            FullscreenLayer.Parent = ScreenGui
-
-            -- Keep the fullscreen image exactly synced with the Obsidian UI.
-            task.spawn(function()
-                while FullscreenLayer and FullscreenLayer.Parent and not Library.Unloaded do
-                    FullscreenLayer.Visible = Library.Toggled == true
-                    task.wait(0.03)
-                end
-            end)
-
-            ScreenGui.Destroying:Connect(function()
-                FullscreenLayer = nil
-            end)
-        end
-    end)
-
-    pcall(function()
-        MenuRoot.BackgroundTransparency =
-            0.10
+        Window:SetBackgroundImageEnabled(
+            true
+        )
     end)
 
     pcall(function()
@@ -211,6 +112,179 @@ function Obsidian.new(title, configFolder)
             9
         )
     end)
+
+    --------------------------------------------------
+    -- FULLSCREEN BACKGROUND
+    --
+    -- Kept in a SEPARATE low DisplayOrder ScreenGui.
+    -- This means it never sits above / over the menu and
+    -- cannot steal the drag area. It follows Library.Toggled.
+    --------------------------------------------------
+
+    local FullscreenGui
+    local FullscreenImage
+    local FullscreenConnection
+
+    pcall(function()
+        local CoreGui =
+            game:GetService(
+                "CoreGui"
+            )
+
+        local old =
+            CoreGui:FindFirstChild(
+                "LilacV1488Fullscreen"
+            )
+
+        if old then
+            old:Destroy()
+        end
+
+        FullscreenGui =
+            Instance.new(
+                "ScreenGui"
+            )
+
+        FullscreenGui.Name =
+            "LilacV1488Fullscreen"
+
+        FullscreenGui.IgnoreGuiInset =
+            true
+
+        FullscreenGui.ResetOnSpawn =
+            false
+
+        FullscreenGui.DisplayOrder =
+            -1000
+
+        FullscreenGui.ZIndexBehavior =
+            Enum.ZIndexBehavior.Global
+
+        FullscreenGui.Parent =
+            CoreGui
+
+        FullscreenImage =
+            Instance.new(
+                "ImageLabel"
+            )
+
+        FullscreenImage.Name =
+            "Background"
+
+        FullscreenImage.BackgroundTransparency =
+            1
+
+        FullscreenImage.BorderSizePixel =
+            0
+
+        FullscreenImage.Position =
+            UDim2.fromScale(
+                0,
+                0
+            )
+
+        FullscreenImage.Size =
+            UDim2.fromScale(
+                1,
+                1
+            )
+
+        FullscreenImage.Image =
+            "rbxassetid://99217170570093"
+
+        FullscreenImage.ImageTransparency =
+            0.38
+
+        FullscreenImage.ScaleType =
+            Enum.ScaleType.Crop
+
+        -- Critical: never capture mouse input.
+        FullscreenImage.Active =
+            false
+
+        FullscreenImage.Selectable =
+            false
+
+        FullscreenImage.ZIndex =
+            -100
+
+        FullscreenImage.Parent =
+            FullscreenGui
+
+        FullscreenImage.Visible =
+            Library.Toggled == true
+
+        --------------------------------------------------
+        -- Dark lilac glass tint
+        --------------------------------------------------
+
+        local Tint =
+            Instance.new(
+                "Frame"
+            )
+
+        Tint.Name =
+            "LilacTint"
+
+        Tint.BackgroundColor3 =
+            Color3.fromRGB(
+                26,
+                6,
+                36
+            )
+
+        Tint.BackgroundTransparency =
+            0.68
+
+        Tint.BorderSizePixel =
+            0
+
+        Tint.Position =
+            UDim2.fromScale(
+                0,
+                0
+            )
+
+        Tint.Size =
+            UDim2.fromScale(
+                1,
+                1
+            )
+
+        Tint.Active =
+            false
+
+        Tint.ZIndex =
+            -99
+
+        Tint.Parent =
+            FullscreenGui
+
+        --------------------------------------------------
+        -- Follow Obsidian's real toggle state.
+        --------------------------------------------------
+
+        FullscreenConnection =
+            game:GetService(
+                "RunService"
+            ).RenderStepped:Connect(
+                function()
+                    if
+                        not FullscreenImage
+                        or not FullscreenImage.Parent
+                    then
+                        return
+                    end
+
+                    FullscreenImage.Visible =
+                        Library.Toggled == true
+
+                    Tint.Visible =
+                        Library.Toggled == true
+                end
+            )
+    end)
+
 
     local ZenWindow = {
         Library = Library,
@@ -651,59 +725,6 @@ function Obsidian.new(title, configFolder)
     end
 
     --------------------------------------------------
-    -- LILAC THEME HELPER
-    --------------------------------------------------
-
-    function ZenWindow:SetLilacBackgroundVisible(visible)
-        if FullscreenLayer then
-            FullscreenLayer.Visible =
-                visible == true
-        end
-    end
-
-    function ZenWindow:ApplyLilacTheme()
-        pcall(function()
-            local Scheme =
-                self.Library.Scheme
-
-            Scheme.FontColor =
-                Color3.fromRGB(
-                    245,
-                    235,
-                    250
-                )
-
-            Scheme.BackgroundColor =
-                Color3.fromRGB(
-                    8,
-                    3,
-                    12
-                )
-
-            Scheme.MainColor =
-                Color3.fromRGB(
-                    22,
-                    8,
-                    30
-                )
-
-            Scheme.AccentColor =
-                Color3.fromRGB(
-                    194,
-                    91,
-                    230
-                )
-
-            Scheme.OutlineColor =
-                Color3.fromRGB(
-                    92,
-                    42,
-                    112
-                )
-        end)
-    end
-
-    --------------------------------------------------
     -- AUTOSAVE
     --------------------------------------------------
 
@@ -717,6 +738,24 @@ function Obsidian.new(title, configFolder)
     --------------------------------------------------
 
     function ZenWindow:Destroy()
+        if FullscreenConnection then
+            pcall(function()
+                FullscreenConnection:Disconnect()
+            end)
+
+            FullscreenConnection =
+                nil
+        end
+
+        if FullscreenGui then
+            pcall(function()
+                FullscreenGui:Destroy()
+            end)
+
+            FullscreenGui =
+                nil
+        end
+
         if self.Library then
             pcall(function()
                 self.Library:Unload()
