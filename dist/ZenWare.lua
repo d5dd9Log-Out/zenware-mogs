@@ -1540,23 +1540,23 @@ _modules["Main.luau"] = {
 			})
 			
 			--------------------------------------------------
-			-- WORLD 2 CLIENT-SIDE AUTO WIN TEST
+			-- WORLD 2 CLIENT AUTO WIN
 			--------------------------------------------------
 			
 			local RunService = game:GetService("RunService")
 			
-			local World2TestRunning = false
+			local World2Running = false
 			local World2NoclipConnection = nil
-			local World2WinPart = nil
+			local World2TestPart = nil
 			
-			local WORLD2_WIN_POSITION =
+			local WORLD2_TEST_POSITION =
 			    Vector3.new(
 			        -682,
 			        40,
 			        4921
 			    )
 			
-			local WORLD2_WIN_SIZE =
+			local WORLD2_TEST_SIZE =
 			    Vector3.new(
 			        2,
 			        2,
@@ -1564,47 +1564,33 @@ _modules["Main.luau"] = {
 			    )
 			
 			--------------------------------------------------
-			-- CREATE WIN PART
+			-- CREATE TEST PART
 			--------------------------------------------------
 			
-			local function CreateWorld2WinPart()
+			local function CreateWorld2TestPart()
 			    if
-			        World2WinPart
-			        and World2WinPart.Parent
+			        World2TestPart
+			        and World2TestPart.Parent
 			    then
-			        return World2WinPart
-			    end
-			
-			    local old =
-			        workspace:FindFirstChild(
-			            "ZenWare_World2_Win"
-			        )
-			
-			    if old
-			        and old:IsA("BasePart")
-			    then
-			        World2WinPart = old
-			
-			        return old
+			        return World2TestPart
 			    end
 			
 			    local part =
 			        Instance.new("Part")
 			
 			    part.Name =
-			        "ZenWare_World2_Win"
+			        "ZenWare_World2_Test"
 			
 			    part.Size =
-			        WORLD2_WIN_SIZE
+			        WORLD2_TEST_SIZE
 			
-			    part.Position =
-			        WORLD2_WIN_POSITION
+			    part.CFrame =
+			        CFrame.new(
+			            WORLD2_TEST_POSITION
+			        )
 			
 			    part.Anchored =
 			        true
-			
-			    part.Transparency =
-			        1
 			
 			    part.CanCollide =
 			        false
@@ -1615,10 +1601,13 @@ _modules["Main.luau"] = {
 			    part.CanQuery =
 			        false
 			
+			    part.Transparency =
+			        1
+			
 			    part.Parent =
 			        workspace
 			
-			    World2WinPart =
+			    World2TestPart =
 			        part
 			
 			    return part
@@ -1646,6 +1635,52 @@ _modules["Main.luau"] = {
 			end
 			
 			--------------------------------------------------
+			-- GET REAL WORLD 2 WIN PART
+			--------------------------------------------------
+			
+			local function GetWorld2WinPart()
+			    local world2 =
+			        workspace:FindFirstChild(
+			            "World2"
+			        )
+			
+			    if not world2 then
+			        return nil
+			    end
+			
+			    local winPads =
+			        world2:FindFirstChild(
+			            "WinPads"
+			        )
+			
+			    if not winPads then
+			        return nil
+			    end
+			
+			    local double =
+			        winPads:FindFirstChild(
+			            "Double"
+			        )
+			
+			    if not double then
+			        return nil
+			    end
+			
+			    local pad15 =
+			        double:FindFirstChild(
+			            "15"
+			        )
+			
+			    if not pad15 then
+			        return nil
+			    end
+			
+			    return pad15:FindFirstChild(
+			        "Win"
+			    )
+			end
+			
+			--------------------------------------------------
 			-- NOCLIP
 			--------------------------------------------------
 			
@@ -1657,7 +1692,7 @@ _modules["Main.luau"] = {
 			    World2NoclipConnection =
 			        RunService.Stepped:Connect(
 			            function()
-			                if not World2TestRunning then
+			                if not World2Running then
 			                    return
 			                end
 			
@@ -1681,62 +1716,75 @@ _modules["Main.luau"] = {
 			end
 			
 			local function StopWorld2Noclip()
-			    if
-			        World2NoclipConnection
-			    then
+			    if World2NoclipConnection then
 			        World2NoclipConnection:Disconnect()
-			
-			        World2NoclipConnection =
-			            nil
+			        World2NoclipConnection = nil
 			    end
 			end
 			
 			--------------------------------------------------
-			-- ONE AUTO WIN CYCLE
+			-- ONE CYCLE
 			--------------------------------------------------
 			
 			local function RunWorld2AutoWinCycle()
 			    local torso =
 			        GetWorld2Torso()
 			
-			    local winPart =
-			        CreateWorld2WinPart()
-			
 			    if not torso then
 			        return
 			    end
 			
-			    if not winPart then
+			    local testPart =
+			        CreateWorld2TestPart()
+			
+			    if not testPart then
 			        return
 			    end
 			
 			    --------------------------------------------------
-			    -- SAVE TORSO POSITION ONLY
+			    -- FIND REAL WIN
 			    --------------------------------------------------
 			
-			    local oldCFrame =
-			        torso.CFrame
+			    local winPart =
+			        GetWorld2WinPart()
+			
+			    if not winPart then
+			        Notify(
+			            "World 2 Auto Win",
+			            'Could not find World2.WinPads.Double["15"].Win',
+			            4
+			        )
+			
+			        task.wait(1)
+			
+			        return
+			    end
 			
 			    --------------------------------------------------
-			    -- TORso -> WIN PART
+			    -- STEP 1
+			    -- TORSO -> CUSTOM TEST PART
 			    --------------------------------------------------
 			
 			    torso.CFrame =
-			        winPart.CFrame
+			        testPart.CFrame
 			
 			    task.wait(0.5)
 			
 			    --------------------------------------------------
-			    -- RETURN TORSO
+			    -- STEP 2
+			    -- TORSO -> REAL WIN PART
 			    --------------------------------------------------
 			
-			    if torso.Parent then
+			    if torso.Parent
+			        and winPart.Parent
+			    then
 			        torso.CFrame =
-			            oldCFrame
+			            winPart.CFrame
 			    end
 			
 			    --------------------------------------------------
-			    -- WAIT BEFORE NEXT ATTEMPT
+			    -- IMPORTANT:
+			    -- DO NOT RETURN TORSO
 			    --------------------------------------------------
 			
 			    task.wait(1)
@@ -1746,15 +1794,15 @@ _modules["Main.luau"] = {
 			-- START
 			--------------------------------------------------
 			
-			local function StartWorld2AutoWinTest()
-			    if World2TestRunning then
+			local function StartWorld2AutoWin()
+			    if World2Running then
 			        return
 			    end
 			
-			    World2TestRunning =
+			    World2Running =
 			        true
 			
-			    CreateWorld2WinPart()
+			    CreateWorld2TestPart()
 			    StartWorld2Noclip()
 			
 			    Notify(
@@ -1765,8 +1813,7 @@ _modules["Main.luau"] = {
 			
 			    task.spawn(
 			        function()
-			
-			            while World2TestRunning do
+			            while World2Running do
 			
 			                local ok, err =
 			                    pcall(
@@ -1782,7 +1829,6 @@ _modules["Main.luau"] = {
 			                    task.wait(1)
 			                end
 			            end
-			
 			        end
 			    )
 			end
@@ -1791,8 +1837,8 @@ _modules["Main.luau"] = {
 			-- STOP
 			--------------------------------------------------
 			
-			local function StopWorld2AutoWinTest()
-			    World2TestRunning =
+			local function StopWorld2AutoWin()
+			    World2Running =
 			        false
 			
 			    StopWorld2Noclip()
@@ -1809,17 +1855,17 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			MainTab:CreateSection(
-			    "World 2 Anti-Cheat"
+			    "World 2 Auto Win"
 			)
 			
 			MainTab:CreateParagraph({
 			    Title =
-			        "World 2 Auto Win",
+			        "World 2",
 			
 			    Content =
-			        "Noclip + torso movement test.\n"
-			        .. "Target: -682, 40, 4921\n"
-			        .. "0.5s at target / 1s delay.",
+			        "Test part: -682, 40, 4921\n"
+			        .. 'Target: World2 > WinPads > Double > 15 > Win\n'
+			        .. "0.5s on test part → Win → 1s wait.",
 			})
 			
 			MainTab:CreateToggle({
@@ -1836,9 +1882,9 @@ _modules["Main.luau"] = {
 			        function(enabled)
 			
 			            if enabled then
-			                StartWorld2AutoWinTest()
+			                StartWorld2AutoWin()
 			            else
-			                StopWorld2AutoWinTest()
+			                StopWorld2AutoWin()
 			            end
 			
 			        end,
@@ -1846,7 +1892,7 @@ _modules["Main.luau"] = {
 			
 			MainTab:CreateButton({
 			    Name =
-			        "Run One World 2 Test",
+			        "Run One World 2 Cycle",
 			
 			    Callback =
 			        function()
@@ -1860,16 +1906,16 @@ _modules["Main.luau"] = {
 			
 			MainTab:CreateButton({
 			    Name =
-			        "Create World 2 Win Part",
+			        "Create Test Part",
 			
 			    Callback =
 			        function()
 			
-			            CreateWorld2WinPart()
+			            CreateWorld2TestPart()
 			
 			            Notify(
 			                "World 2",
-			                "Part created at -682, 40, 4921.",
+			                "Test part created.",
 			                3
 			            )
 			
@@ -1878,26 +1924,48 @@ _modules["Main.luau"] = {
 			
 			MainTab:CreateButton({
 			    Name =
-			        "Remove World 2 Part",
+			        "Check Win Part",
 			
 			    Callback =
 			        function()
 			
-			            World2TestRunning =
+			            local win =
+			                GetWorld2WinPart()
+			
+			            Notify(
+			                "World 2",
+			                win
+			                    and (
+			                        "Found: "
+			                        .. win:GetFullName()
+			                    )
+			                    or "Win part not found.",
+			                4
+			            )
+			
+			        end,
+			})
+			
+			MainTab:CreateButton({
+			    Name =
+			        "Remove Test Part",
+			
+			    Callback =
+			        function()
+			
+			            World2Running =
 			                false
 			
 			            StopWorld2Noclip()
 			
-			            if World2WinPart then
-			                World2WinPart:Destroy()
-			
-			                World2WinPart =
-			                    nil
+			            if World2TestPart then
+			                World2TestPart:Destroy()
+			                World2TestPart = nil
 			            end
 			
 			            Notify(
 			                "World 2",
-			                "Part removed.",
+			                "Test part removed.",
 			                3
 			            )
 			
