@@ -443,6 +443,99 @@ local function StopAutoWinTest(worldName)
     state.running = false
 end
 
+local function RunVerticalOscillation(character, finishPosition, state)
+    if not character or not character.Parent then
+        return
+    end
+
+    local cycles = 10
+    local totalDuration = 1
+    local halfDuration = totalDuration / (cycles * 2)
+
+    local highY = 40
+    local lowY = -1
+
+    for _ = 1, cycles do
+        if not state.running or not character.Parent then
+            break
+        end
+
+        local currentPivot = character:GetPivot()
+        local highPivot = CFrame.new(
+            finishPosition.X,
+            highY,
+            finishPosition.Z
+        ) * CFrame.fromMatrix(
+            Vector3.zero,
+            currentPivot.XVector,
+            currentPivot.YVector,
+            currentPivot.ZVector
+        )
+
+        local lowPivot = CFrame.new(
+            finishPosition.X,
+            lowY,
+            finishPosition.Z
+        ) * CFrame.fromMatrix(
+            Vector3.zero,
+            currentPivot.XVector,
+            currentPivot.YVector,
+            currentPivot.ZVector
+        )
+
+        local driver = Instance.new("CFrameValue")
+        driver.Value = highPivot
+
+        local connection =
+            driver:GetPropertyChangedSignal("Value"):Connect(function()
+                if character.Parent then
+                    character:PivotTo(driver.Value)
+                end
+            end)
+
+        local downTween = TweenService:Create(
+            driver,
+            TweenInfo.new(
+                halfDuration,
+                Enum.EasingStyle.Linear,
+                Enum.EasingDirection.InOut
+            ),
+            {Value = lowPivot}
+        )
+
+        downTween:Play()
+        downTween.Completed:Wait()
+
+        if not state.running or not character.Parent then
+            connection:Disconnect()
+            driver:Destroy()
+            break
+        end
+
+        local upTween = TweenService:Create(
+            driver,
+            TweenInfo.new(
+                halfDuration,
+                Enum.EasingStyle.Linear,
+                Enum.EasingDirection.InOut
+            ),
+            {Value = highPivot}
+        )
+
+        upTween:Play()
+        upTween.Completed:Wait()
+
+        connection:Disconnect()
+        driver:Destroy()
+    end
+
+    if character.Parent and state.running then
+        character:PivotTo(
+            CFrame.new(finishPosition)
+        )
+    end
+end
+
 local function RunAutoWinCycle(worldName)
     local profile = WorldProfiles[worldName]
     local state = AutoWinState[worldName]
@@ -501,11 +594,20 @@ local function RunAutoWinCycle(worldName)
     connection:Disconnect()
     driver:Destroy()
 
-    if character.Parent then
-        character:PivotTo(CFrame.new(profile.finish))
+    if not state.running or not character.Parent then
+        return
     end
 
-    task.wait(1)
+    character:PivotTo(
+        CFrame.new(profile.finish)
+    )
+
+    -- Replace the old fall with a 1-second, 10-cycle vertical test.
+    RunVerticalOscillation(
+        character,
+        profile.finish,
+        state
+    )
 end
 
 local function StartAutoWinTest(worldName)
