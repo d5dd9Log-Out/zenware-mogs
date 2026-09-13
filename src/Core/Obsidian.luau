@@ -20,6 +20,9 @@ function Obsidian.new(title, configFolder)
 
     --------------------------------------------------
     -- LILAC PALETTE
+    -- Change only real Color3/Font fields on Scheme.
+    -- Background image is applied through the official API
+    -- after the window exists.
     --------------------------------------------------
 
     pcall(function()
@@ -27,27 +30,38 @@ function Obsidian.new(title, configFolder)
 
         Scheme.FontColor =
             Color3.fromRGB(
-                242, 232, 248
+                242,
+                232,
+                248
             )
 
         Scheme.BackgroundColor =
             Color3.fromRGB(
-                6, 3, 9
+                5,
+                2,
+                8
             )
 
         Scheme.MainColor =
             Color3.fromRGB(
-                17, 8, 22
+                18,
+                8,
+                24
             )
 
+        -- Dark-to-lilac feel: dark main + brighter accent.
         Scheme.AccentColor =
             Color3.fromRGB(
-                190, 100, 225
+                192,
+                104,
+                226
             )
 
         Scheme.OutlineColor =
             Color3.fromRGB(
-                76, 38, 92
+                76,
+                38,
+                92
             )
 
         Scheme.Font =
@@ -55,8 +69,33 @@ function Obsidian.new(title, configFolder)
                 Enum.Font.Gotham
             )
 
-        Scheme.BackgroundImage =
-            "rbxassetid://83486595661123"
+        Scheme.RedColor =
+            Color3.fromRGB(
+                255,
+                92,
+                120
+            )
+
+        Scheme.DestructiveColor =
+            Color3.fromRGB(
+                224,
+                66,
+                92
+            )
+
+        Scheme.DarkColor =
+            Color3.fromRGB(
+                2,
+                1,
+                4
+            )
+
+        Scheme.WhiteColor =
+            Color3.fromRGB(
+                255,
+                250,
+                255
+            )
     end)
 
     local Window = Library:CreateWindow({
@@ -80,23 +119,33 @@ function Obsidian.new(title, configFolder)
         GlobalSearch = true,
     })
 
+    --------------------------------------------------
+    -- LILAC BACKGROUND
+    --------------------------------------------------
+
     pcall(function()
-        Window:SetBackgroundImage(
+        Library:SetBackgroundImage(
             "rbxassetid://83486595661123"
         )
 
-        Window:SetBackgroundImageEnabled(
+        Library:SetBackgroundImageEnabled(
             true
         )
+    end)
 
+    pcall(function()
         Window:SetFooter(
             "zenware"
         )
+    end)
 
+    pcall(function()
         Window:ChangeTitle(
             "🌸 Lilac v1488"
         )
+    end)
 
+    pcall(function()
         Window:SetCornerRadius(
             9
         )
@@ -553,7 +602,7 @@ function Obsidian.new(title, configFolder)
     end
 
     --------------------------------------------------
-    -- AUTOSAVE
+    -- LILAC THEME HELPER
     --------------------------------------------------
 
     function ZenWindow:ApplyLilacTheme()
@@ -563,27 +612,37 @@ function Obsidian.new(title, configFolder)
 
             Scheme.FontColor =
                 Color3.fromRGB(
-                    242, 232, 248
+                    242,
+                    232,
+                    248
                 )
 
             Scheme.BackgroundColor =
                 Color3.fromRGB(
-                    6, 3, 9
+                    5,
+                    2,
+                    8
                 )
 
             Scheme.MainColor =
                 Color3.fromRGB(
-                    17, 8, 22
+                    18,
+                    8,
+                    24
                 )
 
             Scheme.AccentColor =
                 Color3.fromRGB(
-                    190, 100, 225
+                    192,
+                    104,
+                    226
                 )
 
             Scheme.OutlineColor =
                 Color3.fromRGB(
-                    76, 38, 92
+                    76,
+                    38,
+                    92
                 )
 
             Scheme.Font =
@@ -591,18 +650,19 @@ function Obsidian.new(title, configFolder)
                     Enum.Font.Gotham
                 )
 
-            Scheme.BackgroundImage =
-                "rbxassetid://83486595661123"
-
-            self.Window:SetBackgroundImage(
+            self.Library:SetBackgroundImage(
                 "rbxassetid://83486595661123"
             )
 
-            self.Window:SetBackgroundImageEnabled(
+            self.Library:SetBackgroundImageEnabled(
                 true
             )
         end)
     end
+
+    --------------------------------------------------
+    -- AUTOSAVE
+    --------------------------------------------------
 
     function ZenWindow:SetAutoSave(enabled)
         self.AutoSave =
@@ -625,4 +685,3 @@ function Obsidian.new(title, configFolder)
 end
 
 return Obsidian
-PS C:\Users\Yaroslav\Desktop\ZenWare> 
