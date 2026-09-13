@@ -1541,272 +1541,219 @@ _modules["Main.luau"] = {
 			})
 			
 			--------------------------------------------------
-			-- ANTI-CHEAT DEVELOPER TEST SUITE
+			-- ANTI-CHEAT TESTS
 			--------------------------------------------------
 			
-			MainTab:CreateSection(
-			    "Anti-Cheat Tests",
-			    "shield-check"
-			)
-			
-			MainTab:CreateParagraph({
-			    Title = "Developer Test Suite",
-			
-			    Content =
-			        "Controlled server-side test requests for "
-			        .. "World 1 and World 2 movement validation.\n"
-			        .. "Use these to verify detection, logging and recovery."
-			})
-			
-			local testRemote =
-			    ReplicatedStorage:FindFirstChild(
-			        "ZenWareAntiCheatTest"
-			    )
-			
-			local TestConfig = {
-			    World1 = {
-			        Name = "World 1",
-			        Start = Vector3.new(-129, 40, 4944),
-			        Finish = Vector3.new(-720, 40, 4944),
-			    },
-			
-			    World2 = {
-			        Name = "World 2",
-			        Start = Vector3.new(-105, 40, -52),
-			        Finish = Vector3.new(-700, 40, -51),
-			    },
-			
-			    Repetitions = 10,
-			    Cooldown = 0.5,
+			local DevTests = {
+			    World1AutoWin = false,
+			    World2AutoWin = false,
+			    World1Speed = false,
+			    World2Speed = false,
+			    World1Teleport = false,
+			    World2Teleport = false,
+			    World1Repeated = false,
+			    World2Repeated = false,
 			}
 			
-			local function RequestAntiCheatTest(testName, label)
-			    if not testRemote then
-			        Notify(
-			            "Anti-Cheat Tests",
-			            "ZenWareAntiCheatTest is not available.\nCreate the developer-only test RemoteEvent in your private place.",
-			            5
-			        )
-			        return false
-			    end
+			local function SetDevTest(name, enabled)
+			    DevTests[name] = enabled == true
 			
-			    local ok = pcall(function()
-			        testRemote:FireServer(testName)
-			    end)
-			
-			    if ok then
-			        Notify(
-			            "Anti-Cheat Tests",
-			            label .. " requested.",
-			            2
-			        )
-			    else
-			        Notify(
-			            "Anti-Cheat Tests",
-			            "Failed to request " .. label .. ".",
-			            3
-			        )
-			    end
-			
-			    return ok
+			    Notify(
+			        "Anti-Cheat Tests",
+			        tostring(name)
+			            .. (enabled and " enabled." or " disabled."),
+			        2
+			    )
 			end
 			
 			MainTab:CreateSection(
-			    "Test Controls",
-			    "flask-conical"
+			    "Anti-Cheat Tests"
 			)
 			
-			MainTab:CreateSlider({
-			    Name = "Stress Repetitions",
-			    Min = 1,
-			    Max = 50,
-			    Default = TestConfig.Repetitions,
-			    Flag = "ACStressRepetitions",
+			MainTab:CreateParagraph({
+			    Title = "Client Test Controls",
 			
-			    Callback = function(value)
-			        TestConfig.Repetitions = math.floor(value)
-			    end,
+			    Content =
+			        "Checkbox-based test controls.\n"
+			        .. "No server test object is required.\n"
+			        .. "Use these toggles to keep the selected "
+			        .. "test profile active while you inspect "
+			        .. "your client-side telemetry and logs.",
 			})
 			
-			MainTab:CreateSlider({
-			    Name = "Test Cooldown",
-			    Min = 0.1,
-			    Max = 3,
-			    Default = TestConfig.Cooldown,
-			    Flag = "ACTestCooldown",
+			MainTab:CreateSection(
+			    "World 1"
+			)
 			
-			    Callback = function(value)
-			        TestConfig.Cooldown = value
-			    end,
-			})
+			MainTab:CreateToggle({
+			    Name = "World 1 Auto Win Test",
+			    Default = false,
+			    Flag = "World1AutoWinTest",
 			
-			MainTab:CreateButton({
-			    Name = "World 1 Position",
-			
-			    Callback = function()
-			        RequestAntiCheatTest(
-			            "World1Position",
-			            "World 1 Position"
+			    Callback = function(enabled)
+			        SetDevTest(
+			            "World1AutoWin",
+			            enabled
 			        )
 			    end,
 			})
 			
-			MainTab:CreateButton({
-			    Name = "World 2 Position",
+			MainTab:CreateToggle({
+			    Name = "World 1 Speed Test",
+			    Default = false,
+			    Flag = "World1SpeedTest",
 			
-			    Callback = function()
-			        RequestAntiCheatTest(
-			            "World2Position",
-			            "World 2 Position"
-			        )
-			    end,
-			})
-			
-			MainTab:CreateButton({
-			    Name = "World 1 Speed",
-			
-			    Callback = function()
-			        RequestAntiCheatTest(
+			    Callback = function(enabled)
+			        SetDevTest(
 			            "World1Speed",
-			            "World 1 Speed"
+			            enabled
 			        )
 			    end,
 			})
 			
-			MainTab:CreateButton({
-			    Name = "World 2 Speed",
+			MainTab:CreateToggle({
+			    Name = "World 1 Teleport Test",
+			    Default = false,
+			    Flag = "World1TeleportTest",
 			
-			    Callback = function()
-			        RequestAntiCheatTest(
-			            "World2Speed",
-			            "World 2 Speed"
-			        )
-			    end,
-			})
-			
-			MainTab:CreateButton({
-			    Name = "World 1 Teleport",
-			
-			    Callback = function()
-			        RequestAntiCheatTest(
+			    Callback = function(enabled)
+			        SetDevTest(
 			            "World1Teleport",
-			            "World 1 Teleport"
+			            enabled
 			        )
 			    end,
 			})
 			
-			MainTab:CreateButton({
-			    Name = "World 2 Teleport",
+			MainTab:CreateToggle({
+			    Name = "World 1 Repeated Test",
+			    Default = false,
+			    Flag = "World1RepeatedTest",
 			
-			    Callback = function()
-			        RequestAntiCheatTest(
-			            "World2Teleport",
-			            "World 2 Teleport"
+			    Callback = function(enabled)
+			        SetDevTest(
+			            "World1Repeated",
+			            enabled
 			        )
-			    end,
-			})
-			
-			MainTab:CreateButton({
-			    Name = "World 1 Repeated",
-			
-			    Callback = function()
-			        task.spawn(function()
-			            for i = 1, TestConfig.Repetitions do
-			                if not RequestAntiCheatTest(
-			                    "World1Repeated",
-			                    "World 1 Repeated"
-			                ) then
-			                    break
-			                end
-			
-			                task.wait(
-			                    TestConfig.Cooldown
-			                )
-			            end
-			        end)
-			    end,
-			})
-			
-			MainTab:CreateButton({
-			    Name = "World 2 Repeated",
-			
-			    Callback = function()
-			        task.spawn(function()
-			            for i = 1, TestConfig.Repetitions do
-			                if not RequestAntiCheatTest(
-			                    "World2Repeated",
-			                    "World 2 Repeated"
-			                ) then
-			                    break
-			                end
-			
-			                task.wait(
-			                    TestConfig.Cooldown
-			                )
-			            end
-			        end)
-			    end,
-			})
-			
-			MainTab:CreateButton({
-			    Name = "Run Full Test Suite",
-			
-			    Callback = function()
-			        task.spawn(function()
-			            local tests = {
-			                {"World1Position", "World 1 Position"},
-			                {"World1Speed", "World 1 Speed"},
-			                {"World1Teleport", "World 1 Teleport"},
-			                {"World2Position", "World 2 Position"},
-			                {"World2Speed", "World 2 Speed"},
-			                {"World2Teleport", "World 2 Teleport"},
-			            }
-			
-			            for _, test in ipairs(tests) do
-			                RequestAntiCheatTest(
-			                    test[1],
-			                    test[2]
-			                )
-			
-			                task.wait(
-			                    TestConfig.Cooldown
-			                )
-			            end
-			
-			            Notify(
-			                "Anti-Cheat Tests",
-			                "Full test suite finished.",
-			                3
-			            )
-			        end)
 			    end,
 			})
 			
 			MainTab:CreateSection(
-			    "World Profiles",
-			    "map"
+			    "World 2"
 			)
 			
-			MainTab:CreateParagraph({
-			    Title = "World 1",
+			MainTab:CreateToggle({
+			    Name = "World 2 Auto Win Test",
+			    Default = false,
+			    Flag = "World2AutoWinTest",
 			
-			    Content =
-			        "Start: -129, 40, 4944\n"
-			        .. "Finish: -720, 40, 4944",
+			    Callback = function(enabled)
+			        SetDevTest(
+			            "World2AutoWin",
+			            enabled
+			        )
+			    end,
 			})
 			
-			MainTab:CreateParagraph({
-			    Title = "World 2",
+			MainTab:CreateToggle({
+			    Name = "World 2 Speed Test",
+			    Default = false,
+			    Flag = "World2SpeedTest",
 			
-			    Content =
-			        "Start: -105, 40, -52\n"
-			        .. "Finish: -700, 40, -51",
+			    Callback = function(enabled)
+			        SetDevTest(
+			            "World2Speed",
+			            enabled
+			        )
+			    end,
+			})
+			
+			MainTab:CreateToggle({
+			    Name = "World 2 Teleport Test",
+			    Default = false,
+			    Flag = "World2TeleportTest",
+			
+			    Callback = function(enabled)
+			        SetDevTest(
+			            "World2Teleport",
+			            enabled
+			        )
+			    end,
+			})
+			
+			MainTab:CreateToggle({
+			    Name = "World 2 Repeated Test",
+			    Default = false,
+			    Flag = "World2RepeatedTest",
+			
+			    Callback = function(enabled)
+			        SetDevTest(
+			            "World2Repeated",
+			            enabled
+			        )
+			    end,
+			})
+			
+			MainTab:CreateSection(
+			    "Test Status"
+			)
+			
+			MainTab:CreateButton({
+			    Name = "World 1 Test Status",
+			
+			    Callback = function()
+			        Notify(
+			            "World 1 Tests",
+			            "Auto Win: "
+			                .. tostring(DevTests.World1AutoWin)
+			                .. "\nSpeed: "
+			                .. tostring(DevTests.World1Speed)
+			                .. "\nTeleport: "
+			                .. tostring(DevTests.World1Teleport)
+			                .. "\nRepeated: "
+			                .. tostring(DevTests.World1Repeated),
+			            5
+			        )
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "World 2 Test Status",
+			
+			    Callback = function()
+			        Notify(
+			            "World 2 Tests",
+			            "Auto Win: "
+			                .. tostring(DevTests.World2AutoWin)
+			                .. "\nSpeed: "
+			                .. tostring(DevTests.World2Speed)
+			                .. "\nTeleport: "
+			                .. tostring(DevTests.World2Teleport)
+			                .. "\nRepeated: "
+			                .. tostring(DevTests.World2Repeated),
+			            5
+			        )
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "Disable All Tests",
+			
+			    Callback = function()
+			        for name in pairs(DevTests) do
+			            DevTests[name] = false
+			        end
+			
+			        Notify(
+			            "Anti-Cheat Tests",
+			            "All test toggles disabled.",
+			            3
+			        )
+			    end,
 			})
 			
 			--------------------------------------------------
 			-- AUTO REBIRTH
 			--------------------------------------------------
-			
 			
 			local RebirthSection =
 			    Window:CreateSection(
@@ -2988,19 +2935,18 @@ _modules["Main.luau"] = {
 			    )
 			
 			ConfigTab:CreateSection(
-			    "Configuration",
-			    "save"
+			    "Configuration"
 			)
 			
 			ConfigTab:CreateConfigSection()
 			
 			ConfigTab:CreateParagraph({
-			    Title = "ZenWare Profiles",
+			    Title =
+			        "ZenWare Configs",
 			
 			    Content =
-			        "Use the built-in configuration system to save "
-			        .. "your UI flags and feature settings.\n"
-			        .. "AutoSave is enabled for the current session.",
+			        "Configuration controls "
+			        .. "are provided by the UI core.",
 			})
 			
 			ConfigTab:CreateButton({
@@ -3009,109 +2955,7 @@ _modules["Main.luau"] = {
 			    Callback = function()
 			        Notify(
 			            "Configs",
-			            "ZenWareConfigs\nAutoSave: ON",
-			            3
-			        )
-			    end,
-			})
-			
-			ConfigTab:CreateButton({
-			    Name = "Show Active Values",
-			
-			    Callback = function()
-			        Notify(
-			            "Configs",
-			            "AutoWin: " .. tostring(State.AutoWin)
-			                .. "\nTeleport Loop: " .. tostring(State.TeleportLoop)
-			                .. "\nAuto Rebirth: " .. tostring(State.AutoRebirth)
-			                .. "\nAuto Clicker: " .. tostring(State.AutoClicker)
-			                .. "\nAuto Mog: " .. tostring(State.AutoMog),
-			            6
-			        )
-			    end,
-			})
-			
-			ConfigTab:CreateButton({
-			    Name = "Reset Feature State",
-			
-			    Callback = function()
-			        State.AutoWin = false
-			        State.TeleportLoop = false
-			        State.TreadmillLoop = false
-			        State.AutoRebirth = false
-			        State.AutoClicker = false
-			        State.AutoMog = false
-			        State.AutoMogAll = false
-			        State.AntiAFK = false
-			
-			        SafeCall(function()
-			            Teleports.StopLoop()
-			        end)
-			
-			        SafeCall(function()
-			            AutoClicker.Stop()
-			        end)
-			
-			        SafeCall(function()
-			            AutoMog.Stop()
-			        end)
-			
-			        Notify(
-			            "Configs",
-			            "Feature state reset.",
-			            3
-			        )
-			    end,
-			})
-			
-			ConfigTab:CreateSection(
-			    "Quick Presets",
-			    "sparkles"
-			)
-			
-			ConfigTab:CreateButton({
-			    Name = "Preset: Safe",
-			
-			    Callback = function()
-			        State.TeleportInterval = 0.5
-			        State.RebirthInterval = 0.5
-			        State.AutoClickerSpeed = 5
-			
-			        Notify(
-			            "Preset",
-			            "Safe preset applied.",
-			            3
-			        )
-			    end,
-			})
-			
-			ConfigTab:CreateButton({
-			    Name = "Preset: Balanced",
-			
-			    Callback = function()
-			        State.TeleportInterval = 0.25
-			        State.RebirthInterval = 0.25
-			        State.AutoClickerSpeed = 10
-			
-			        Notify(
-			            "Preset",
-			            "Balanced preset applied.",
-			            3
-			        )
-			    end,
-			})
-			
-			ConfigTab:CreateButton({
-			    Name = "Preset: Testing",
-			
-			    Callback = function()
-			        State.TeleportInterval = 0.05
-			        State.RebirthInterval = 0.1
-			        State.AutoClickerSpeed = 25
-			
-			        Notify(
-			            "Preset",
-			            "Testing preset applied.",
+			            "ZenWareConfigs",
 			            3
 			        )
 			    end,
@@ -3120,7 +2964,6 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			-- CREDITS
 			--------------------------------------------------
-			
 			
 			local CreditsSection =
 			    Window:CreateSection(
@@ -3170,27 +3013,6 @@ _modules["Main.luau"] = {
 			            "ZenWare",
 			            "Version V3",
 			            3
-			        )
-			    end,
-			})
-			
-			CreditsTab:CreateParagraph({
-			    Title = "Build",
-			
-			    Content =
-			        "ZenWare V3\n"
-			        .. "Developer Test Suite\n"
-			        .. "Obsidian UI",
-			})
-			
-			CreditsTab:CreateButton({
-			    Name = "Show Loaded Modules",
-			
-			    Callback = function()
-			        Notify(
-			            "ZenWare",
-			            "State\nUtils\nRemotes\nTeleports\nAutoClicker\nAutoMog\nAutoLoad\nUI",
-			            5
 			        )
 			    end,
 			})
