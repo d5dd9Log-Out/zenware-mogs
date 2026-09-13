@@ -3,7 +3,6 @@ local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -334,152 +333,282 @@ MainTab:CreateToggle({
 })
 
 --------------------------------------------------
--- WORLD 2 ANTI-CHEAT TEST
+-- WORLD 2 CLIENT-SIDE ANTI-CHEAT TEST
+--------------------------------------------------
+
+local World2TestRunning = false
+local World2NoclipConnection = nil
+local World2TestPart = nil
+
+local WORLD2_WIN_POSITION =
+    Vector3.new(
+        -682,
+        40,
+        4921
+    )
+
+local WORLD2_WIN_SIZE =
+    Vector3.new(
+        3,
+        3,
+        3
+    )
+
+--------------------------------------------------
+-- CREATE LOCAL TEST PART
+--------------------------------------------------
+
+local function CreateWorld2TestPart()
+    if
+        World2TestPart
+        and World2TestPart.Parent
+    then
+        return World2TestPart
+    end
+
+    local part =
+        workspace:FindFirstChild(
+            "ZenWare_World2_Test"
+        )
+
+    if part
+        and part:IsA("BasePart")
+    then
+        World2TestPart = part
+        return part
+    end
+
+    part =
+        Instance.new("Part")
+
+    part.Name =
+        "ZenWare_World2_Test"
+
+    part.Size =
+        WORLD2_WIN_SIZE
+
+    part.CFrame =
+        CFrame.new(
+            WORLD2_WIN_POSITION
+        )
+
+    part.Anchored =
+        true
+
+    part.Transparency =
+        1
+
+    part.CanCollide =
+        false
+
+    part.CanTouch =
+        false
+
+    part.CanQuery =
+        false
+
+    part.Parent =
+        workspace
+
+    World2TestPart =
+        part
+
+    return part
+end
+
+--------------------------------------------------
+-- GET ROOT / TORSO
+--------------------------------------------------
+
+local function GetWorld2BodyPart()
+    local character =
+        LocalPlayer.Character
+
+    if not character then
+        return nil
+    end
+
+    return
+        character:FindFirstChild(
+            "UpperTorso"
+        )
+        or character:FindFirstChild(
+            "Torso"
+        )
+        or character:FindFirstChild(
+            "HumanoidRootPart"
+        )
+end
+
+--------------------------------------------------
+-- CLIENT NOCLIP TEST
+--------------------------------------------------
+
+local function StartWorld2Noclip()
+    if World2NoclipConnection then
+        return
+    end
+
+    World2NoclipConnection =
+        game:GetService(
+            "RunService"
+        ).Stepped:Connect(
+            function()
+                if not World2TestRunning then
+                    return
+                end
+
+                local character =
+                    LocalPlayer.Character
+
+                if not character then
+                    return
+                end
+
+                for _, object in ipairs(
+                    character:GetDescendants()
+                ) do
+                    if object:IsA("BasePart") then
+                        object.CanCollide =
+                            false
+                    end
+                end
+            end
+        )
+end
+
+local function StopWorld2Noclip()
+    if World2NoclipConnection then
+        World2NoclipConnection:Disconnect()
+        World2NoclipConnection = nil
+    end
+end
+
+--------------------------------------------------
+-- SINGLE CLIENT TEST
+--------------------------------------------------
+
+local function RunWorld2AutoWinTest()
+    local body =
+        GetWorld2BodyPart()
+
+    local part =
+        CreateWorld2TestPart()
+
+    if not body then
+        Notify(
+            "World 2 Test",
+            "Character body part not found.",
+            3
+        )
+        return
+    end
+
+    if not part then
+        Notify(
+            "World 2 Test",
+            "Test part could not be created.",
+            3
+        )
+        return
+    end
+
+    local oldCFrame =
+        body.CFrame
+
+    print(
+        "[ZenWare TEST] World2 AutoWin:",
+        FormatVector3(body.Position)
+    )
+
+    body.CFrame =
+        part.CFrame
+
+    task.wait(0.5)
+
+    if body.Parent then
+        body.CFrame =
+            oldCFrame
+    end
+
+    task.wait(1)
+end
+
+--------------------------------------------------
+-- START LOOP
+--------------------------------------------------
+
+local function StartWorld2AutoWinTest()
+    if World2TestRunning then
+        return
+    end
+
+    World2TestRunning =
+        true
+
+    CreateWorld2TestPart()
+    StartWorld2Noclip()
+
+    Notify(
+        "World 2 Test",
+        "Client Auto Win test started.",
+        3
+    )
+
+    task.spawn(
+        function()
+            while World2TestRunning do
+                local ok, err =
+                    pcall(
+                        RunWorld2AutoWinTest
+                    )
+
+                if not ok then
+                    warn(
+                        "[ZenWare World2 Test]",
+                        err
+                    )
+
+                    task.wait(1)
+                end
+            end
+        end
+    )
+end
+
+--------------------------------------------------
+-- STOP LOOP
+--------------------------------------------------
+
+local function StopWorld2AutoWinTest()
+    World2TestRunning =
+        false
+
+    StopWorld2Noclip()
+
+    Notify(
+        "World 2 Test",
+        "Client Auto Win test stopped.",
+        3
+    )
+end
+
+--------------------------------------------------
+-- UI
 --------------------------------------------------
 
 MainTab:CreateSection(
-    "World 2 Anti-Cheat Test"
+    "World 2 Anti-Cheat"
 )
 
 MainTab:CreateParagraph({
-    Title = "Developer Test",
+    Title = "Client Test",
 
     Content =
-        "Runs controlled server-side "
-        .. "movement simulations so you "
-        .. "can verify that World 2 anti-cheat "
-        .. "rules detect and log them.",
+        "Client-side World 2 movement test.\n"
+        .. "Target: -682, 40, 4921\n"
+        .. "0.5s at target / 1s wait.",
 })
-
-local testRemote =
-    ReplicatedStorage:
-    FindFirstChild(
-        "ZenWareAntiCheatTest"
-    )
-
-MainTab:CreateButton({
-    Name = "Test World 2 Position",
-
-    Callback = function()
-        if not testRemote then
-            Notify(
-                "Anti-Cheat Test",
-                "ZenWareAntiCheatTest not found.",
-                4
-            )
-
-            return
-        end
-
-        SafeCall(function()
-            testRemote:FireServer(
-                "World2Position"
-            )
-        end)
-
-        Notify(
-            "Anti-Cheat Test",
-            "World 2 position test requested.",
-            3
-        )
-    end,
-})
-
-MainTab:CreateButton({
-    Name = "Test World 2 Speed",
-
-    Callback = function()
-        if not testRemote then
-            Notify(
-                "Anti-Cheat Test",
-                "Test RemoteEvent not found.",
-                4
-            )
-
-            return
-        end
-
-        SafeCall(function()
-            testRemote:FireServer(
-                "World2Speed"
-            )
-        end)
-
-        Notify(
-            "Anti-Cheat Test",
-            "World 2 speed test requested.",
-            3
-        )
-    end,
-})
-
-MainTab:CreateButton({
-    Name = "Test World 2 Teleport",
-
-    Callback = function()
-        if not testRemote then
-            Notify(
-                "Anti-Cheat Test",
-                "Test RemoteEvent not found.",
-                4
-            )
-
-            return
-        end
-
-        SafeCall(function()
-            testRemote:FireServer(
-                "World2Teleport"
-            )
-        end)
-
-        Notify(
-            "Anti-Cheat Test",
-            "World 2 teleport test requested.",
-            3
-        )
-    end,
-})
-
-MainTab:CreateButton({
-    Name = "Test World 2 Repeated",
-
-    Callback = function()
-        if not testRemote then
-            Notify(
-                "Anti-Cheat Test",
-                "Test RemoteEvent not found.",
-                4
-            )
-
-            return
-        end
-
-        task.spawn(function()
-            for i = 1, 10 do
-                SafeCall(function()
-                    testRemote:FireServer(
-                        "World2Repeated"
-                    )
-                end)
-
-                task.wait(0.5)
-            end
-        end)
-
-        Notify(
-            "Anti-Cheat Test",
-            "Repeated test started.",
-            3
-        )
-    end,
-})
-
---------------------------------------------------
--- WORLD 2 AUTO WIN TEST
---------------------------------------------------
-
-local world2AutoWinTestRunning = false
 
 MainTab:CreateToggle({
     Name = "World 2 Auto Win Test",
@@ -487,82 +616,55 @@ MainTab:CreateToggle({
     Flag = "World2AutoWinTest",
 
     Callback = function(enabled)
-        world2AutoWinTestRunning = enabled
-
-        if not enabled then
-            Notify(
-                "Anti-Cheat Test",
-                "World 2 Auto Win test stopped.",
-                2
-            )
-
-            return
+        if enabled then
+            StartWorld2AutoWinTest()
+        else
+            StopWorld2AutoWinTest()
         end
-
-        if not testRemote then
-            world2AutoWinTestRunning = false
-
-            Notify(
-                "Anti-Cheat Test",
-                "ZenWareAntiCheatTest not found.",
-                4
-            )
-
-            return
-        end
-
-        Notify(
-            "Anti-Cheat Test",
-            "World 2 Auto Win simulation started.",
-            3
-        )
-
-        task.spawn(function()
-            while world2AutoWinTestRunning do
-                local ok, err = pcall(function()
-                    testRemote:FireServer(
-                        "World2AutoWin"
-                    )
-                end)
-
-                if not ok then
-                    warn(
-                        "[ZenWare V3] World2AutoWin test:",
-                        err
-                    )
-                end
-
-                task.wait(1.5)
-            end
-        end)
     end,
 })
 
 MainTab:CreateButton({
-    Name = "Test World 2 Auto Win Once",
+    Name = "Run One Client Test",
 
     Callback = function()
-        if not testRemote then
-            Notify(
-                "Anti-Cheat Test",
-                "ZenWareAntiCheatTest not found.",
-                4
-            )
+        task.spawn(
+            RunWorld2AutoWinTest
+        )
+    end,
+})
 
-            return
-        end
+MainTab:CreateButton({
+    Name = "Create Test Part",
 
-        local ok, err = pcall(function()
-            testRemote:FireServer(
-                "World2AutoWin"
-            )
-        end)
+    Callback = function()
+        CreateWorld2TestPart()
 
         Notify(
-            "Anti-Cheat Test",
-            ok
-                and "World 2 Auto Win simulation requested."
-                or ("Request failed: " .. tostring(err)),
+            "World 2 Test",
+            "Part created at -682, 40, 4921.",
+            3
+        )
+    end,
+})
+
+MainTab:CreateButton({
+    Name = "Remove Test Part",
+
+    Callback = function()
+        World2TestRunning =
+            false
+
+        StopWorld2Noclip()
+
+        if World2TestPart then
+            World2TestPart:Destroy()
+            World2TestPart = nil
+        end
+
+        Notify(
+            "World 2 Test",
+            "Test part removed.",
             3
         )
     end,
