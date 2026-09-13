@@ -1541,512 +1541,272 @@ _modules["Main.luau"] = {
 			})
 			
 			--------------------------------------------------
-			-- AUTO WIN TESTS - TWO WORLDS
+			-- ANTI-CHEAT DEVELOPER TEST SUITE
 			--------------------------------------------------
 			
-			local TweenService = game:GetService("TweenService")
+			MainTab:CreateSection(
+			    "Anti-Cheat Tests",
+			    "shield-check"
+			)
 			
-			local AutoWinTests = {
+			MainTab:CreateParagraph({
+			    Title = "Developer Test Suite",
+			
+			    Content =
+			        "Controlled server-side test requests for "
+			        .. "World 1 and World 2 movement validation.\n"
+			        .. "Use these to verify detection, logging and recovery."
+			})
+			
+			local testRemote =
+			    ReplicatedStorage:FindFirstChild(
+			        "ZenWareAntiCheatTest"
+			    )
+			
+			local TestConfig = {
 			    World1 = {
 			        Name = "World 1",
-			
-			        Start =
-			            Vector3.new(
-			                -129,
-			                40,
-			                4944
-			            ),
-			
-			        Finish =
-			            Vector3.new(
-			                -720,
-			                40,
-			                4944
-			            ),
+			        Start = Vector3.new(-129, 40, 4944),
+			        Finish = Vector3.new(-720, 40, 4944),
 			    },
 			
 			    World2 = {
 			        Name = "World 2",
-			
-			        Start =
-			            Vector3.new(
-			                -105,
-			                40,
-			                -52
-			            ),
-			
-			        Finish =
-			            Vector3.new(
-			                -700,
-			                40,
-			                -51
-			            ),
+			        Start = Vector3.new(-105, 40, -52),
+			        Finish = Vector3.new(-700, 40, -51),
 			    },
+			
+			    Repetitions = 10,
+			    Cooldown = 0.5,
 			}
 			
-			local AutoWinRunning = {
-			    World1 = false,
-			    World2 = false,
-			}
-			
-			local AutoWinParts = {}
-			
-			--------------------------------------------------
-			-- CREATE PART
-			--------------------------------------------------
-			
-			local function CreateAutoWinPart(worldName)
-			    local data =
-			        AutoWinTests[worldName]
-			
-			    if not data then
-			        return nil
+			local function RequestAntiCheatTest(testName, label)
+			    if not testRemote then
+			        Notify(
+			            "Anti-Cheat Tests",
+			            "ZenWareAntiCheatTest is not available.\nCreate the developer-only test RemoteEvent in your private place.",
+			            5
+			        )
+			        return false
 			    end
 			
-			    if
-			        AutoWinParts[worldName]
-			        and AutoWinParts[worldName].Parent
-			    then
-			        return AutoWinParts[worldName]
+			    local ok = pcall(function()
+			        testRemote:FireServer(testName)
+			    end)
+			
+			    if ok then
+			        Notify(
+			            "Anti-Cheat Tests",
+			            label .. " requested.",
+			            2
+			        )
+			    else
+			        Notify(
+			            "Anti-Cheat Tests",
+			            "Failed to request " .. label .. ".",
+			            3
+			        )
 			    end
 			
-			    local part =
-			        Instance.new("Part")
-			
-			    part.Name =
-			        "ZenWare_" .. worldName .. "_AutoWin"
-			
-			    part.Size =
-			        Vector3.new(
-			            7,
-			            1,
-			            7
-			        )
-			
-			    part.CFrame =
-			        CFrame.new(
-			            data.Start
-			        )
-			
-			    part.Anchored =
-			        true
-			
-			    part.CanCollide =
-			        true
-			
-			    part.CanTouch =
-			        false
-			
-			    part.CanQuery =
-			        false
-			
-			    part.Transparency =
-			        0.5
-			
-			    part.Parent =
-			        workspace
-			
-			    AutoWinParts[worldName] =
-			        part
-			
-			    return part
+			    return ok
 			end
-			
-			--------------------------------------------------
-			-- GET CHARACTER
-			--------------------------------------------------
-			
-			local function GetAutoWinCharacter()
-			    return LocalPlayer.Character
-			end
-			
-			--------------------------------------------------
-			-- RUN ONE CYCLE
-			--------------------------------------------------
-			
-			local function RunAutoWinCycle(worldName)
-			    local data =
-			        AutoWinTests[worldName]
-			
-			    if not data then
-			        return
-			    end
-			
-			    local character =
-			        GetAutoWinCharacter()
-			
-			    if not character then
-			        return
-			    end
-			
-			    local part =
-			        CreateAutoWinPart(
-			            worldName
-			        )
-			
-			    if not part then
-			        return
-			    end
-			
-			    --------------------------------------------------
-			    -- START
-			    --------------------------------------------------
-			
-			    character:PivotTo(
-			        part.CFrame
-			        + Vector3.new(
-			            0,
-			            3,
-			            0
-			        )
-			    )
-			
-			    task.wait(0.5)
-			
-			    --------------------------------------------------
-			    -- TWEEN
-			    --------------------------------------------------
-			
-			    local driver =
-			        Instance.new(
-			            "CFrameValue"
-			        )
-			
-			    driver.Value =
-			        character:GetPivot()
-			
-			    local connection =
-			        driver:GetPropertyChangedSignal(
-			            "Value"
-			        ):Connect(
-			            function()
-			                if
-			                    character.Parent
-			                then
-			                    character:PivotTo(
-			                        driver.Value
-			                    )
-			                end
-			            end
-			        )
-			
-			    local tween =
-			        TweenService:Create(
-			            driver,
-			
-			            TweenInfo.new(
-			                1,
-			                Enum.EasingStyle.Linear,
-			                Enum.EasingDirection.InOut
-			            ),
-			
-			            {
-			                Value =
-			                    CFrame.new(
-			                        data.Finish
-			                    ),
-			            }
-			        )
-			
-			    tween:Play()
-			
-			    tween.Completed:Wait()
-			
-			    connection:Disconnect()
-			    driver:Destroy()
-			
-			    --------------------------------------------------
-			    -- STAY AT FINISH
-			    --------------------------------------------------
-			
-			    if character.Parent then
-			        character:PivotTo(
-			            CFrame.new(
-			                data.Finish
-			            )
-			        )
-			    end
-			
-			    task.wait(1)
-			end
-			
-			--------------------------------------------------
-			-- START LOOP
-			--------------------------------------------------
-			
-			local function StartAutoWin(worldName)
-			    if AutoWinRunning[worldName] then
-			        return
-			    end
-			
-			    AutoWinRunning[worldName] =
-			        true
-			
-			    CreateAutoWinPart(
-			        worldName
-			    )
-			
-			    Notify(
-			        "Auto Win Test",
-			        AutoWinTests[worldName].Name
-			            .. " started.",
-			        3
-			    )
-			
-			    task.spawn(
-			        function()
-			
-			            while
-			                AutoWinRunning[worldName]
-			            do
-			
-			                local ok, err =
-			                    pcall(
-			                        function()
-			                            RunAutoWinCycle(
-			                                worldName
-			                            )
-			                        end
-			                    )
-			
-			                if not ok then
-			                    warn(
-			                        "[ZenWare Auto Win]",
-			                        err
-			                    )
-			
-			                    task.wait(1)
-			                end
-			            end
-			        end
-			    )
-			end
-			
-			--------------------------------------------------
-			-- STOP LOOP
-			--------------------------------------------------
-			
-			local function StopAutoWin(worldName)
-			    AutoWinRunning[worldName] =
-			        false
-			
-			    Notify(
-			        "Auto Win Test",
-			        AutoWinTests[worldName].Name
-			            .. " stopped.",
-			        3
-			    )
-			end
-			
-			--------------------------------------------------
-			-- WORLD 1
-			--------------------------------------------------
 			
 			MainTab:CreateSection(
-			    "World 1 Auto Win Test"
+			    "Test Controls",
+			    "flask-conical"
+			)
+			
+			MainTab:CreateSlider({
+			    Name = "Stress Repetitions",
+			    Min = 1,
+			    Max = 50,
+			    Default = TestConfig.Repetitions,
+			    Flag = "ACStressRepetitions",
+			
+			    Callback = function(value)
+			        TestConfig.Repetitions = math.floor(value)
+			    end,
+			})
+			
+			MainTab:CreateSlider({
+			    Name = "Test Cooldown",
+			    Min = 0.1,
+			    Max = 3,
+			    Default = TestConfig.Cooldown,
+			    Flag = "ACTestCooldown",
+			
+			    Callback = function(value)
+			        TestConfig.Cooldown = value
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "World 1 Position",
+			
+			    Callback = function()
+			        RequestAntiCheatTest(
+			            "World1Position",
+			            "World 1 Position"
+			        )
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "World 2 Position",
+			
+			    Callback = function()
+			        RequestAntiCheatTest(
+			            "World2Position",
+			            "World 2 Position"
+			        )
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "World 1 Speed",
+			
+			    Callback = function()
+			        RequestAntiCheatTest(
+			            "World1Speed",
+			            "World 1 Speed"
+			        )
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "World 2 Speed",
+			
+			    Callback = function()
+			        RequestAntiCheatTest(
+			            "World2Speed",
+			            "World 2 Speed"
+			        )
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "World 1 Teleport",
+			
+			    Callback = function()
+			        RequestAntiCheatTest(
+			            "World1Teleport",
+			            "World 1 Teleport"
+			        )
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "World 2 Teleport",
+			
+			    Callback = function()
+			        RequestAntiCheatTest(
+			            "World2Teleport",
+			            "World 2 Teleport"
+			        )
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "World 1 Repeated",
+			
+			    Callback = function()
+			        task.spawn(function()
+			            for i = 1, TestConfig.Repetitions do
+			                if not RequestAntiCheatTest(
+			                    "World1Repeated",
+			                    "World 1 Repeated"
+			                ) then
+			                    break
+			                end
+			
+			                task.wait(
+			                    TestConfig.Cooldown
+			                )
+			            end
+			        end)
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "World 2 Repeated",
+			
+			    Callback = function()
+			        task.spawn(function()
+			            for i = 1, TestConfig.Repetitions do
+			                if not RequestAntiCheatTest(
+			                    "World2Repeated",
+			                    "World 2 Repeated"
+			                ) then
+			                    break
+			                end
+			
+			                task.wait(
+			                    TestConfig.Cooldown
+			                )
+			            end
+			        end)
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "Run Full Test Suite",
+			
+			    Callback = function()
+			        task.spawn(function()
+			            local tests = {
+			                {"World1Position", "World 1 Position"},
+			                {"World1Speed", "World 1 Speed"},
+			                {"World1Teleport", "World 1 Teleport"},
+			                {"World2Position", "World 2 Position"},
+			                {"World2Speed", "World 2 Speed"},
+			                {"World2Teleport", "World 2 Teleport"},
+			            }
+			
+			            for _, test in ipairs(tests) do
+			                RequestAntiCheatTest(
+			                    test[1],
+			                    test[2]
+			                )
+			
+			                task.wait(
+			                    TestConfig.Cooldown
+			                )
+			            end
+			
+			            Notify(
+			                "Anti-Cheat Tests",
+			                "Full test suite finished.",
+			                3
+			            )
+			        end)
+			    end,
+			})
+			
+			MainTab:CreateSection(
+			    "World Profiles",
+			    "map"
 			)
 			
 			MainTab:CreateParagraph({
-			    Title =
-			        "World 1",
+			    Title = "World 1",
 			
 			    Content =
 			        "Start: -129, 40, 4944\n"
-			        .. "Tween: 1 second\n"
-			        .. "Finish: -720, 40, 4944\n"
-			        .. "Wait: 1 second",
+			        .. "Finish: -720, 40, 4944",
 			})
-			
-			MainTab:CreateToggle({
-			    Name =
-			        "World 1 Auto Win",
-			
-			    Default =
-			        false,
-			
-			    Flag =
-			        "World1AutoWinTest",
-			
-			    Callback =
-			        function(enabled)
-			
-			            if enabled then
-			                StartAutoWin(
-			                    "World1"
-			                )
-			            else
-			                StopAutoWin(
-			                    "World1"
-			                )
-			            end
-			
-			        end,
-			})
-			
-			MainTab:CreateButton({
-			    Name =
-			        "World 1 - One Test",
-			
-			    Callback =
-			        function()
-			
-			            task.spawn(
-			                function()
-			                    RunAutoWinCycle(
-			                        "World1"
-			                    )
-			                end
-			            )
-			
-			        end,
-			})
-			
-			MainTab:CreateButton({
-			    Name =
-			        "World 1 - Create Part",
-			
-			    Callback =
-			        function()
-			
-			            CreateAutoWinPart(
-			                "World1"
-			            )
-			
-			            Notify(
-			                "World 1",
-			                "Part created.",
-			                2
-			            )
-			
-			        end,
-			})
-			
-			--------------------------------------------------
-			-- WORLD 2
-			--------------------------------------------------
-			
-			MainTab:CreateSection(
-			    "World 2 Auto Win Test"
-			)
 			
 			MainTab:CreateParagraph({
-			    Title =
-			        "World 2",
+			    Title = "World 2",
 			
 			    Content =
 			        "Start: -105, 40, -52\n"
-			        .. "Tween: 1 second\n"
-			        .. "Finish: -700, 40, -51\n"
-			        .. "Wait: 1 second",
-			})
-			
-			MainTab:CreateToggle({
-			    Name =
-			        "World 2 Auto Win",
-			
-			    Default =
-			        false,
-			
-			    Flag =
-			        "World2AutoWinTest",
-			
-			    Callback =
-			        function(enabled)
-			
-			            if enabled then
-			                StartAutoWin(
-			                    "World2"
-			                )
-			            else
-			                StopAutoWin(
-			                    "World2"
-			                )
-			            end
-			
-			        end,
-			})
-			
-			MainTab:CreateButton({
-			    Name =
-			        "World 2 - One Test",
-			
-			    Callback =
-			        function()
-			
-			            task.spawn(
-			                function()
-			                    RunAutoWinCycle(
-			                        "World2"
-			                    )
-			                end
-			            )
-			
-			        end,
-			})
-			
-			MainTab:CreateButton({
-			    Name =
-			        "World 2 - Create Part",
-			
-			    Callback =
-			        function()
-			
-			            CreateAutoWinPart(
-			                "World2"
-			            )
-			
-			            Notify(
-			                "World 2",
-			                "Part created.",
-			                2
-			            )
-			
-			        end,
-			})
-			
-			--------------------------------------------------
-			-- REMOVE PARTS
-			--------------------------------------------------
-			
-			MainTab:CreateButton({
-			    Name =
-			        "Remove Auto Win Parts",
-			
-			    Callback =
-			        function()
-			
-			            AutoWinRunning.World1 =
-			                false
-			
-			            AutoWinRunning.World2 =
-			                false
-			
-			            for worldName, part in pairs(
-			                AutoWinParts
-			            ) do
-			
-			                if part
-			                    and part.Parent
-			                then
-			                    part:Destroy()
-			                end
-			
-			                AutoWinParts[worldName] =
-			                    nil
-			            end
-			
-			            Notify(
-			                "Auto Win Test",
-			                "All test parts removed.",
-			                3
-			            )
-			
-			        end,
+			        .. "Finish: -700, 40, -51",
 			})
 			
 			--------------------------------------------------
 			-- AUTO REBIRTH
 			--------------------------------------------------
+			
 			
 			local RebirthSection =
 			    Window:CreateSection(
@@ -3228,18 +2988,19 @@ _modules["Main.luau"] = {
 			    )
 			
 			ConfigTab:CreateSection(
-			    "Configuration"
+			    "Configuration",
+			    "save"
 			)
 			
 			ConfigTab:CreateConfigSection()
 			
 			ConfigTab:CreateParagraph({
-			    Title =
-			        "ZenWare Configs",
+			    Title = "ZenWare Profiles",
 			
 			    Content =
-			        "Configuration controls "
-			        .. "are provided by the UI core.",
+			        "Use the built-in configuration system to save "
+			        .. "your UI flags and feature settings.\n"
+			        .. "AutoSave is enabled for the current session.",
 			})
 			
 			ConfigTab:CreateButton({
@@ -3248,7 +3009,109 @@ _modules["Main.luau"] = {
 			    Callback = function()
 			        Notify(
 			            "Configs",
-			            "ZenWareConfigs",
+			            "ZenWareConfigs\nAutoSave: ON",
+			            3
+			        )
+			    end,
+			})
+			
+			ConfigTab:CreateButton({
+			    Name = "Show Active Values",
+			
+			    Callback = function()
+			        Notify(
+			            "Configs",
+			            "AutoWin: " .. tostring(State.AutoWin)
+			                .. "\nTeleport Loop: " .. tostring(State.TeleportLoop)
+			                .. "\nAuto Rebirth: " .. tostring(State.AutoRebirth)
+			                .. "\nAuto Clicker: " .. tostring(State.AutoClicker)
+			                .. "\nAuto Mog: " .. tostring(State.AutoMog),
+			            6
+			        )
+			    end,
+			})
+			
+			ConfigTab:CreateButton({
+			    Name = "Reset Feature State",
+			
+			    Callback = function()
+			        State.AutoWin = false
+			        State.TeleportLoop = false
+			        State.TreadmillLoop = false
+			        State.AutoRebirth = false
+			        State.AutoClicker = false
+			        State.AutoMog = false
+			        State.AutoMogAll = false
+			        State.AntiAFK = false
+			
+			        SafeCall(function()
+			            Teleports.StopLoop()
+			        end)
+			
+			        SafeCall(function()
+			            AutoClicker.Stop()
+			        end)
+			
+			        SafeCall(function()
+			            AutoMog.Stop()
+			        end)
+			
+			        Notify(
+			            "Configs",
+			            "Feature state reset.",
+			            3
+			        )
+			    end,
+			})
+			
+			ConfigTab:CreateSection(
+			    "Quick Presets",
+			    "sparkles"
+			)
+			
+			ConfigTab:CreateButton({
+			    Name = "Preset: Safe",
+			
+			    Callback = function()
+			        State.TeleportInterval = 0.5
+			        State.RebirthInterval = 0.5
+			        State.AutoClickerSpeed = 5
+			
+			        Notify(
+			            "Preset",
+			            "Safe preset applied.",
+			            3
+			        )
+			    end,
+			})
+			
+			ConfigTab:CreateButton({
+			    Name = "Preset: Balanced",
+			
+			    Callback = function()
+			        State.TeleportInterval = 0.25
+			        State.RebirthInterval = 0.25
+			        State.AutoClickerSpeed = 10
+			
+			        Notify(
+			            "Preset",
+			            "Balanced preset applied.",
+			            3
+			        )
+			    end,
+			})
+			
+			ConfigTab:CreateButton({
+			    Name = "Preset: Testing",
+			
+			    Callback = function()
+			        State.TeleportInterval = 0.05
+			        State.RebirthInterval = 0.1
+			        State.AutoClickerSpeed = 25
+			
+			        Notify(
+			            "Preset",
+			            "Testing preset applied.",
 			            3
 			        )
 			    end,
@@ -3257,6 +3120,7 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			-- CREDITS
 			--------------------------------------------------
+			
 			
 			local CreditsSection =
 			    Window:CreateSection(
@@ -3306,6 +3170,27 @@ _modules["Main.luau"] = {
 			            "ZenWare",
 			            "Version V3",
 			            3
+			        )
+			    end,
+			})
+			
+			CreditsTab:CreateParagraph({
+			    Title = "Build",
+			
+			    Content =
+			        "ZenWare V3\n"
+			        .. "Developer Test Suite\n"
+			        .. "Obsidian UI",
+			})
+			
+			CreditsTab:CreateButton({
+			    Name = "Show Loaded Modules",
+			
+			    Callback = function()
+			        Notify(
+			            "ZenWare",
+			            "State\nUtils\nRemotes\nTeleports\nAutoClicker\nAutoMog\nAutoLoad\nUI",
+			            5
 			        )
 			    end,
 			})
