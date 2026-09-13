@@ -428,321 +428,105 @@ local function GetWorld2Torso()
 end
 
 --------------------------------------------------
--- WORLD 2 AUTO WIN / TWEEN TEST
+-- WORLD 2 CLIENT TEST
 --------------------------------------------------
 
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 
 local World2Running = false
-local World2NoclipConnection = nil
 local World2Part = nil
 
-local WORLD2_START_POSITION =
-    Vector3.new(
-        -129,
-        40,
-        4944
-    )
+local WORLD2_START =
+    CFrame.new(-129, 37, 4944)
 
-local WORLD2_TWEEN_POSITION =
-    Vector3.new(
-        -720,
-        40,
-        4944
-    )
+local WORLD2_END =
+    CFrame.new(-720, 40, 4944)
 
-local WORLD2_PART_SIZE =
-    Vector3.new(
-        3,
-        1,
-        3
-    )
-
-local WORLD2_TWEEN_TIME =
-    1
-
---------------------------------------------------
--- CREATE PART
---------------------------------------------------
+local function GetCharacter()
+    return LocalPlayer.Character
+end
 
 local function CreateWorld2Part()
-    if
-        World2Part
-        and World2Part.Parent
-    then
+    if World2Part and World2Part.Parent then
         return World2Part
     end
 
-    local existing =
-        workspace:FindFirstChild(
-            "ZenWare_World2_TweenStart"
-        )
+    World2Part = Instance.new("Part")
+    World2Part.Name = "ZenWare_World2_Test"
+    World2Part.Size = Vector3.new(7, 1, 7)
+    World2Part.CFrame = WORLD2_START
+    World2Part.Anchored = true
+    World2Part.CanCollide = true
+    World2Part.Transparency = 0.5
+    World2Part.Parent = workspace
 
-    if existing
-        and existing:IsA("BasePart")
-    then
-        World2Part = existing
-        return existing
-    end
-
-    local part =
-        Instance.new("Part")
-
-    part.Name =
-        "ZenWare_World2_TweenStart"
-
-    part.Size =
-        WORLD2_PART_SIZE
-
-    part.Position =
-        WORLD2_START_POSITION
-
-    part.Anchored =
-        true
-
-    part.CanCollide =
-        true
-
-    part.CanTouch =
-        false
-
-    part.CanQuery =
-        false
-
-    part.Transparency =
-        0.5
-
-    part.Parent =
-        workspace
-
-    World2Part =
-        part
-
-    return part
+    return World2Part
 end
-
---------------------------------------------------
--- GET TORSO
---------------------------------------------------
-
-local function GetWorld2Torso()
-    local character =
-        LocalPlayer.Character
-
-    if not character then
-        return nil
-    end
-
-    return
-        character:FindFirstChild(
-            "UpperTorso"
-        )
-        or character:FindFirstChild(
-            "Torso"
-        )
-        or character:FindFirstChild(
-            "HumanoidRootPart"
-        )
-end
-
---------------------------------------------------
--- NOCLIP
---------------------------------------------------
-
-local function StartWorld2Noclip()
-    if World2NoclipConnection then
-        return
-    end
-
-    World2NoclipConnection =
-        RunService.Stepped:Connect(
-            function()
-                if not World2Running then
-                    return
-                end
-
-                local character =
-                    LocalPlayer.Character
-
-                if not character then
-                    return
-                end
-
-                for _, object in ipairs(
-                    character:GetDescendants()
-                ) do
-                    if object:IsA("BasePart") then
-                        object.CanCollide =
-                            false
-                    end
-                end
-            end
-        )
-end
-
-local function StopWorld2Noclip()
-    if World2NoclipConnection then
-        World2NoclipConnection:Disconnect()
-        World2NoclipConnection = nil
-    end
-end
-
---------------------------------------------------
--- WAIT UNTIL FALL
---------------------------------------------------
-
-local function WaitForWorld2Fall(torso)
-    local startTime =
-        os.clock()
-
-    while
-        World2Running
-        and torso
-        and torso.Parent
-    do
-        local y =
-            torso.Position.Y
-
-        if y <= 8 then
-            break
-        end
-
-        if os.clock() - startTime > 5 then
-            break
-        end
-
-        RunService.Heartbeat:Wait()
-    end
-end
-
---------------------------------------------------
--- ONE CYCLE
---------------------------------------------------
 
 local function RunWorld2Cycle()
-    local torso =
-        GetWorld2Torso()
+    local character = GetCharacter()
 
-    if not torso then
+    if not character then
         return
     end
 
-    local part =
-        CreateWorld2Part()
+    local part = CreateWorld2Part()
 
-    if not part then
-        return
-    end
+    character:PivotTo(
+        part.CFrame + Vector3.new(0, 3, 0)
+    )
 
-    --------------------------------------------------
-    -- START ON PART
-    --------------------------------------------------
+    task.wait(0.5)
 
-    torso.CFrame =
-        CFrame.new(
-            WORLD2_START_POSITION
-        )
+    local driver = Instance.new("CFrameValue")
+    driver.Value = character:GetPivot()
 
-    task.wait()
-
-    --------------------------------------------------
-    -- TWEEN
-    --------------------------------------------------
+    local connection =
+        driver:GetPropertyChangedSignal("Value"):Connect(function()
+            if character.Parent then
+                character:PivotTo(driver.Value)
+            end
+        end)
 
     local tween =
         TweenService:Create(
-            torso,
+            driver,
             TweenInfo.new(
-                WORLD2_TWEEN_TIME,
-                Enum.EasingStyle.Linear,
-                Enum.EasingDirection.Out
+                1,
+                Enum.EasingStyle.Linear
             ),
             {
-                CFrame =
-                    CFrame.new(
-                        WORLD2_TWEEN_POSITION
-                    ),
+                Value = WORLD2_END
             }
         )
 
     tween:Play()
-
     tween.Completed:Wait()
 
-    --------------------------------------------------
-    -- STOP TWEEN
-    --------------------------------------------------
-
-    pcall(function()
-        tween:Cancel()
-    end)
-
-    --------------------------------------------------
-    -- LET CHARACTER FALL
-    --------------------------------------------------
-
-    if torso
-        and torso.Parent
-    then
-        local character =
-            LocalPlayer.Character
-
-        local humanoid =
-            character
-            and character:FindFirstChildOfClass(
-                "Humanoid"
-            )
-
-        if humanoid then
-            humanoid:ChangeState(
-                Enum.HumanoidStateType.Freefall
-            )
-        end
-    end
-
-    --------------------------------------------------
-    -- WAIT FOR Y ~ 6-8
-    --------------------------------------------------
-
-    WaitForWorld2Fall(
-        torso
-    )
-
-    --------------------------------------------------
-    -- AFTER FALL
-    --------------------------------------------------
+    connection:Disconnect()
+    driver:Destroy()
 
     task.wait(1)
 end
-
---------------------------------------------------
--- START
---------------------------------------------------
 
 local function StartWorld2()
     if World2Running then
         return
     end
 
-    World2Running =
-        true
-
+    World2Running = true
     CreateWorld2Part()
-    StartWorld2Noclip()
 
     Notify(
-        "World 2 Auto Win",
-        "Tween test started.",
+        "World 2",
+        "Test started.",
         3
     )
 
     task.spawn(function()
         while World2Running do
             local ok, err =
-                pcall(
-                    RunWorld2Cycle
-                )
+                pcall(RunWorld2Cycle)
 
             if not ok then
                 warn(
@@ -756,114 +540,63 @@ local function StartWorld2()
     end)
 end
 
---------------------------------------------------
--- STOP
---------------------------------------------------
-
 local function StopWorld2()
-    World2Running =
-        false
-
-    StopWorld2Noclip()
+    World2Running = false
 
     Notify(
-        "World 2 Auto Win",
-        "Stopped.",
+        "World 2",
+        "Test stopped.",
         3
     )
 end
 
---------------------------------------------------
--- UI
---------------------------------------------------
-
 MainTab:CreateSection(
-    "World 2 Auto Win"
+    "World 2 Anti-Cheat"
 )
 
-MainTab:CreateParagraph({
-    Title =
-        "World 2 Tween",
-
-    Content =
-        "Start: -129, 40, 4944\n"
-        .. "Tween: 1 second\n"
-        .. "End: -720, 40, 4944\n"
-        .. "Then fall to Y 6-8\n"
-        .. "Wait 1 second and repeat.",
-})
-
 MainTab:CreateToggle({
-    Name =
-        "World 2 Auto Win Test",
+    Name = "World 2 Auto Win Test",
+    Default = false,
+    Flag = "World2AutoWinTest",
 
-    Default =
-        false,
-
-    Flag =
-        "World2AutoWinTest",
-
-    Callback =
-        function(enabled)
-            if enabled then
-                StartWorld2()
-            else
-                StopWorld2()
-            end
-        end,
+    Callback = function(enabled)
+        if enabled then
+            StartWorld2()
+        else
+            StopWorld2()
+        end
+    end,
 })
 
 MainTab:CreateButton({
-    Name =
-        "Run One World 2 Cycle",
+    Name = "Run One Cycle",
 
-    Callback =
-        function()
-            task.spawn(
-                RunWorld2Cycle
-            )
-        end,
+    Callback = function()
+        task.spawn(
+            RunWorld2Cycle
+        )
+    end,
 })
 
 MainTab:CreateButton({
-    Name =
-        "Create Start Part",
+    Name = "Create Start Part",
 
-    Callback =
-        function()
-            CreateWorld2Part()
-
-            Notify(
-                "World 2",
-                "Part created at -129, 40, 4944.",
-                3
-            )
-        end,
+    Callback = function()
+        CreateWorld2Part()
+    end,
 })
 
 MainTab:CreateButton({
-    Name =
-        "Remove Start Part",
+    Name = "Remove Start Part",
 
-    Callback =
-        function()
+    Callback = function()
+        World2Running = false
 
-            World2Running =
-                false
-
-            StopWorld2Noclip()
-
-            if World2Part then
-                World2Part:Destroy()
-                World2Part = nil
-            end
-
-            Notify(
-                "World 2",
-                "Start part removed.",
-                3
-            )
-        end,
+        if World2Part then
+            World2Part:Destroy()
+            World2Part = nil
+        end
+    end,
 })
 
 --------------------------------------------------
