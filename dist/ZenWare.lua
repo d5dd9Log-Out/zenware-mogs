@@ -1541,413 +1541,234 @@ _modules["Main.luau"] = {
 			})
 			
 			--------------------------------------------------
-			-- WORLD 2 CLIENT ANTI-CHEAT TEST
+			-- WORLD 2 ANTI-CHEAT TESTS
 			--------------------------------------------------
 			
-			local TweenService = game:GetService("TweenService")
-			local RunService = game:GetService("RunService")
+			MainTab:CreateSection(
+			    "World 2 Anti-Cheat Tests"
+			)
 			
-			local World2Running = false
-			local World2Part = nil
+			MainTab:CreateParagraph({
+			    Title = "Developer Test Suite",
 			
-			local WORLD2_START_POSITION =
-			    Vector3.new(
-			        -105,
-			        40,
-			        -52
-			    )
+			    Content =
+			        "Local test tools for checking World 2 "
+			        .. "movement validation and logging.",
+			})
 			
-			local WORLD2_END_POSITION =
-			    Vector3.new(
-			        -700,
-			        40,
-			        -51
-			    )
+			local World2TestRunning = false
 			
-			local WORLD2_PART_SIZE =
-			    Vector3.new(
-			        7,
-			        1,
-			        7
-			    )
-			
-			local WORLD2_TWEEN_TIME = 1
-			local WORLD2_FALL_Y = 8
-			local WORLD2_FINAL_WAIT = 1
-			
-			--------------------------------------------------
-			-- CREATE START PART
-			--------------------------------------------------
-			
-			local function CreateWorld2Part()
-			    if
-			        World2Part
-			        and World2Part.Parent
-			    then
-			        return World2Part
-			    end
-			
-			    local existing =
-			        workspace:FindFirstChild(
-			            "ZenWare_World2_Start"
-			        )
-			
-			    if existing
-			        and existing:IsA("BasePart")
-			    then
-			        World2Part = existing
-			        return existing
-			    end
-			
-			    local part =
-			        Instance.new("Part")
-			
-			    part.Name =
-			        "ZenWare_World2_Start"
-			
-			    part.Size =
-			        WORLD2_PART_SIZE
-			
-			    part.CFrame =
-			        CFrame.new(
-			            WORLD2_START_POSITION
-			        )
-			
-			    part.Anchored = true
-			    part.CanCollide = true
-			    part.CanTouch = false
-			    part.CanQuery = false
-			    part.Transparency = 0.5
-			
-			    part.Parent = workspace
-			
-			    World2Part = part
-			
-			    return part
-			end
-			
-			--------------------------------------------------
-			-- CHARACTER
-			--------------------------------------------------
-			
-			local function GetWorld2Character()
-			    return LocalPlayer.Character
-			end
-			
-			local function GetWorld2Humanoid()
+			local function GetWorld2TestRoot()
 			    local character =
-			        GetWorld2Character()
+			        LocalPlayer.Character
 			
 			    if not character then
 			        return nil
 			    end
 			
-			    return character:FindFirstChildOfClass(
-			        "Humanoid"
+			    return character:FindFirstChild(
+			        "HumanoidRootPart"
 			    )
 			end
 			
-			--------------------------------------------------
-			-- MOVE WHOLE CHARACTER
-			--------------------------------------------------
-			
-			local function PivotCharacter(cframe)
-			    local character =
-			        GetWorld2Character()
-			
-			    if not character then
-			        return false
-			    end
-			
-			    if not character.Parent then
-			        return false
-			    end
-			
-			    character:PivotTo(cframe)
-			
-			    return true
+			local function GetWorld2TestHumanoid()
+			    return GetHumanoid()
 			end
 			
-			--------------------------------------------------
-			-- TWEEN WHOLE CHARACTER
-			--------------------------------------------------
+			local function RunSafeTest(name, callback)
+			    Notify(
+			        "Anti-Cheat Test",
+			        name .. " started.",
+			        2
+			    )
 			
-			local function TweenCharacterTo(targetCFrame)
-			    local character =
-			        GetWorld2Character()
+			    local ok, err =
+			        SafeCall(callback)
 			
-			    if not character then
-			        return false
+			    if ok then
+			        Notify(
+			            "Anti-Cheat Test",
+			            name .. " finished.",
+			            2
+			        )
+			    else
+			        Notify(
+			            "Anti-Cheat Test",
+			            name .. " failed: " .. tostring(err),
+			            4
+			        )
 			    end
+			end
 			
-			    local driver =
-			        Instance.new("CFrameValue")
+			MainTab:CreateButton({
+			    Name = "Test World 2 Position",
 			
-			    driver.Value =
-			        character:GetPivot()
+			    Callback = function()
+			        RunSafeTest(
+			            "World 2 Position",
+			            function()
+			                local root =
+			                    GetWorld2TestRoot()
 			
-			    local connection =
-			        driver:GetPropertyChangedSignal(
-			            "Value"
-			        ):Connect(function()
-			            if character.Parent then
-			                character:PivotTo(
-			                    driver.Value
+			                if not root then
+			                    error("Character root not found")
+			                end
+			
+			                print(
+			                    "[AC TEST] Position:",
+			                    FormatVector3(root.Position)
 			                )
 			            end
-			        end)
-			
-			    local tween =
-			        TweenService:Create(
-			            driver,
-			            TweenInfo.new(
-			                WORLD2_TWEEN_TIME,
-			                Enum.EasingStyle.Linear,
-			                Enum.EasingDirection.Out
-			            ),
-			            {
-			                Value = targetCFrame,
-			            }
 			        )
+			    end,
+			})
 			
-			    tween:Play()
-			    tween.Completed:Wait()
+			MainTab:CreateButton({
+			    Name = "Test World 2 Speed",
 			
-			    connection:Disconnect()
-			    driver:Destroy()
+			    Callback = function()
+			        RunSafeTest(
+			            "World 2 Speed",
+			            function()
+			                local humanoid =
+			                    GetWorld2TestHumanoid()
 			
-			    return true
-			end
+			                if not humanoid then
+			                    error("Humanoid not found")
+			                end
 			
-			--------------------------------------------------
-			-- WAIT FOR FALL
-			--------------------------------------------------
+			                local old =
+			                    humanoid.WalkSpeed
 			
-			local function WaitForWorld2Fall()
-			    local character =
-			        GetWorld2Character()
-			
-			    local humanoid =
-			        GetWorld2Humanoid()
-			
-			    if not character or not humanoid then
-			        return
-			    end
-			
-			    pcall(function()
-			        humanoid:ChangeState(
-			            Enum.HumanoidStateType.Freefall
-			        )
-			    end)
-			
-			    local timeout =
-			        os.clock() + 5
-			
-			    while
-			        World2Running
-			        and character.Parent
-			        and os.clock() < timeout
-			    do
-			        local pivot =
-			            character:GetPivot()
-			
-			        if pivot.Position.Y <= WORLD2_FALL_Y then
-			            break
-			        end
-			
-			        RunService.Heartbeat:Wait()
-			    end
-			end
-			
-			--------------------------------------------------
-			-- ONE WORLD 2 TEST CYCLE
-			--------------------------------------------------
-			
-			local function RunWorld2Cycle()
-			    local character =
-			        GetWorld2Character()
-			
-			    if not character then
-			        return
-			    end
-			
-			    local part =
-			        CreateWorld2Part()
-			
-			    if not part then
-			        return
-			    end
-			
-			    --------------------------------------------------
-			    -- STEP 1: START ON PART
-			    --------------------------------------------------
-			
-			    local startCFrame =
-			        CFrame.new(
-			            WORLD2_START_POSITION
-			            + Vector3.new(0, 3, 0)
-			        )
-			
-			    PivotCharacter(startCFrame)
-			
-			    task.wait(0.5)
-			
-			    --------------------------------------------------
-			    -- STEP 2: 1 SECOND TWEEN
-			    --------------------------------------------------
-			
-			    local endCFrame =
-			        CFrame.new(
-			            WORLD2_END_POSITION
-			        )
-			
-			    TweenCharacterTo(
-			        endCFrame
-			    )
-			
-			    --------------------------------------------------
-			    -- STEP 3: STOP TWEEN / FALL
-			    --------------------------------------------------
-			
-			    WaitForWorld2Fall()
-			
-			    --------------------------------------------------
-			    -- STEP 4: WAIT BEFORE NEXT CYCLE
-			    --------------------------------------------------
-			
-			    task.wait(
-			        WORLD2_FINAL_WAIT
-			    )
-			end
-			
-			--------------------------------------------------
-			-- START / STOP
-			--------------------------------------------------
-			
-			local function StartWorld2Test()
-			    if World2Running then
-			        return
-			    end
-			
-			    World2Running = true
-			
-			    CreateWorld2Part()
-			
-			    Notify(
-			        "World 2 Anti-Cheat",
-			        "Client movement test started.",
-			        3
-			    )
-			
-			    task.spawn(function()
-			        while World2Running do
-			            local ok, err =
-			                pcall(
-			                    RunWorld2Cycle
-			                )
-			
-			            if not ok then
-			                warn(
-			                    "[ZenWare World2 Test]",
-			                    err
-			                )
+			                humanoid.WalkSpeed = 40
 			
 			                task.wait(1)
+			
+			                if humanoid.Parent then
+			                    humanoid.WalkSpeed = old
+			                end
 			            end
-			        end
-			    end)
-			end
+			        )
+			    end,
+			})
 			
-			local function StopWorld2Test()
-			    World2Running = false
+			MainTab:CreateButton({
+			    Name = "Test World 2 Jump",
 			
-			    Notify(
-			        "World 2 Anti-Cheat",
-			        "Client movement test stopped.",
-			        3
-			    )
-			end
+			    Callback = function()
+			        RunSafeTest(
+			            "World 2 Jump",
+			            function()
+			                local humanoid =
+			                    GetWorld2TestHumanoid()
 			
-			--------------------------------------------------
-			-- WORLD 2 UI
-			--------------------------------------------------
+			                if not humanoid then
+			                    error("Humanoid not found")
+			                end
 			
-			MainTab:CreateSection(
-			    "World 2 Anti-Cheat"
-			)
+			                local oldUse =
+			                    humanoid.UseJumpPower
 			
-			MainTab:CreateParagraph({
-			    Title = "Client Movement Test",
+			                local oldPower =
+			                    humanoid.JumpPower
 			
-			    Content =
-			        "Start: -105, 40, -52\n"
-			        .. "Wait: 0.5s\n"
-			        .. "Tween: 1 second\n"
-			        .. "End: -700, 40, -51\n"
-			        .. "Then fall to Y <= 8\n"
-			        .. "Wait 1 second and repeat.",
+			                humanoid.UseJumpPower = true
+			                humanoid.JumpPower = 100
+			
+			                task.wait(1)
+			
+			                if humanoid.Parent then
+			                    humanoid.UseJumpPower = oldUse
+			                    humanoid.JumpPower = oldPower
+			                end
+			            end
+			        )
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "Test World 2 Snapshot",
+			
+			    Callback = function()
+			        RunSafeTest(
+			            "World 2 Snapshot",
+			            function()
+			                local root =
+			                    GetWorld2TestRoot()
+			
+			                if not root then
+			                    error("Character root not found")
+			                end
+			
+			                local position = root.Position
+			
+			                print(
+			                    "[AC TEST] World2 snapshot:",
+			                    FormatVector3(position),
+			                    "PlaceId:",
+			                    game.PlaceId,
+			                    "JobId:",
+			                    game.JobId
+			                )
+			            end
+			        )
+			    end,
 			})
 			
 			MainTab:CreateToggle({
-			    Name =
-			        "World 2 Auto Win Test",
+			    Name = "World 2 Test Monitor",
 			
 			    Default = false,
 			
-			    Flag =
-			        "World2AutoWinTest",
+			    Flag = "World2TestMonitor",
 			
 			    Callback = function(enabled)
-			        if enabled then
-			            StartWorld2Test()
-			        else
-			            StopWorld2Test()
-			        end
-			    end,
-			})
+			        World2TestRunning = enabled
 			
-			MainTab:CreateButton({
-			    Name =
-			        "Run One World 2 Cycle",
+			        if not enabled then
+			            Notify(
+			                "Anti-Cheat Test",
+			                "World 2 monitor stopped.",
+			                2
+			            )
 			
-			    Callback = function()
-			        task.spawn(
-			            RunWorld2Cycle
-			        )
-			    end,
-			})
-			
-			MainTab:CreateButton({
-			    Name =
-			        "Create Start Part",
-			
-			    Callback = function()
-			        CreateWorld2Part()
-			
-			        Notify(
-			            "World 2",
-			            "Start part created at -105, 40, -52.",
-			            3
-			        )
-			    end,
-			})
-			
-			MainTab:CreateButton({
-			    Name =
-			        "Remove Start Part",
-			
-			    Callback = function()
-			        World2Running = false
-			
-			        if World2Part then
-			            World2Part:Destroy()
-			            World2Part = nil
+			            return
 			        end
 			
 			        Notify(
+			            "Anti-Cheat Test",
+			            "World 2 monitor started.",
+			            2
+			        )
+			
+			        task.spawn(function()
+			            while World2TestRunning do
+			                local root =
+			                    GetWorld2TestRoot()
+			
+			                if root then
+			                    print(
+			                        "[AC TEST] World2 position:",
+			                        FormatVector3(root.Position)
+			                    )
+			                end
+			
+			                task.wait(1)
+			            end
+			        end)
+			    end,
+			})
+			
+			MainTab:CreateButton({
+			    Name = "World 2 Test Info",
+			
+			    Callback = function()
+			        Notify(
 			            "World 2",
-			            "Start part removed.",
-			            3
+			            "Use the buttons above to generate controlled "
+			                .. "client-side state changes for your "
+			                .. "anti-cheat logs.",
+			            5
 			        )
 			    end,
 			})
@@ -1955,7 +1776,6 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			-- AUTO REBIRTH
 			--------------------------------------------------
-			
 			
 			local RebirthSection =
 			    Window:CreateSection(
