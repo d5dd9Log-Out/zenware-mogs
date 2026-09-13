@@ -126,7 +126,7 @@ function Obsidian.new(title, configFolder)
     --------------------------------------------------
 
     local MENU_IMAGE =
-        "rbxassetid://99661080845947"
+        "rbxassetid://137423681201950"
 
     local MenuRoot =
         Window.Window
