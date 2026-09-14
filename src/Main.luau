@@ -740,6 +740,46 @@ local function GetRebirthButton()
         return nil
     end
 
+    local playerGui =
+        player:FindFirstChild(
+            "PlayerGui"
+        )
+
+    if not playerGui then
+        return nil
+    end
+
+    local mainGui =
+        playerGui:FindFirstChild(
+            "MainGui"
+        )
+
+    if not mainGui then
+        return nil
+    end
+
+    local frames =
+        mainGui:FindFirstChild(
+            "Frames"
+        )
+
+    if not frames then
+        return nil
+    end
+
+    local rebirthFrame =
+        frames:FindFirstChild(
+            "Rebirth"
+        )
+
+    if not rebirthFrame then
+        return nil
+    end
+
+    return rebirthFrame:FindFirstChild(
+        "Rebirth"
+    )
+end
 
 local function RunRebirthOnce()
     local button =
