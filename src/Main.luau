@@ -4,8 +4,17 @@ local TeleportService = game:GetService("TeleportService")
 local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
+
+--------------------------------------------------
+-- DEV MODE
+--------------------------------------------------
+-- Keep this enabled only while running your private
+-- development/test build. Set false before production.
+local DEV_TEST_MODE = true
 
 local State = require("Core/State")
 local Utils = require("Core/Utils")
@@ -187,36 +196,6 @@ MainTab:CreateSection(
     "Win"
 )
 
-MainTab:CreateToggle({
-    Name = "Auto Win (500m)",
-
-    Default = false,
-
-    Flag = "AutoWin",
-
-    Callback = function(enabled)
-        State.AutoWin = enabled
-
-        if enabled then
-            SafeCall(function()
-                Teleports.Win()
-            end)
-
-            Notify(
-                "Auto Win",
-                "Enabled.",
-                2
-            )
-        else
-            Notify(
-                "Auto Win",
-                "Disabled.",
-                2
-            )
-        end
-    end,
-})
-
 MainTab:CreateButton({
     Name = "Teleport to Win",
 
@@ -248,93 +227,7 @@ MainTab:CreateButton({
 })
 
 --------------------------------------------------
--- LOOPS
---------------------------------------------------
-
-MainTab:CreateSection(
-    "Teleport Loops"
-)
-
-MainTab:CreateSlider({
-    Name = "Loop Interval",
-
-    Min = 0.01,
-    Max = 5,
-
-    Default =
-        State.TeleportInterval,
-
-    Flag = "TeleportInterval",
-
-    Callback = function(value)
-        State.TeleportInterval =
-            value
-
-        if State.TeleportLoop then
-            SafeCall(function()
-                Teleports.StartLoop(
-                    Teleports.Locations.Win,
-                    value
-                )
-            end)
-        end
-    end,
-})
-
-MainTab:CreateToggle({
-    Name = "Loop Win Teleport",
-
-    Default = false,
-
-    Flag = "TeleportLoop",
-
-    Callback = function(enabled)
-        State.TeleportLoop =
-            enabled
-
-        if enabled then
-            SafeCall(function()
-                Teleports.StartLoop(
-                    Teleports.Locations.Win,
-                    State.TeleportInterval
-                )
-            end)
-        else
-            SafeCall(function()
-                Teleports.StopLoop()
-            end)
-        end
-    end,
-})
-
-MainTab:CreateToggle({
-    Name = "Loop Treadmill Teleport",
-
-    Default = false,
-
-    Flag = "TreadmillLoop",
-
-    Callback = function(enabled)
-        State.TreadmillLoop =
-            enabled
-
-        if enabled then
-            SafeCall(function()
-                Teleports.StartLoop(
-                    Teleports.Locations.Treadmill,
-                    State.TeleportInterval
-                )
-            end)
-        else
-            SafeCall(function()
-                Teleports.StopLoop()
-            end)
-        end
-    end,
-})
-
---------------------------------------------------
--- ANTI-CHEAT TESTS
+-- AUTO WIN TESTS
 --------------------------------------------------
 
 local TweenService = game:GetService("TweenService")
@@ -342,12 +235,6 @@ local TweenService = game:GetService("TweenService")
 local DevTests = {
     World1AutoWin = false,
     World2AutoWin = false,
-    World1Speed = false,
-    World2Speed = false,
-    World1Teleport = false,
-    World2Teleport = false,
-    World1Repeated = false,
-    World2Repeated = false,
 }
 
 local AutoWinState = {
@@ -362,15 +249,17 @@ local AutoWinState = {
 }
 
 local WorldProfiles = {
+    -- Corrected mapping: the coordinates previously labeled World 2
+    -- belong to World 1, and vice versa.
     World1 = {
-        start = Vector3.new(-129, 40, 4944),
-        finish = Vector3.new(-720, 40, 4944),
+        start = Vector3.new(-105, 40, -52),
+        finish = Vector3.new(-700, 40, -51),
         name = "World 1",
     },
 
     World2 = {
-        start = Vector3.new(-105, 40, -52),
-        finish = Vector3.new(-700, 40, -51),
+        start = Vector3.new(-129, 40, 4944),
+        finish = Vector3.new(-720, 40, 4944),
         name = "World 2",
     },
 }
@@ -610,6 +499,41 @@ local function RunAutoWinCycle(worldName)
     )
 end
 
+local OriginalGravity = nil
+
+local function SetDeveloperGravity(enabled)
+    if not DEV_TEST_MODE then
+        return
+    end
+
+    if enabled then
+        if OriginalGravity == nil then
+            OriginalGravity = Workspace.Gravity
+        end
+
+        Workspace.Gravity = 0
+    else
+        if OriginalGravity ~= nil then
+            Workspace.Gravity =
+                OriginalGravity
+            OriginalGravity = nil
+        end
+    end
+end
+
+local function AnyAutoWinRunning()
+    return
+        (
+            AutoWinState.World1
+            and AutoWinState.World1.running
+        )
+        or
+        (
+            AutoWinState.World2
+            and AutoWinState.World2.running
+        )
+end
+
 local function StartAutoWinTest(worldName)
     local state = AutoWinState[worldName]
 
@@ -618,6 +542,11 @@ local function StartAutoWinTest(worldName)
     end
 
     state.running = true
+
+    SetDeveloperGravity(
+        true
+    )
+
     CreateAutoWinPart(worldName)
 
     Notify(
@@ -650,7 +579,8 @@ local function StopAllDevTests()
 end
 
 local function SetDevTest(name, enabled)
-    DevTests[name] = enabled == true
+    DevTests[name] =
+        enabled == true
 
     if name == "World1AutoWin" then
         if enabled then
@@ -667,25 +597,25 @@ local function SetDevTest(name, enabled)
     end
 
     Notify(
-        "Anti-Cheat Tests",
+        "Auto Win Dev",
         tostring(name)
-            .. (enabled and " enabled." or " disabled."),
+            .. (
+                enabled
+                and " enabled."
+                or " disabled."
+            ),
         2
     )
 end
 
 MainTab:CreateSection(
-    "Anti-Cheat Tests"
+    "Auto Win Dev"
 )
 
 MainTab:CreateParagraph({
-    Title = "Client Test Controls",
-
+    Title = "🌸 Developer",
     Content =
-        "Local developer test harness.\n"
-        .. "World Auto Win tests create a visible test part,\n"
-        .. "move the whole character with a timed tween,\n"
-        .. "and repeat so movement validation can be observed.",
+        "World 1 and World 2 movement test profiles."
 })
 
 MainTab:CreateSection(
@@ -693,42 +623,15 @@ MainTab:CreateSection(
 )
 
 MainTab:CreateToggle({
-    Name = "World 1 Auto Win Test",
+    Name = "World 1 Auto Win Dev",
     Default = false,
     Flag = "World1AutoWinTest",
 
     Callback = function(enabled)
-        SetDevTest("World1AutoWin", enabled)
-    end,
-})
-
-MainTab:CreateToggle({
-    Name = "World 1 Speed Test",
-    Default = false,
-    Flag = "World1SpeedTest",
-
-    Callback = function(enabled)
-        SetDevTest("World1Speed", enabled)
-    end,
-})
-
-MainTab:CreateToggle({
-    Name = "World 1 Teleport Test",
-    Default = false,
-    Flag = "World1TeleportTest",
-
-    Callback = function(enabled)
-        SetDevTest("World1Teleport", enabled)
-    end,
-})
-
-MainTab:CreateToggle({
-    Name = "World 1 Repeated Test",
-    Default = false,
-    Flag = "World1RepeatedTest",
-
-    Callback = function(enabled)
-        SetDevTest("World1Repeated", enabled)
+        SetDevTest(
+            "World1AutoWin",
+            enabled
+        )
     end,
 })
 
@@ -737,88 +640,27 @@ MainTab:CreateSection(
 )
 
 MainTab:CreateToggle({
-    Name = "World 2 Auto Win Test",
+    Name = "World 2 Auto Win Dev",
     Default = false,
     Flag = "World2AutoWinTest",
 
     Callback = function(enabled)
-        SetDevTest("World2AutoWin", enabled)
-    end,
-})
-
-MainTab:CreateToggle({
-    Name = "World 2 Speed Test",
-    Default = false,
-    Flag = "World2SpeedTest",
-
-    Callback = function(enabled)
-        SetDevTest("World2Speed", enabled)
-    end,
-})
-
-MainTab:CreateToggle({
-    Name = "World 2 Teleport Test",
-    Default = false,
-    Flag = "World2TeleportTest",
-
-    Callback = function(enabled)
-        SetDevTest("World2Teleport", enabled)
-    end,
-})
-
-MainTab:CreateToggle({
-    Name = "World 2 Repeated Test",
-    Default = false,
-    Flag = "World2RepeatedTest",
-
-    Callback = function(enabled)
-        SetDevTest("World2Repeated", enabled)
-    end,
-})
-
-MainTab:CreateSection(
-    "Test Status"
-)
-
-MainTab:CreateButton({
-    Name = "World 1 Test Status",
-
-    Callback = function()
-        Notify(
-            "World 1 Tests",
-            "Auto Win: " .. tostring(DevTests.World1AutoWin)
-                .. "\nSpeed: " .. tostring(DevTests.World1Speed)
-                .. "\nTeleport: " .. tostring(DevTests.World1Teleport)
-                .. "\nRepeated: " .. tostring(DevTests.World1Repeated),
-            5
+        SetDevTest(
+            "World2AutoWin",
+            enabled
         )
     end,
 })
 
 MainTab:CreateButton({
-    Name = "World 2 Test Status",
-
-    Callback = function()
-        Notify(
-            "World 2 Tests",
-            "Auto Win: " .. tostring(DevTests.World2AutoWin)
-                .. "\nSpeed: " .. tostring(DevTests.World2Speed)
-                .. "\nTeleport: " .. tostring(DevTests.World2Teleport)
-                .. "\nRepeated: " .. tostring(DevTests.World2Repeated),
-            5
-        )
-    end,
-})
-
-MainTab:CreateButton({
-    Name = "Disable All Tests",
+    Name = "Disable Auto Win Dev",
 
     Callback = function()
         StopAllDevTests()
 
         Notify(
-            "Anti-Cheat Tests",
-            "All test toggles disabled.",
+            "Auto Win Dev",
+            "Both tests disabled.",
             3
         )
     end,
@@ -2091,6 +1933,1007 @@ CreditsTab:CreateButton({
 })
 
 --------------------------------------------------
+-- EXTRA UTILITIES
+--------------------------------------------------
+
+local UtilitySection =
+    Window:CreateSection(
+        "Utilities"
+    )
+
+local UtilityTab =
+    UtilitySection:CreateTab(
+        "Utilities",
+        "sparkles"
+    )
+
+local SessionStart =
+    os.clock()
+
+--------------------------------------------------
+-- SESSION
+--------------------------------------------------
+
+UtilityTab:CreateSection(
+    "Session"
+)
+
+UtilityTab:CreateParagraph({
+    Title = "🌸 Lilac Utilities",
+    Content =
+        "Client information, dev tests and small helpers."
+})
+
+UtilityTab:CreateButton({
+    Name = "Session Info",
+
+    Callback = function()
+        local character =
+            LocalPlayer.Character
+
+        local position =
+            character
+            and character:GetPivot().Position
+
+        Notify(
+            "Session Info",
+            "Place: "
+                .. tostring(game.PlaceId)
+                .. "\nPlayers: "
+                .. tostring(#Players:GetPlayers())
+                .. "\nUptime: "
+                .. string.format(
+                    "%.0fs",
+                    os.clock() - SessionStart
+                )
+                .. "\nPosition: "
+                .. (
+                    position
+                    and string.format(
+                        "%.1f, %.1f, %.1f",
+                        position.X,
+                        position.Y,
+                        position.Z
+                    )
+                    or "Unknown"
+                ),
+            6
+        )
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Show Place ID",
+
+    Callback = function()
+        Notify(
+            "Place ID",
+            tostring(game.PlaceId),
+            4
+        )
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Show Job ID",
+
+    Callback = function()
+        Notify(
+            "Job ID",
+            tostring(game.JobId),
+            4
+        )
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Show Player Count",
+
+    Callback = function()
+        Notify(
+            "Server",
+            tostring(
+                #Players:GetPlayers()
+            ) .. " players online.",
+            3
+        )
+    end,
+})
+
+--------------------------------------------------
+-- CHARACTER
+--------------------------------------------------
+
+UtilityTab:CreateSection(
+    "Character"
+)
+
+UtilityTab:CreateButton({
+    Name = "Refresh Character",
+
+    Callback = function()
+        SafeCall(function()
+            LocalPlayer:LoadCharacter()
+        end)
+
+        Notify(
+            "Character",
+            "Refresh requested.",
+            3
+        )
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Reset Camera",
+
+    Callback = function()
+        SafeCall(function()
+            local character =
+                LocalPlayer.Character
+
+            local humanoid =
+                character
+                and character:FindFirstChildOfClass(
+                    "Humanoid"
+                )
+
+            if humanoid then
+                Workspace.CurrentCamera.CameraSubject =
+                    humanoid
+                Workspace.CurrentCamera.CameraType =
+                    Enum.CameraType.Custom
+            end
+        end)
+
+        Notify(
+            "Camera",
+            "Camera reset.",
+            2
+        )
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Character Position",
+
+    Callback = function()
+        local position =
+            GetPosition()
+
+        Notify(
+            "Position",
+            FormatVector3(
+                position
+            ),
+            4
+        )
+    end,
+})
+
+--------------------------------------------------
+-- DEVELOPER PHYSICS TESTS
+--------------------------------------------------
+
+local devGravity0Enabled = false
+local devFlyEnabled = false
+local devFlyConnection = nil
+local devInputConnection = nil
+local devCameraConnection = nil
+
+local devVerticalInput = 0
+local devFlyHeight = 62
+
+local DEV_CAMERA_POSITION =
+    Vector3.new(
+        -73,
+        62,
+        4923
+    )
+
+local DEV_FLY_SPEED = 32
+
+local function RequireDevMode()
+    if DEV_TEST_MODE then
+        return true
+    end
+
+    Notify(
+        "Developer",
+        "Dev mode is disabled.",
+        4
+    )
+
+    return false
+end
+
+local function RestoreGravity()
+    if OriginalGravity ~= nil then
+        Workspace.Gravity =
+            OriginalGravity
+
+        OriginalGravity =
+            nil
+    end
+end
+
+local function SetDevGravity0(enabled)
+    if not RequireDevMode() then
+        return
+    end
+
+    devGravity0Enabled =
+        enabled == true
+
+    if devGravity0Enabled then
+        if OriginalGravity == nil then
+            OriginalGravity =
+                Workspace.Gravity
+        end
+
+        Workspace.Gravity =
+            0
+    else
+        RestoreGravity()
+    end
+
+    Notify(
+        "Dev Physics",
+        devGravity0Enabled
+            and "Gravity set to 0."
+            or "Gravity restored.",
+        3
+    )
+end
+
+UtilityTab:CreateToggle({
+    Name = "Dev Gravity 0",
+
+    Default = false,
+    Flag = "DevGravity0",
+
+    Callback = function(enabled)
+        SetDevGravity0(
+            enabled
+        )
+    end,
+})
+
+--------------------------------------------------
+-- TEST CAMERA
+--------------------------------------------------
+
+local function StopDevCamera()
+    if devCameraConnection then
+        devCameraConnection:Disconnect()
+        devCameraConnection = nil
+    end
+
+    local camera =
+        Workspace.CurrentCamera
+
+    if camera then
+        camera.CameraType =
+            Enum.CameraType.Custom
+    end
+end
+
+local function StartDevCamera()
+    if not RequireDevMode() then
+        return
+    end
+
+    StopDevCamera()
+
+    local camera =
+        Workspace.CurrentCamera
+
+    if not camera then
+        return
+    end
+
+    camera.CameraType =
+        Enum.CameraType.Scriptable
+
+    camera.CFrame =
+        CFrame.new(
+            DEV_CAMERA_POSITION
+        )
+
+    devCameraConnection =
+        RunService.RenderStepped:Connect(
+            function()
+                if not devFlyEnabled then
+                    return
+                end
+            end
+        )
+
+    Notify(
+        "Dev Camera",
+        "Camera positioned at -73, 62, 4923.\n"
+            .. "Mouse rotation remains available through the game camera.",
+        4
+    )
+end
+
+UtilityTab:CreateButton({
+    Name = "Dev Camera Position",
+
+    Callback = function()
+        if not RequireDevMode() then
+            return
+        end
+
+        local camera =
+            Workspace.CurrentCamera
+
+        if not camera then
+            return
+        end
+
+        camera.CameraType =
+            Enum.CameraType.Scriptable
+
+        camera.CFrame =
+            CFrame.new(
+                DEV_CAMERA_POSITION
+            )
+
+        Notify(
+            "Dev Camera",
+            "Set to X -73 | Y 62 | Z 4923.",
+            3
+        )
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Reset Dev Camera",
+
+    Callback = function()
+        StopDevCamera()
+    end,
+})
+
+--------------------------------------------------
+-- DEV FLY
+--------------------------------------------------
+
+local function StopDevFly()
+    devFlyEnabled =
+        false
+
+    if devFlyConnection then
+        devFlyConnection:Disconnect()
+        devFlyConnection = nil
+    end
+
+    if devInputConnection then
+        devInputConnection:Disconnect()
+        devInputConnection = nil
+    end
+
+    local humanoid =
+        GetHumanoid()
+
+    if humanoid then
+        humanoid.PlatformStand =
+            false
+
+        humanoid.AutoRotate =
+            true
+
+        humanoid:ChangeState(
+            Enum.HumanoidStateType.GettingUp
+        )
+    end
+
+    local root =
+        GetRoot()
+
+    if root then
+        root.AssemblyLinearVelocity =
+            Vector3.zero
+    end
+end
+
+local function StartDevFly()
+    if not RequireDevMode() then
+        return
+    end
+
+    StopDevFly()
+
+    local root =
+        GetRoot()
+
+    local humanoid =
+        GetHumanoid()
+
+    if not root or not humanoid then
+        Notify(
+            "Dev Fly",
+            "Character is not ready.",
+            3
+        )
+        return
+    end
+
+    devFlyEnabled =
+        true
+
+    devFlyHeight =
+        root.Position.Y
+
+    humanoid.PlatformStand =
+        true
+
+    humanoid.AutoRotate =
+        false
+
+    devInputConnection =
+        UserInputService.InputBegan:Connect(
+            function(input, processed)
+                if processed then
+                    return
+                end
+
+                if input.KeyCode ==
+                    Enum.KeyCode.Q
+                then
+                    devVerticalInput =
+                        -1
+
+                elseif input.KeyCode ==
+                    Enum.KeyCode.E
+                then
+                    devVerticalInput =
+                        1
+                end
+            end
+        )
+
+    devFlyConnection =
+        RunService.RenderStepped:Connect(
+            function(dt)
+                if not devFlyEnabled then
+                    return
+                end
+
+                local currentRoot =
+                    GetRoot()
+
+                if not currentRoot then
+                    return
+                end
+
+                local delta =
+                    devVerticalInput
+                    * DEV_FLY_SPEED
+                    * dt
+
+                devFlyHeight +=
+                    delta
+
+                currentRoot.CFrame =
+                    CFrame.new(
+                        currentRoot.Position.X,
+                        devFlyHeight,
+                        currentRoot.Position.Z
+                    )
+
+                currentRoot.AssemblyLinearVelocity =
+                    Vector3.zero
+            end
+        )
+
+    Notify(
+        "Dev Fly",
+        "Enabled. Hold E to rise, Q to descend.",
+        4
+    )
+end
+
+-- Release Q/E cleanly.
+UserInputService.InputEnded:Connect(
+    function(input)
+        if
+            input.KeyCode ==
+                Enum.KeyCode.Q
+            or
+            input.KeyCode ==
+                Enum.KeyCode.E
+        then
+            devVerticalInput =
+                0
+        end
+    end
+)
+
+UtilityTab:CreateToggle({
+    Name = "Dev Fly",
+
+    Default = false,
+    Flag = "DevFlyTest",
+
+    Callback = function(enabled)
+        if enabled then
+            StartDevFly()
+        else
+            StopDevFly()
+        end
+    end,
+})
+
+--------------------------------------------------
+-- TEST PRESETS
+--------------------------------------------------
+
+UtilityTab:CreateSection(
+    "Quick Tests"
+)
+
+UtilityTab:CreateButton({
+    Name = "Start Both Auto Win",
+
+    Callback = function()
+        if not RequireDevMode() then
+            return
+        end
+
+        StartAutoWinTest(
+            "World1"
+        )
+
+        StartAutoWinTest(
+            "World2"
+        )
+
+        Notify(
+            "Auto Win Dev",
+            "Both dev tests started.",
+            3
+        )
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Stop All Developers",
+
+    Callback = function()
+        StopAllDevTests()
+        StopDevFly()
+        StopDevCamera()
+
+        StopTreadmillLock(
+            "World1"
+        )
+
+        StopTreadmillLock(
+            "World2"
+        )
+
+        devGravity0Enabled =
+            false
+
+        RestoreGravity()
+
+        Notify(
+            "Developers",
+            "All dev test systems stopped.",
+            3
+        )
+    end,
+})
+
+--------------------------------------------------
+-- TREADMILL DEV
+--------------------------------------------------
+
+local TreadmillProfiles = {
+    -- Coordinates supplied by the user:
+    -- World 1 = second screenshot
+    World1 = Vector3.new(
+        -40,
+        13,
+        -163
+    ),
+
+    -- World 2 = first screenshot
+    World2 = Vector3.new(
+        -60,
+        13,
+        4837
+    ),
+}
+
+local treadmillLocks = {
+    World1 = false,
+    World2 = false,
+}
+
+local treadmillConnections = {
+    World1 = nil,
+    World2 = nil,
+}
+
+local treadmillTweening = {
+    World1 = false,
+    World2 = false,
+}
+
+local TREADMILL_TWEEN_TIME =
+    0.35
+
+local TREADMILL_CHECK_INTERVAL =
+    0.15
+
+local function GetRootSafe()
+    local character =
+        LocalPlayer.Character
+
+    if not character then
+        return nil
+    end
+
+    return character:FindFirstChild(
+        "HumanoidRootPart"
+    )
+end
+
+local function TweenCharacterTo(
+    position,
+    worldName,
+    duration
+)
+    if not RequireDevMode() then
+        return false
+    end
+
+    local root =
+        GetRootSafe()
+
+    if not root then
+        return false
+    end
+
+    if treadmillTweening[worldName] then
+        return false
+    end
+
+    treadmillTweening[worldName] =
+        true
+
+    local target =
+        CFrame.new(position)
+
+    local tween =
+        TweenService:Create(
+            root,
+            TweenInfo.new(
+                duration
+                    or TREADMILL_TWEEN_TIME,
+                Enum.EasingStyle.Linear,
+                Enum.EasingDirection.InOut
+            ),
+            {
+                CFrame =
+                    target
+            }
+        )
+
+    tween:Play()
+
+    tween.Completed:Wait()
+
+    treadmillTweening[worldName] =
+        false
+
+    return true
+end
+
+local function StopTreadmillLock(
+    worldName
+)
+    treadmillLocks[worldName] =
+        false
+
+    local connection =
+        treadmillConnections[worldName]
+
+    if connection then
+        connection:Disconnect()
+        treadmillConnections[worldName] =
+            nil
+    end
+
+    treadmillTweening[worldName] =
+        false
+end
+
+local function StartTreadmillLock(
+    worldName
+)
+    if not RequireDevMode() then
+        return
+    end
+
+    StopTreadmillLock(
+        worldName
+    )
+
+    treadmillLocks[worldName] =
+        true
+
+    local target =
+        TreadmillProfiles[worldName]
+
+    treadmillConnections[worldName] =
+        task.spawn(
+            function()
+                while treadmillLocks[worldName] do
+                    local root =
+                        GetRootSafe()
+
+                    if root then
+                        local distance =
+                            (
+                                root.Position
+                                - target
+                            ).Magnitude
+
+                        if distance >= 1 then
+                            pcall(function()
+                                TweenCharacterTo(
+                                    target,
+                                    worldName,
+                                    TREADMILL_TWEEN_TIME
+                                )
+                            end)
+                        end
+                    end
+
+                    task.wait(
+                        TREADMILL_CHECK_INTERVAL
+                    )
+                end
+            end
+        )
+
+    Notify(
+        "Treadmill Dev",
+        worldName
+            .. " lock enabled.\n"
+            .. "Target: "
+            .. string.format(
+                "%.0f, %.0f, %.0f",
+                target.X,
+                target.Y,
+                target.Z
+            ),
+        3
+    )
+end
+
+UtilityTab:CreateSection(
+    "Treadmill Dev"
+)
+
+UtilityTab:CreateParagraph({
+    Title =
+        "🌸 Treadmill Position Lock",
+
+    Content =
+        "Tweens the character to the configured treadmill "
+        .. "position and returns it whenever it moves 1+ stud away.",
+})
+
+--------------------------------------------------
+-- WORLD 1
+--------------------------------------------------
+
+UtilityTab:CreateButton({
+    Name =
+        "World 1 Tween to Treadmill",
+
+    Callback = function()
+        task.spawn(function()
+            TweenCharacterTo(
+                TreadmillProfiles.World1,
+                "World1",
+                TREADMILL_TWEEN_TIME
+            )
+        end)
+    end,
+})
+
+UtilityTab:CreateToggle({
+    Name =
+        "World 1 Treadmill Lock",
+
+    Default = false,
+
+    Flag =
+        "World1TreadmillLock",
+
+    Callback = function(enabled)
+        if enabled then
+            StartTreadmillLock(
+                "World1"
+            )
+        else
+            StopTreadmillLock(
+                "World1"
+            )
+
+            Notify(
+                "Treadmill Dev",
+                "World 1 lock disabled.",
+                2
+            )
+        end
+    end,
+})
+
+--------------------------------------------------
+-- WORLD 2
+--------------------------------------------------
+
+UtilityTab:CreateButton({
+    Name =
+        "World 2 Tween to Treadmill",
+
+    Callback = function()
+        task.spawn(function()
+            TweenCharacterTo(
+                TreadmillProfiles.World2,
+                "World2",
+                TREADMILL_TWEEN_TIME
+            )
+        end)
+    end,
+})
+
+UtilityTab:CreateToggle({
+    Name =
+        "World 2 Treadmill Lock",
+
+    Default = false,
+
+    Flag =
+        "World2TreadmillLock",
+
+    Callback = function(enabled)
+        if enabled then
+            StartTreadmillLock(
+                "World2"
+            )
+        else
+            StopTreadmillLock(
+                "World2"
+            )
+
+            Notify(
+                "Treadmill Dev",
+                "World 2 lock disabled.",
+                2
+            )
+        end
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name =
+        "Stop Treadmill Locks",
+
+    Callback = function()
+        StopTreadmillLock(
+            "World1"
+        )
+
+        StopTreadmillLock(
+            "World2"
+        )
+
+        Notify(
+            "Treadmill Dev",
+            "All treadmill locks stopped.",
+            3
+        )
+    end,
+})
+
+--------------------------------------------------
+-- DIAGNOSTICS
+--------------------------------------------------
+
+UtilityTab:CreateSection(
+    "Diagnostics"
+)
+
+UtilityTab:CreateButton({
+    Name = "Check Worlds",
+
+    Callback = function()
+        Notify(
+            "Workspace",
+            "World1: "
+                .. tostring(
+                    Workspace:FindFirstChild(
+                        "World1"
+                    ) ~= nil
+                )
+                .. "\nWorld2: "
+                .. tostring(
+                    Workspace:FindFirstChild(
+                        "World2"
+                    ) ~= nil
+                ),
+            4
+        )
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Check Character",
+
+    Callback = function()
+        local character =
+            LocalPlayer.Character
+
+        Notify(
+            "Character Diagnostics",
+            "Character: "
+                .. tostring(
+                    character ~= nil
+                )
+                .. "\nHumanoid: "
+                .. tostring(
+                    character
+                    and character:FindFirstChildOfClass(
+                        "Humanoid"
+                    ) ~= nil
+                )
+                .. "\nRoot: "
+                .. tostring(
+                    character
+                    and character:FindFirstChild(
+                        "HumanoidRootPart"
+                    ) ~= nil
+                ),
+            4
+        )
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Copy Position",
+
+    Callback = function()
+        local position =
+            GetPosition()
+
+        if position then
+            SetClipboard(
+                string.format(
+                    "%.3f, %.3f, %.3f",
+                    position.X,
+                    position.Y,
+                    position.Z
+                )
+            )
+
+            Notify(
+                "Clipboard",
+                "Position copied.",
+                2
+            )
+        end
+    end,
+})
+
+--------------------------------------------------
 -- FINALIZE
 --------------------------------------------------
 
@@ -2099,11 +2942,11 @@ Window:SetAutoSave(
 )
 
 Notify(
-    "ZenWare V3",
+    "🌸 Lilac v1488",
     "All modules loaded successfully.",
     4
 )
 
 print(
-    "[ZenWare V3] Loaded successfully"
+    "[Lilac v1488] Loaded successfully"
 )
