@@ -6,6 +6,7 @@ local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -323,13 +324,24 @@ local function RemoveAutoWinPart(worldName)
 end
 
 local function StopAutoWinTest(worldName)
-    local state = AutoWinState[worldName]
+    local state =
+        AutoWinState[worldName]
 
     if not state then
         return
     end
 
-    state.running = false
+    state.running =
+        false
+
+    if state.gravityLocked then
+        state.gravityLocked =
+            false
+
+        SetDeveloperGravity(
+            false
+        )
+    end
 end
 
 local function RunVerticalOscillation(character, finishPosition, state)
@@ -500,6 +512,42 @@ local function RunAutoWinCycle(worldName)
 end
 
 local OriginalGravity = nil
+local GravityLocks = 0
+local GravityEnforcer = nil
+
+local function StartGravityEnforcer()
+    if GravityEnforcer then
+        return
+    end
+
+    GravityEnforcer =
+        RunService.Heartbeat:Connect(
+            function()
+                if GravityLocks > 0
+                    or devGravity0Enabled
+                then
+                    Workspace.Gravity = 0
+                end
+            end
+        )
+end
+
+local function StopGravityEnforcer()
+    if GravityEnforcer
+        and GravityLocks <= 0
+        and not devGravity0Enabled
+    then
+        GravityEnforcer:Disconnect()
+        GravityEnforcer = nil
+    end
+end
+
+local function CaptureGravity()
+    if OriginalGravity == nil then
+        OriginalGravity =
+            Workspace.Gravity
+    end
+end
 
 local function SetDeveloperGravity(enabled)
     if not DEV_TEST_MODE then
@@ -507,17 +555,31 @@ local function SetDeveloperGravity(enabled)
     end
 
     if enabled then
-        if OriginalGravity == nil then
-            OriginalGravity = Workspace.Gravity
-        end
-
+        GravityLocks += 1
+        CaptureGravity()
+        StartGravityEnforcer()
         Workspace.Gravity = 0
-    else
+        return
+    end
+
+    GravityLocks =
+        math.max(
+            0,
+            GravityLocks - 1
+        )
+
+    if GravityLocks == 0
+        and not devGravity0Enabled
+    then
         if OriginalGravity ~= nil then
             Workspace.Gravity =
                 OriginalGravity
-            OriginalGravity = nil
+
+            OriginalGravity =
+                nil
         end
+
+        StopGravityEnforcer()
     end
 end
 
@@ -543,9 +605,10 @@ local function StartAutoWinTest(worldName)
 
     state.running = true
 
-    SetDeveloperGravity(
-        true
-    )
+    if not state.gravityLocked then
+        state.gravityLocked = true
+        SetDeveloperGravity(true)
+    end
 
     CreateAutoWinPart(worldName)
 
@@ -667,20 +730,6 @@ MainTab:CreateButton({
 })
 
 --------------------------------------------------
--- AUTO REBIRTH
---------------------------------------------------
-
-local RebirthSection =
-    Window:CreateSection(
-        "Auto Rebirth"
-    )
-
-local RebirthTab =
-    RebirthSection:CreateTab(
-        "Auto Rebirth",
-        "refresh-cw"
-    )
-
 local rebirthRunning = false
 
 local function GetRebirthButton()
@@ -691,146 +740,55 @@ local function GetRebirthButton()
         return nil
     end
 
-    local playerGui =
-        player:FindFirstChild(
-            "PlayerGui"
-        )
 
-    if not playerGui then
-        return nil
+local function RunRebirthOnce()
+    local button =
+        GetRebirthButton()
+
+    if not button then
+        return false
     end
 
-    local mainGui =
-        playerGui:FindFirstChild(
-            "MainGui"
-        )
-
-    if not mainGui then
-        return nil
-    end
-
-    local frames =
-        mainGui:FindFirstChild(
-            "Frames"
-        )
-
-    if not frames then
-        return nil
-    end
-
-    local rebirthFrame =
-        frames:FindFirstChild(
-            "Rebirth"
-        )
-
-    if not rebirthFrame then
-        return nil
-    end
-
-    return rebirthFrame:FindFirstChild(
-        "Rebirth"
-    )
-end
-
-RebirthTab:CreateSection(
-    "Rebirth"
-)
-
-RebirthTab:CreateSlider({
-    Name = "Rebirth Interval",
-
-    Min = 0.05,
-    Max = 2,
-
-    Default = 0.25,
-
-    Flag = "RebirthInterval",
-
-    Callback = function(value)
-        State.RebirthInterval =
-            value
-    end,
-})
-
-RebirthTab:CreateToggle({
-    Name = "Auto Rebirth",
-
-    Default = false,
-
-    Flag = "AutoRebirth",
-
-    Callback = function(enabled)
-        State.AutoRebirth =
-            enabled
-
-        if not enabled then
-            rebirthRunning =
-                false
-
-            return
-        end
-
-        if rebirthRunning then
-            return
-        end
-
-        rebirthRunning =
-            true
-
-        task.spawn(function()
-            while
-                State.AutoRebirth
-                and rebirthRunning
-            do
-                local button =
-                    GetRebirthButton()
-
-                if button then
-                    pcall(function()
-                        firesignal(
-                            button.MouseButton1Click
-                        )
-                    end)
-                end
-
-                task.wait(
-                    State.RebirthInterval
-                    or 0.25
-                )
-            end
-
-            rebirthRunning =
-                false
-        end)
-    end,
-})
-
-RebirthTab:CreateButton({
-    Name = "Test Rebirth Once",
-
-    Callback = function()
-        local button =
-            GetRebirthButton()
-
-        if not button then
-            Notify(
-                "Rebirth",
-                "Button not found.",
-                3
-            )
-
-            return
-        end
-
+    local ok =
         pcall(function()
             firesignal(
                 button.MouseButton1Click
             )
         end)
-    end,
-})
 
---------------------------------------------------
+    return ok
+end
+
+local function StartAutoRebirth()
+    if rebirthRunning then
+        return
+    end
+
+    State.AutoRebirth = true
+    rebirthRunning = true
+
+    task.spawn(function()
+        while
+            State.AutoRebirth
+            and rebirthRunning
+        do
+            RunRebirthOnce()
+
+            task.wait(
+                State.RebirthInterval
+                or 0.25
+            )
+        end
+
+        rebirthRunning = false
+    end)
+end
+
+local function StopAutoRebirth()
+    State.AutoRebirth = false
+    rebirthRunning = false
+end
+
 -- TELEPORTS
 --------------------------------------------------
 
@@ -1021,48 +979,9 @@ TeleportTab:CreateButton({
 })
 
 --------------------------------------------------
--- AUTO CLICKER
 --------------------------------------------------
-
-local ClickSection =
-    Window:CreateSection(
-        "Auto Clicker"
-    )
-
-local ClickTab =
-    ClickSection:CreateTab(
-        "Auto Clicker",
-        "mouse-pointer"
-    )
-
-ClickTab:CreateSection(
-    "Clicker"
-)
-
-ClickTab:CreateSlider({
-    Name = "Clicks Per Second",
-
-    Min = 1,
-    Max = 100,
-
-    Default =
-        State.AutoClickerSpeed,
-
-    Flag = "AutoClickerSpeed",
-
-    Callback = function(value)
-        State.AutoClickerSpeed =
-            value
-
-        if State.AutoClicker then
-            SafeCall(function()
-                AutoClicker.Start(
-                    value
-                )
-            end)
-        end
-    end,
-})
+-- AUTO CLICKER LOGIC
+--------------------------------------------------
 
 SafeCall(function()
     AutoClicker.SetCallback(
@@ -1074,168 +993,9 @@ SafeCall(function()
     )
 end)
 
-ClickTab:CreateToggle({
-    Name = "Enable Auto Clicker",
-
-    Default = false,
-
-    Flag = "AutoClicker",
-
-    Callback = function(enabled)
-        State.AutoClicker =
-            enabled
-
-        if enabled then
-            SafeCall(function()
-                AutoClicker.Start(
-                    State.AutoClickerSpeed
-                )
-            end)
-        else
-            SafeCall(function()
-                AutoClicker.Stop()
-            end)
-        end
-    end,
-})
-
-ClickTab:CreateKeybind({
-    Name = "Pause / Resume",
-
-    Default = Enum.KeyCode.F,
-
-    Flag = "AutoClickerKey",
-
-    Callback = function()
-        SafeCall(function()
-            AutoClicker.Toggle(
-                State.AutoClickerSpeed
-            )
-        end)
-
-        SafeCall(function()
-            State.AutoClicker =
-                AutoClicker.IsRunning()
-        end)
-    end,
-})
-
-ClickTab:CreateButton({
-    Name = "Start Clicker",
-
-    Callback = function()
-        State.AutoClicker =
-            true
-
-        SafeCall(function()
-            AutoClicker.Start(
-                State.AutoClickerSpeed
-            )
-        end)
-    end,
-})
-
-ClickTab:CreateButton({
-    Name = "Stop Clicker",
-
-    Callback = function()
-        State.AutoClicker =
-            false
-
-        SafeCall(function()
-            AutoClicker.Stop()
-        end)
-    end,
-})
-
 --------------------------------------------------
--- AUTO MOG
+-- AUTO MOG LOGIC
 --------------------------------------------------
-
-local MogSection =
-    Window:CreateSection(
-        "Auto Mog"
-    )
-
-local MogTab =
-    MogSection:CreateTab(
-        "Auto Mog",
-        "swords"
-    )
-
-MogTab:CreateSection(
-    "Target"
-)
-
-local targetBox =
-    MogTab:CreateTextBox({
-        Name = "Player",
-        Placeholder = "Player username",
-    })
-
-MogTab:CreateButton({
-    Name = "Mog Target",
-
-    Callback = function()
-        local username =
-            targetBox:GetText()
-
-        if username == "" then
-            return
-        end
-
-        State.CurrentTarget =
-            username
-
-        State.AutoMog =
-            true
-
-        SafeCall(function()
-            AutoMog.Start(
-                username
-            )
-        end)
-    end,
-})
-
-MogTab:CreateButton({
-    Name = "Auto Mog All",
-
-    Callback = function()
-        State.AutoMogAll =
-            true
-
-        SafeCall(function()
-            AutoMog.StartAll()
-        end)
-    end,
-})
-
-MogTab:CreateButton({
-    Name = "Stop Mog",
-
-    Callback = function()
-        State.AutoMog =
-            false
-
-        State.AutoMogAll =
-            false
-
-        SafeCall(function()
-            AutoMog.Stop()
-        end)
-    end,
-})
-
-MogTab:CreateButton({
-    Name = "Clear Target",
-
-    Callback = function()
-        targetBox:SetText("")
-        State.CurrentTarget =
-            nil
-    end,
-})
 
 SafeCall(function()
     AutoMog.SetCallbacks(
@@ -1258,7 +1018,6 @@ SafeCall(function()
     )
 end)
 
---------------------------------------------------
 -- SERVER FINDER
 --------------------------------------------------
 
@@ -1944,34 +1703,489 @@ local ConfigTab =
         "folder"
     )
 
+local CONFIG_FOLDER =
+    "ZenWare/Lilac"
+
+local ConfigNameBox =
+    ConfigTab:CreateTextBox({
+        Name = "Config Name",
+        Placeholder = "Example: main",
+        Default = "default",
+    })
+
+local function SafeConfigName(name)
+    name =
+        tostring(
+            name
+            or "default"
+        )
+        :gsub(
+            "[^%w_%-%s]",
+            ""
+        )
+        :gsub(
+            "%s+",
+            "_"
+        )
+
+    if name == "" then
+        name = "default"
+    end
+
+    return name
+end
+
+local function ConfigPath(name)
+    return CONFIG_FOLDER
+        .. "/"
+        .. SafeConfigName(name)
+        .. ".json"
+end
+
+local function EnsureConfigFolder()
+    if type(isfolder) == "function"
+        and type(makefolder) == "function"
+    then
+        pcall(function()
+            if not isfolder(CONFIG_FOLDER) then
+                makefolder(
+                    "ZenWare"
+                )
+            end
+
+            if not isfolder(
+                CONFIG_FOLDER
+            ) then
+                makefolder(
+                    CONFIG_FOLDER
+                )
+            end
+        end)
+    end
+end
+
+local function BuildConfigData()
+    return {
+        WalkSpeed =
+            State.WalkSpeed,
+
+        JumpPower =
+            State.JumpPower,
+
+        HipHeight =
+            State.HipHeight,
+
+        RebirthInterval =
+            State.RebirthInterval,
+
+        AutoClickerSpeed =
+            State.AutoClickerSpeed,
+
+        AutoRebirth =
+            State.AutoRebirth == true,
+
+        AutoClicker =
+            State.AutoClicker == true,
+
+        AutoMog =
+            State.AutoMog == true,
+
+        AutoMogAll =
+            State.AutoMogAll == true,
+
+        AntiAFK =
+            State.AntiAFK == true,
+
+        World1AutoWin =
+            DevTests.World1AutoWin == true,
+
+        World2AutoWin =
+            DevTests.World2AutoWin == true,
+
+        SavedAt =
+            os.time(),
+    }
+end
+
+local function ApplyOption(
+    flag,
+    value
+)
+    pcall(function()
+        local library =
+            Window.Library
+
+        local options =
+            library
+            and library.Options
+
+        local option =
+            options
+            and options[flag]
+
+        if option
+            and option.SetValue
+        then
+            option:SetValue(
+                value
+            )
+        end
+    end)
+end
+
+local function ApplyConfigData(data)
+    if type(data) ~= "table" then
+        return false
+    end
+
+    State.WalkSpeed =
+        tonumber(
+            data.WalkSpeed
+        )
+        or State.WalkSpeed
+
+    State.JumpPower =
+        tonumber(
+            data.JumpPower
+        )
+        or State.JumpPower
+
+    State.HipHeight =
+        tonumber(
+            data.HipHeight
+        )
+        or State.HipHeight
+
+    State.RebirthInterval =
+        tonumber(
+            data.RebirthInterval
+        )
+        or State.RebirthInterval
+
+    State.AutoClickerSpeed =
+        tonumber(
+            data.AutoClickerSpeed
+        )
+        or State.AutoClickerSpeed
+
+    ApplyOption(
+        "WalkSpeed",
+        State.WalkSpeed
+    )
+
+    ApplyOption(
+        "JumpPower",
+        State.JumpPower
+    )
+
+    ApplyOption(
+        "HipHeight",
+        State.HipHeight
+    )
+
+    ApplyOption(
+        "RebirthInterval",
+        State.RebirthInterval
+    )
+
+    ApplyOption(
+        "AutoClickerSpeed",
+        State.AutoClickerSpeed
+    )
+
+    ApplyOption(
+        "AutoRebirth",
+        data.AutoRebirth == true
+    )
+
+    ApplyOption(
+        "AutoClicker",
+        data.AutoClicker == true
+    )
+
+    ApplyOption(
+        "AutoMog",
+        data.AutoMog == true
+    )
+
+    ApplyOption(
+        "AutoMogAll",
+        data.AutoMogAll == true
+    )
+
+    ApplyOption(
+        "AntiAFK",
+        data.AntiAFK == true
+    )
+
+    ApplyOption(
+        "World1AutoWinTest",
+        data.World1AutoWin == true
+    )
+
+    ApplyOption(
+        "World2AutoWinTest",
+        data.World2AutoWin == true
+    )
+
+    return true
+end
+
+local function SaveConfig(name)
+    EnsureConfigFolder()
+
+    if type(writefile) ~= "function" then
+        return false,
+            "writefile is unavailable"
+    end
+
+    local encoded =
+        HttpService:JSONEncode(
+            BuildConfigData()
+        )
+
+    local ok, err =
+        pcall(function()
+            writefile(
+                ConfigPath(name),
+                encoded
+            )
+        end)
+
+    return ok, err
+end
+
+local function LoadConfig(name)
+    if type(readfile) ~= "function"
+        or type(isfile) ~= "function"
+    then
+        return false,
+            "readfile/isfile is unavailable"
+    end
+
+    local path =
+        ConfigPath(name)
+
+    if not isfile(path) then
+        return false,
+            "Config not found"
+    end
+
+    local ok, data =
+        pcall(function()
+            return HttpService:JSONDecode(
+                readfile(path)
+            )
+        end)
+
+    if not ok then
+        return false,
+            tostring(data)
+    end
+
+    return ApplyConfigData(
+        data
+    ),
+        nil
+end
+
+local function DeleteConfig(name)
+    if type(delfile) ~= "function"
+        or type(isfile) ~= "function"
+    then
+        return false,
+            "delfile/isfile is unavailable"
+    end
+
+    local path =
+        ConfigPath(name)
+
+    if not isfile(path) then
+        return false,
+            "Config not found"
+    end
+
+    return pcall(function()
+        delfile(path)
+    end)
+end
+
+local function ListConfigs()
+    if type(listfiles) ~= "function" then
+        return {}
+    end
+
+    EnsureConfigFolder()
+
+    local result = {}
+
+    local ok, files =
+        pcall(function()
+            return listfiles(
+                CONFIG_FOLDER
+            )
+        end)
+
+    if not ok or type(files) ~= "table" then
+        return result
+    end
+
+    for _, path in ipairs(files) do
+        local name =
+            tostring(path)
+            :match(
+                "([^/\\]+)%.json$"
+            )
+
+        if name then
+            table.insert(
+                result,
+                name
+            )
+        end
+    end
+
+    table.sort(result)
+
+    return result
+end
+
 ConfigTab:CreateSection(
     "Configuration"
 )
 
-ConfigTab:CreateConfigSection()
-
-ConfigTab:CreateParagraph({
-    Title =
-        "ZenWare Configs",
-
-    Content =
-        "Configuration controls "
-        .. "are provided by the UI core.",
-})
-
 ConfigTab:CreateButton({
-    Name = "Configuration Status",
+    Name = "Save Config",
 
     Callback = function()
+        local name =
+            ConfigNameBox:GetText()
+
+        local ok, err =
+            SaveConfig(name)
+
         Notify(
             "Configs",
-            "ZenWareConfigs",
-            3
+            ok
+                and (
+                    "Saved "
+                    .. SafeConfigName(name)
+                    .. "."
+                )
+                or (
+                    "Save failed: "
+                    .. tostring(err)
+                ),
+            4
         )
     end,
 })
 
---------------------------------------------------
+ConfigTab:CreateButton({
+    Name = "Load Config",
+
+    Callback = function()
+        local name =
+            ConfigNameBox:GetText()
+
+        local ok, err =
+            LoadConfig(name)
+
+        Notify(
+            "Configs",
+            ok
+                and (
+                    "Loaded "
+                    .. SafeConfigName(name)
+                    .. "."
+                )
+                or (
+                    "Load failed: "
+                    .. tostring(err)
+                ),
+            4
+        )
+    end,
+})
+
+ConfigTab:CreateButton({
+    Name = "Delete Config",
+
+    Callback = function()
+        local name =
+            ConfigNameBox:GetText()
+
+        local ok, err =
+            DeleteConfig(name)
+
+        Notify(
+            "Configs",
+            ok
+                and (
+                    "Deleted "
+                    .. SafeConfigName(name)
+                    .. "."
+                )
+                or (
+                    "Delete failed: "
+                    .. tostring(err)
+                ),
+            4
+        )
+    end,
+})
+
+ConfigTab:CreateButton({
+    Name = "List Configs",
+
+    Callback = function()
+        local configs =
+            ListConfigs()
+
+        Notify(
+            "Configs",
+            #configs > 0
+                and table.concat(
+                    configs,
+                    ", "
+                )
+                or "No configs found.",
+            6
+        )
+    end,
+})
+
+ConfigTab:CreateButton({
+    Name = "Save As Default",
+
+    Callback = function()
+        local ok, err =
+            SaveConfig(
+                "default"
+            )
+
+        Notify(
+            "Configs",
+            ok
+                and "Default config saved."
+                or (
+                    "Save failed: "
+                    .. tostring(err)
+                ),
+            4
+        )
+    end,
+})
+
+ConfigTab:CreateParagraph({
+    Title =
+        "Local Configs",
+
+    Content =
+        "Configs are stored locally as JSON. "
+        .. "Save and Load are real file operations.",
+})
+
 -- CREDITS
 --------------------------------------------------
 
@@ -2044,6 +2258,458 @@ local UtilityTab =
 
 local SessionStart =
     os.clock()
+
+--------------------------------------------------
+-- AUTOMATION
+--------------------------------------------------
+
+UtilityTab:CreateSection(
+    "Automation"
+)
+
+UtilityTab:CreateSlider({
+    Name = "Rebirth Interval",
+
+    Min = 0.05,
+    Max = 2,
+
+    Default =
+        State.RebirthInterval,
+
+    Flag = "RebirthInterval",
+
+    Callback = function(value)
+        State.RebirthInterval =
+            tonumber(value)
+            or 0.25
+    end,
+})
+
+UtilityTab:CreateToggle({
+    Name = "Auto Rebirth",
+
+    Default =
+        State.AutoRebirth == true,
+
+    Flag = "AutoRebirth",
+
+    Callback = function(enabled)
+        if enabled then
+            StartAutoRebirth()
+        else
+            StopAutoRebirth()
+        end
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Rebirth Once",
+
+    Callback = function()
+        local ok =
+            RunRebirthOnce()
+
+        Notify(
+            "Auto Rebirth",
+            ok
+                and "Rebirth requested."
+                or "Rebirth button not found.",
+            3
+        )
+    end,
+})
+
+UtilityTab:CreateSlider({
+    Name = "Clicks Per Second",
+
+    Min = 1,
+    Max = 100,
+
+    Default =
+        State.AutoClickerSpeed,
+
+    Flag = "AutoClickerSpeed",
+
+    Callback = function(value)
+        State.AutoClickerSpeed =
+            tonumber(value)
+            or 10
+
+        if State.AutoClicker then
+            SafeCall(function()
+                AutoClicker.Start(
+                    State.AutoClickerSpeed
+                )
+            end)
+        end
+    end,
+})
+
+UtilityTab:CreateToggle({
+    Name = "Auto Clicker",
+
+    Default =
+        State.AutoClicker == true,
+
+    Flag = "AutoClicker",
+
+    Callback = function(enabled)
+        State.AutoClicker =
+            enabled == true
+
+        if State.AutoClicker then
+            SafeCall(function()
+                AutoClicker.Start(
+                    State.AutoClickerSpeed
+                )
+            end)
+        else
+            SafeCall(function()
+                AutoClicker.Stop()
+            end)
+        end
+    end,
+})
+
+UtilityTab:CreateKeybind({
+    Name = "Clicker Hotkey",
+
+    Default = Enum.KeyCode.F,
+
+    Flag = "AutoClickerKey",
+
+    Callback = function()
+        SafeCall(function()
+            AutoClicker.Toggle(
+                State.AutoClickerSpeed
+            )
+        end)
+
+        SafeCall(function()
+            State.AutoClicker =
+                AutoClicker.IsRunning()
+        end)
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Stop Clicker",
+
+    Callback = function()
+        State.AutoClicker = false
+
+        SafeCall(function()
+            AutoClicker.Stop()
+        end)
+    end,
+})
+
+local utilityTargetBox =
+    UtilityTab:CreateTextBox({
+        Name = "Mog Target",
+        Placeholder = "Player username",
+    })
+
+UtilityTab:CreateButton({
+    Name = "Mog Target",
+
+    Callback = function()
+        local username =
+            utilityTargetBox:GetText()
+
+        if username == "" then
+            Notify(
+                "Auto Mog",
+                "Enter a username first.",
+                3
+            )
+            return
+        end
+
+        State.CurrentTarget =
+            username
+
+        State.AutoMog = true
+
+        SafeCall(function()
+            AutoMog.Start(
+                username
+            )
+        end)
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Mog All",
+
+    Callback = function()
+        State.AutoMogAll = true
+
+        SafeCall(function()
+            AutoMog.StartAll()
+        end)
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Stop Mog",
+
+    Callback = function()
+        State.AutoMog = false
+        State.AutoMogAll = false
+
+        SafeCall(function()
+            AutoMog.Stop()
+        end)
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Clear Mog Target",
+
+    Callback = function()
+        utilityTargetBox:SetText("")
+        State.CurrentTarget = nil
+    end,
+})
+
+--------------------------------------------------
+-- MOVEMENT / CHARACTER
+--------------------------------------------------
+
+UtilityTab:CreateSection(
+    "Movement"
+)
+
+UtilityTab:CreateSlider({
+    Name = "WalkSpeed",
+
+    Min = 1,
+    Max = 100,
+
+    Default =
+        State.WalkSpeed,
+
+    Flag = "WalkSpeed",
+
+    Callback = function(value)
+        State.WalkSpeed =
+            tonumber(value)
+            or 16
+
+        local humanoid =
+            GetHumanoid()
+
+        if humanoid then
+            humanoid.WalkSpeed =
+                State.WalkSpeed
+        end
+    end,
+})
+
+UtilityTab:CreateSlider({
+    Name = "JumpPower",
+
+    Min = 1,
+    Max = 150,
+
+    Default =
+        State.JumpPower,
+
+    Flag = "JumpPower",
+
+    Callback = function(value)
+        State.JumpPower =
+            tonumber(value)
+            or 50
+
+        local humanoid =
+            GetHumanoid()
+
+        if humanoid then
+            humanoid.UseJumpPower = true
+            humanoid.JumpPower =
+                State.JumpPower
+        end
+    end,
+})
+
+UtilityTab:CreateSlider({
+    Name = "HipHeight",
+
+    Min = 0,
+    Max = 10,
+
+    Default =
+        State.HipHeight,
+
+    Flag = "HipHeight",
+
+    Callback = function(value)
+        State.HipHeight =
+            tonumber(value)
+            or 2
+
+        local humanoid =
+            GetHumanoid()
+
+        if humanoid then
+            humanoid.HipHeight =
+                State.HipHeight
+        end
+    end,
+})
+
+UtilityTab:CreateToggle({
+    Name = "Anti AFK",
+
+    Default =
+        State.AntiAFK == true,
+
+    Flag = "AntiAFK",
+
+    Callback = function(enabled)
+        State.AntiAFK =
+            enabled == true
+
+        if enabled then
+            SafeCall(function()
+                LocalPlayer.Idled:Connect(
+                    function()
+                        VirtualUser:CaptureController()
+                        VirtualUser:ClickButton2(
+                            Vector2.new()
+                        )
+                    end
+                )
+            end)
+        end
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Reset Character Physics",
+
+    Callback = function()
+        local humanoid =
+            GetHumanoid()
+
+        local root =
+            GetRoot()
+
+        if root then
+            root.AssemblyLinearVelocity =
+                Vector3.zero
+
+            root.AssemblyAngularVelocity =
+                Vector3.zero
+        end
+
+        if humanoid then
+            humanoid.WalkSpeed =
+                16
+
+            humanoid.JumpPower =
+                50
+
+            humanoid.HipHeight =
+                2
+        end
+
+        State.WalkSpeed = 16
+        State.JumpPower = 50
+        State.HipHeight = 2
+
+        Notify(
+            "Movement",
+            "Character physics reset.",
+            3
+        )
+    end,
+})
+
+--------------------------------------------------
+-- CAMERA / VISUAL
+--------------------------------------------------
+
+UtilityTab:CreateSection(
+    "Camera & Visuals"
+)
+
+UtilityTab:CreateSlider({
+    Name = "Camera FOV",
+
+    Min = 40,
+    Max = 120,
+
+    Default = 70,
+
+    Flag = "CameraFOV",
+
+    Callback = function(value)
+        local camera =
+            GetCamera()
+
+        if camera then
+            camera.FieldOfView =
+                tonumber(value)
+                or 70
+        end
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "FOV 70",
+
+    Callback = function()
+        local camera =
+            GetCamera()
+
+        if camera then
+            camera.FieldOfView = 70
+        end
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "FOV 90",
+
+    Callback = function()
+        local camera =
+            GetCamera()
+
+        if camera then
+            camera.FieldOfView = 90
+        end
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Clear Visual Effects",
+
+    Callback = function()
+        for _, object in ipairs(
+            Lighting:GetChildren()
+        ) do
+            if
+                object:IsA("BlurEffect")
+                or object:IsA("ColorCorrectionEffect")
+                or object:IsA("BloomEffect")
+                or object:IsA("SunRaysEffect")
+            then
+                pcall(function()
+                    object.Enabled = false
+                end)
+            end
+        end
+
+        Notify(
+            "Visuals",
+            "Local visual effects disabled.",
+            3
+        )
+    end,
+})
 
 --------------------------------------------------
 -- SESSION
@@ -2210,7 +2876,6 @@ UtilityTab:CreateButton({
 -- DEVELOPER PHYSICS TESTS
 --------------------------------------------------
 
-local devGravity0Enabled = false
 local devFlyEnabled = false
 local devFlyConnection = nil
 local devInputConnection = nil
@@ -2242,14 +2907,20 @@ local function RequireDevMode()
     return false
 end
 
-local function RestoreGravity()
-    if OriginalGravity ~= nil then
-        Workspace.Gravity =
-            OriginalGravity
+local DevGravityOriginal = nil
 
-        OriginalGravity =
+local function RestoreGravity()
+    if DevGravityOriginal ~= nil
+        and GravityLocks <= 0
+    then
+        Workspace.Gravity =
+            DevGravityOriginal
+
+        DevGravityOriginal =
             nil
     end
+
+    StopGravityEnforcer()
 end
 
 local function SetDevGravity0(enabled)
@@ -2261,13 +2932,13 @@ local function SetDevGravity0(enabled)
         enabled == true
 
     if devGravity0Enabled then
-        if OriginalGravity == nil then
-            OriginalGravity =
+        if DevGravityOriginal == nil then
+            DevGravityOriginal =
                 Workspace.Gravity
         end
 
-        Workspace.Gravity =
-            0
+        StartGravityEnforcer()
+        Workspace.Gravity = 0
     else
         RestoreGravity()
     end
@@ -2298,11 +2969,53 @@ UtilityTab:CreateToggle({
 -- TEST CAMERA
 --------------------------------------------------
 
+local devCameraEnabled = false
+local devCameraRender = nil
+local devCameraInputBegan = nil
+local devCameraInputEnded = nil
+local devCameraMouse = nil
+local devCameraPosition =
+    Vector3.new(
+        -73,
+        62,
+        4923
+    )
+local devCameraYaw = 0
+local devCameraPitch = math.rad(-5)
+local devCameraKeys = {}
+
+local DEV_CAMERA_SPEED = 28
+local DEV_CAMERA_FAST_SPEED = 65
+local DEV_CAMERA_SENSITIVITY = 0.0025
+
 local function StopDevCamera()
-    if devCameraConnection then
-        devCameraConnection:Disconnect()
-        devCameraConnection = nil
+    devCameraEnabled = false
+
+    if devCameraRender then
+        devCameraRender:Disconnect()
+        devCameraRender = nil
     end
+
+    if devCameraInputBegan then
+        devCameraInputBegan:Disconnect()
+        devCameraInputBegan = nil
+    end
+
+    if devCameraInputEnded then
+        devCameraInputEnded:Disconnect()
+        devCameraInputEnded = nil
+    end
+
+    if devCameraMouse then
+        devCameraMouse:Disconnect()
+        devCameraMouse = nil
+    end
+
+    table.clear(devCameraKeys)
+
+    UserInputService.MouseBehavior =
+        Enum.MouseBehavior.Default
+    UserInputService.MouseIconEnabled = true
 
     local camera =
         Workspace.CurrentCamera
@@ -2310,6 +3023,14 @@ local function StopDevCamera()
     if camera then
         camera.CameraType =
             Enum.CameraType.Custom
+
+        local humanoid =
+            GetHumanoid()
+
+        if humanoid then
+            camera.CameraSubject =
+                humanoid
+        end
     end
 end
 
@@ -2324,68 +3045,247 @@ local function StartDevCamera()
         Workspace.CurrentCamera
 
     if not camera then
+        Notify(
+            "Dev Camera",
+            "CurrentCamera is unavailable.",
+            3
+        )
         return
     end
+
+    devCameraEnabled = true
+    devCameraPosition =
+        Vector3.new(
+            -73,
+            62,
+            4923
+        )
+
+    local look =
+        camera.CFrame.LookVector
+
+    devCameraYaw =
+        math.atan2(
+            -look.X,
+            -look.Z
+        )
+
+    devCameraPitch =
+        math.asin(
+            math.clamp(
+                look.Y,
+                -0.98,
+                0.98
+            )
+        )
 
     camera.CameraType =
         Enum.CameraType.Scriptable
 
     camera.CFrame =
         CFrame.new(
-            DEV_CAMERA_POSITION
+            devCameraPosition
+        )
+        * CFrame.Angles(
+            devCameraPitch,
+            devCameraYaw,
+            0
         )
 
-    devCameraConnection =
-        RunService.RenderStepped:Connect(
-            function()
-                if not devFlyEnabled then
+    devCameraInputBegan =
+        UserInputService.InputBegan:Connect(
+            function(input, processed)
+                if processed then
                     return
                 end
+
+                if input.UserInputType
+                    == Enum.UserInputType.Keyboard
+                then
+                    devCameraKeys[
+                        input.KeyCode
+                    ] = true
+                end
+            end
+        )
+
+    devCameraInputEnded =
+        UserInputService.InputEnded:Connect(
+            function(input)
+                if input.UserInputType
+                    == Enum.UserInputType.Keyboard
+                then
+                    devCameraKeys[
+                        input.KeyCode
+                    ] = nil
+                end
+            end
+        )
+
+    devCameraMouse =
+        UserInputService.InputChanged:Connect(
+            function(input)
+                if not devCameraEnabled then
+                    return
+                end
+
+                if input.UserInputType
+                    == Enum.UserInputType.MouseMovement
+                then
+                    devCameraYaw -=
+                        input.Delta.X
+                        * DEV_CAMERA_SENSITIVITY
+
+                    devCameraPitch -=
+                        input.Delta.Y
+                        * DEV_CAMERA_SENSITIVITY
+
+                    devCameraPitch =
+                        math.clamp(
+                            devCameraPitch,
+                            math.rad(-89),
+                            math.rad(89)
+                        )
+                end
+            end
+        )
+
+    UserInputService.MouseBehavior =
+        Enum.MouseBehavior.LockCurrentPosition
+    UserInputService.MouseIconEnabled = false
+
+    devCameraRender =
+        RunService.RenderStepped:Connect(
+            function(dt)
+                if not devCameraEnabled then
+                    return
+                end
+
+                local cameraNow =
+                    Workspace.CurrentCamera
+
+                if not cameraNow then
+                    return
+                end
+
+                local forward =
+                    Vector3.new(
+                        -math.sin(
+                            devCameraYaw
+                        ),
+                        0,
+                        -math.cos(
+                            devCameraYaw
+                        )
+                    )
+
+                local right =
+                    Vector3.new(
+                        math.cos(
+                            devCameraYaw
+                        ),
+                        0,
+                        -math.sin(
+                            devCameraYaw
+                        )
+                    )
+
+                local move =
+                    Vector3.zero
+
+                if devCameraKeys[
+                    Enum.KeyCode.W
+                ] then
+                    move += forward
+                end
+
+                if devCameraKeys[
+                    Enum.KeyCode.S
+                ] then
+                    move -= forward
+                end
+
+                if devCameraKeys[
+                    Enum.KeyCode.D
+                ] then
+                    move += right
+                end
+
+                if devCameraKeys[
+                    Enum.KeyCode.A
+                ] then
+                    move -= right
+                end
+
+                if devCameraKeys[
+                    Enum.KeyCode.E
+                ] then
+                    move += Vector3.yAxis
+                end
+
+                if devCameraKeys[
+                    Enum.KeyCode.Q
+                ] then
+                    move -= Vector3.yAxis
+                end
+
+                if move.Magnitude > 0 then
+                    local speed =
+                        devCameraKeys[
+                            Enum.KeyCode.LeftShift
+                        ]
+                        and DEV_CAMERA_FAST_SPEED
+                        or DEV_CAMERA_SPEED
+
+                    devCameraPosition +=
+                        move.Unit
+                        * speed
+                        * dt
+                end
+
+                cameraNow.CFrame =
+                    CFrame.new(
+                        devCameraPosition
+                    )
+                    * CFrame.Angles(
+                        devCameraPitch,
+                        devCameraYaw,
+                        0
+                    )
             end
         )
 
     Notify(
         "Dev Camera",
-        "Camera positioned at -73, 62, 4923.\n"
-            .. "Mouse rotation remains available through the game camera.",
-        4
+        "Enabled at -73, 62, 4923.\n"
+            .. "Mouse = look • WASD = move\n"
+            .. "Q/E = down/up • Shift = fast",
+        5
     )
 end
 
+UtilityTab:CreateToggle({
+    Name = "Dev Camera",
+    Default = false,
+    Flag = "DevCamera",
+    Callback = function(enabled)
+        if enabled then
+            StartDevCamera()
+        else
+            StopDevCamera()
+        end
+    end,
+})
+
 UtilityTab:CreateButton({
     Name = "Dev Camera Position",
-
     Callback = function()
-        if not RequireDevMode() then
-            return
-        end
-
-        local camera =
-            Workspace.CurrentCamera
-
-        if not camera then
-            return
-        end
-
-        camera.CameraType =
-            Enum.CameraType.Scriptable
-
-        camera.CFrame =
-            CFrame.new(
-                DEV_CAMERA_POSITION
-            )
-
-        Notify(
-            "Dev Camera",
-            "Set to X -73 | Y 62 | Z 4923.",
-            3
-        )
+        StartDevCamera()
     end,
 })
 
 UtilityTab:CreateButton({
     Name = "Reset Dev Camera",
-
     Callback = function()
         StopDevCamera()
     end,
@@ -2396,8 +3296,8 @@ UtilityTab:CreateButton({
 --------------------------------------------------
 
 local function StopDevFly()
-    devFlyEnabled =
-        false
+    devFlyEnabled = false
+    devVerticalInput = 0
 
     if devFlyConnection then
         devFlyConnection:Disconnect()
@@ -2413,15 +3313,14 @@ local function StopDevFly()
         GetHumanoid()
 
     if humanoid then
-        humanoid.PlatformStand =
-            false
+        humanoid.AutoRotate = true
 
-        humanoid.AutoRotate =
-            true
-
-        humanoid:ChangeState(
-            Enum.HumanoidStateType.GettingUp
-        )
+        pcall(function()
+            humanoid.PlatformStand = false
+            humanoid:ChangeState(
+                Enum.HumanoidStateType.GettingUp
+            )
+        end)
     end
 
     local root =
@@ -2429,6 +3328,9 @@ local function StopDevFly()
 
     if root then
         root.AssemblyLinearVelocity =
+            Vector3.zero
+
+        root.AssemblyAngularVelocity =
             Vector3.zero
     end
 end
@@ -2455,36 +3357,47 @@ local function StartDevFly()
         return
     end
 
-    devFlyEnabled =
-        true
-
+    devFlyEnabled = true
     devFlyHeight =
         root.Position.Y
 
-    humanoid.PlatformStand =
-        true
+    humanoid.AutoRotate = false
+    humanoid.PlatformStand = false
 
-    humanoid.AutoRotate =
-        false
+    -- Keep the normal character WalkSpeed.
+    local flySpeed =
+        math.max(
+            1,
+            tonumber(
+                humanoid.WalkSpeed
+            )
+            or 16
+        )
+
+    -- Force the falling animation/state while we hold the
+    -- character at a fixed altitude.
+    pcall(function()
+        humanoid:ChangeState(
+            Enum.HumanoidStateType.Freefall
+        )
+    end)
 
     devInputConnection =
         UserInputService.InputBegan:Connect(
             function(input, processed)
-                if processed then
+                if processed or not devFlyEnabled then
                     return
                 end
 
                 if input.KeyCode ==
                     Enum.KeyCode.Q
                 then
-                    devVerticalInput =
-                        -1
+                    devVerticalInput = -1
 
                 elseif input.KeyCode ==
                     Enum.KeyCode.E
                 then
-                    devVerticalInput =
-                        1
+                    devVerticalInput = 1
                 end
             end
         )
@@ -2503,34 +3416,60 @@ local function StartDevFly()
                     return
                 end
 
-                local delta =
-                    devVerticalInput
-                    * DEV_FLY_SPEED
-                    * dt
+                local currentHumanoid =
+                    GetHumanoid()
+
+                local currentSpeed =
+                    math.max(
+                        1,
+                        tonumber(
+                            currentHumanoid
+                            and currentHumanoid.WalkSpeed
+                        )
+                        or flySpeed
+                    )
 
                 devFlyHeight +=
-                    delta
+                    (
+                        devVerticalInput
+                        * currentSpeed
+                        * dt
+                    )
+
+                local current =
+                    currentRoot.Position
 
                 currentRoot.CFrame =
                     CFrame.new(
-                        currentRoot.Position.X,
+                        current.X,
                         devFlyHeight,
-                        currentRoot.Position.Z
+                        current.Z
                     )
 
                 currentRoot.AssemblyLinearVelocity =
                     Vector3.zero
+
+                currentRoot.AssemblyAngularVelocity =
+                    Vector3.zero
+
+                pcall(function()
+                    currentHumanoid:ChangeState(
+                        Enum.HumanoidStateType.Freefall
+                    )
+                end)
             end
         )
 
     Notify(
         "Dev Fly",
-        "Enabled. Hold E to rise, Q to descend.",
-        4
+        "Hover enabled.\n"
+            .. "Speed = WalkSpeed\n"
+            .. "Hold E to rise • Q to descend\n"
+            .. "Freefall animation is kept active.",
+        5
     )
 end
 
--- Release Q/E cleanly.
 UserInputService.InputEnded:Connect(
     function(input)
         if
@@ -2540,26 +3479,10 @@ UserInputService.InputEnded:Connect(
             input.KeyCode ==
                 Enum.KeyCode.E
         then
-            devVerticalInput =
-                0
+            devVerticalInput = 0
         end
     end
 )
-
-UtilityTab:CreateToggle({
-    Name = "Dev Fly",
-
-    Default = false,
-    Flag = "DevFlyTest",
-
-    Callback = function(enabled)
-        if enabled then
-            StartDevFly()
-        else
-            StopDevFly()
-        end
-    end,
-})
 
 --------------------------------------------------
 -- TEST PRESETS
@@ -2734,11 +3657,18 @@ local function StopTreadmillLock(
     treadmillLocks[worldName] =
         false
 
-    local connection =
+    local thread =
         treadmillConnections[worldName]
 
-    if connection then
-        connection:Disconnect()
+    if thread
+        and task.cancel
+    then
+        pcall(function()
+            task.cancel(
+                thread
+            )
+        end)
+
         treadmillConnections[worldName] =
             nil
     end
