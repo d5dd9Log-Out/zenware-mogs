@@ -6215,13 +6215,13 @@ _modules["Main.luau"] = {
 			    )
 			end
 
-			UtilityTab:CreateSection(
+			UtilityMoreTab:CreateSection(
 			    "Treadmill Dev"
 			)
 
-			UtilityTab:CreateParagraph({
+			UtilityMoreTab:CreateParagraph({
 			    Title =
-			        "🌸 Treadmill Position Lock",
+			        "🌸 Treadmill Tween / Position Lock",
 
 			    Content =
 			        "Tweens the character to the configured treadmill "
@@ -6232,7 +6232,7 @@ _modules["Main.luau"] = {
 			-- WORLD 1
 			--------------------------------------------------
 
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name =
 			        "World 1 Tween to Treadmill",
 
@@ -6247,7 +6247,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 
-			UtilityTab:CreateToggle({
+			UtilityMoreTab:CreateToggle({
 			    Name =
 			        "World 1 Treadmill Lock",
 
@@ -6279,7 +6279,7 @@ _modules["Main.luau"] = {
 			-- WORLD 2
 			--------------------------------------------------
 
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name =
 			        "World 2 Tween to Treadmill",
 
@@ -6294,7 +6294,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 
-			UtilityTab:CreateToggle({
+			UtilityMoreTab:CreateToggle({
 			    Name =
 			        "World 2 Treadmill Lock",
 
@@ -6322,7 +6322,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name =
 			        "Stop Treadmill Locks",
 

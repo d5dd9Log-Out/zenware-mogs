@@ -4738,13 +4738,13 @@ local function StartTreadmillLock(
     )
 end
 
-UtilityTab:CreateSection(
+UtilityMoreTab:CreateSection(
     "Treadmill Dev"
 )
 
-UtilityTab:CreateParagraph({
+UtilityMoreTab:CreateParagraph({
     Title =
-        "🌸 Treadmill Position Lock",
+        "🌸 Treadmill Tween / Position Lock",
 
     Content =
         "Tweens the character to the configured treadmill "
@@ -4755,7 +4755,7 @@ UtilityTab:CreateParagraph({
 -- WORLD 1
 --------------------------------------------------
 
-UtilityTab:CreateButton({
+UtilityMoreTab:CreateButton({
     Name =
         "World 1 Tween to Treadmill",
 
@@ -4770,7 +4770,7 @@ UtilityTab:CreateButton({
     end,
 })
 
-UtilityTab:CreateToggle({
+UtilityMoreTab:CreateToggle({
     Name =
         "World 1 Treadmill Lock",
 
@@ -4802,7 +4802,7 @@ UtilityTab:CreateToggle({
 -- WORLD 2
 --------------------------------------------------
 
-UtilityTab:CreateButton({
+UtilityMoreTab:CreateButton({
     Name =
         "World 2 Tween to Treadmill",
 
@@ -4817,7 +4817,7 @@ UtilityTab:CreateButton({
     end,
 })
 
-UtilityTab:CreateToggle({
+UtilityMoreTab:CreateToggle({
     Name =
         "World 2 Treadmill Lock",
 
@@ -4845,7 +4845,7 @@ UtilityTab:CreateToggle({
     end,
 })
 
-UtilityTab:CreateButton({
+UtilityMoreTab:CreateButton({
     Name =
         "Stop Treadmill Locks",
 
