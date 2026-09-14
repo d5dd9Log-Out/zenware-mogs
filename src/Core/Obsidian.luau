@@ -18,6 +18,7 @@ function Obsidian.new(title, configFolder)
     Library.ForceCheckbox = false
     Library.ShowToggleFrameInKeybinds = true
     Library.ShowCustomCursor = false
+    Library.ShowCustomCursor = false
 
     --------------------------------------------------
     -- LILAC V1488 PALETTE
@@ -120,83 +121,182 @@ function Obsidian.new(title, configFolder)
     -- LILAC MENU IMAGE
     --------------------------------------------------
 
-    local MENU_IMAGE_ID = "137423681201950"
-    local MENU_IMAGE = "rbxthumb://type=Asset&id=" .. MENU_IMAGE_ID .. "&w=768&h=768"
+    local MENU_IMAGE =
+        "rbxassetid://137423681201950"
 
-    local MenuRoot = Window.Window
+    local MenuRoot =
+        Window.Window
 
-    -- Obsidian already creates a real BackgroundImage ImageLabel.
-    -- Set it directly so the artwork is actually rendered by Roblox.
     pcall(function()
-        Window:SetBackgroundImage(MENU_IMAGE)
+        -- Make the menu itself translucent so the artwork behind its
+        -- controls is actually visible.
+        MenuRoot.BackgroundTransparency =
+            0.12
 
-        local BackgroundImage = Window.BackgroundImage
-            or MenuRoot:FindFirstChild("BackgroundImage")
+        local old =
+            MenuRoot:FindFirstChild(
+                "LilacMenuBackground"
+            )
 
-        if BackgroundImage and BackgroundImage:IsA("ImageLabel") then
-            BackgroundImage.Image = MENU_IMAGE
-            BackgroundImage.ImageTransparency = 0.35
-            BackgroundImage.BackgroundTransparency = 1
-            BackgroundImage.ScaleType = Enum.ScaleType.Crop
-            BackgroundImage.Visible = true
-            BackgroundImage.ZIndex = 1
+        if old then
+            old:Destroy()
         end
+
+        local MenuImage =
+            Instance.new(
+                "ImageLabel"
+            )
+
+        MenuImage.Name =
+            "LilacMenuBackground"
+
+        MenuImage.Position =
+            UDim2.fromScale(
+                0,
+                0
+            )
+
+        MenuImage.Size =
+            UDim2.fromScale(
+                1,
+                1
+            )
+
+        MenuImage.AnchorPoint =
+            Vector2.zero
+
+        MenuImage.BackgroundTransparency =
+            1
+
+        MenuImage.BorderSizePixel =
+            0
+
+        MenuImage.Image =
+            MENU_IMAGE
+
+        MenuImage.ImageTransparency =
+            0.38
+
+        MenuImage.ScaleType =
+            Enum.ScaleType.Crop
+
+        MenuImage.Active =
+            false
+
+        MenuImage.Selectable =
+            false
+
+        MenuImage.ZIndex =
+            0
+
+        MenuImage.Parent =
+            MenuRoot
     end)
 
     --------------------------------------------------
     -- FULLSCREEN LILAC IMAGE
     --------------------------------------------------
 
-    local FULLSCREEN_IMAGE_ID = "99217170570093"
     local FULLSCREEN_IMAGE =
-        "rbxthumb://type=Asset&id=" .. FULLSCREEN_IMAGE_ID .. "&w=1920&h=1080"
-
-    local FullscreenLayer
+        "rbxassetid://99217170570093"
 
     pcall(function()
-        local ScreenGui = Library.ScreenGui
+        local ScreenGui =
+            Library.ScreenGui
 
-        if ScreenGui then
-            ScreenGui.IgnoreGuiInset = true
-
-            local old = ScreenGui:FindFirstChild("LilacFullscreenBackground")
-            if old then
-                old:Destroy()
-            end
-
-            FullscreenLayer = Instance.new("ImageLabel")
-            FullscreenLayer.Name = "LilacFullscreenBackground"
-            FullscreenLayer.AnchorPoint = Vector2.zero
-            FullscreenLayer.Position = UDim2.fromScale(0, 0)
-            FullscreenLayer.Size = UDim2.fromScale(1, 1)
-            FullscreenLayer.BackgroundTransparency = 1
-            FullscreenLayer.BorderSizePixel = 0
-            FullscreenLayer.Image = FULLSCREEN_IMAGE
-            FullscreenLayer.ImageTransparency = 0.28
-            FullscreenLayer.ScaleType = Enum.ScaleType.Crop
-            FullscreenLayer.Active = false
-            FullscreenLayer.Selectable = false
-            FullscreenLayer.ZIndex = 0
-            FullscreenLayer.Visible = Library.Toggled == true
-            FullscreenLayer.Parent = ScreenGui
-
-            -- Keep the fullscreen image exactly synced with the Obsidian UI.
-            task.spawn(function()
-                while FullscreenLayer and FullscreenLayer.Parent and not Library.Unloaded do
-                    FullscreenLayer.Visible = Library.Toggled == true
-                    task.wait(0.03)
-                end
-            end)
-
-            ScreenGui.Destroying:Connect(function()
-                FullscreenLayer = nil
-            end)
+        if not ScreenGui then
+            return
         end
-    end)
 
-    pcall(function()
-        MenuRoot.BackgroundTransparency =
-            0.10
+        ScreenGui.IgnoreGuiInset =
+            true
+
+        ScreenGui.DisplayOrder =
+            math.max(
+                ScreenGui.DisplayOrder,
+                100
+            )
+
+        local old =
+            ScreenGui:FindFirstChild(
+                "LilacFullscreenBackground"
+            )
+
+        if old then
+            old:Destroy()
+        end
+
+        local FullscreenLayer =
+            Instance.new(
+                "ImageLabel"
+            )
+
+        FullscreenLayer.Name =
+            "LilacFullscreenBackground"
+
+        FullscreenLayer.Position =
+            UDim2.fromScale(
+                0,
+                0
+            )
+
+        FullscreenLayer.Size =
+            UDim2.fromScale(
+                1,
+                1
+            )
+
+        FullscreenLayer.AnchorPoint =
+            Vector2.zero
+
+        FullscreenLayer.BackgroundTransparency =
+            1
+
+        FullscreenLayer.BorderSizePixel =
+            0
+
+        FullscreenLayer.Image =
+            FULLSCREEN_IMAGE
+
+        FullscreenLayer.ImageTransparency =
+            0.40
+
+        FullscreenLayer.ScaleType =
+            Enum.ScaleType.Crop
+
+        FullscreenLayer.Active =
+            false
+
+        FullscreenLayer.Selectable =
+            false
+
+        FullscreenLayer.ZIndex =
+            0
+
+        FullscreenLayer.Visible =
+            true
+
+        FullscreenLayer.Parent =
+            ScreenGui
+
+        task.spawn(function()
+            while
+                FullscreenLayer.Parent
+                and not Library.Unloaded
+            do
+                -- Keep it behind the UI, but only while the UI is open.
+                local visible =
+                    Library.Toggled
+                    ~= false
+
+                FullscreenLayer.Visible =
+                    visible
+
+                task.wait(
+                    0.05
+                )
+            end
+        end)
     end)
 
     pcall(function()
