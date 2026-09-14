@@ -17,6 +17,7 @@ function Obsidian.new(title, configFolder)
 
     Library.ForceCheckbox = false
     Library.ShowToggleFrameInKeybinds = true
+    Library.ShowCustomCursor = false
 
     --------------------------------------------------
     -- LILAC V1488 PALETTE
@@ -106,7 +107,7 @@ function Obsidian.new(title, configFolder)
 
         NotifySide = "Right",
 
-        ShowCustomCursor = true,
+        ShowCustomCursor = false,
         AutoShow = true,
         Resizable = true,
         Center = true,
@@ -244,11 +245,196 @@ function Obsidian.new(title, configFolder)
                 Group = nil,
             }
 
+            local function EnsureGroup(self)
+                if self.Group then
+                    return self.Group
+                end
+
+                local ok, group =
+                    pcall(function()
+                        return self.Tab:AddLeftGroupbox(
+                            "General"
+                        )
+                    end)
+
+                if ok and group then
+                    self.Group = group
+                    return group
+                end
+
+                return nil
+            end
+
+            function ZenTab:CreateButton(config)
+                config = config or {}
+                local Group = EnsureGroup(self)
+                if not Group then return nil end
+
+                return Group:AddButton({
+                    Text = config.Name or "Button",
+                    Func = config.Callback,
+                })
+            end
+
+            function ZenTab:CreateToggle(config)
+                config = config or {}
+                local Group = EnsureGroup(self)
+                if not Group then return nil end
+
+                return Group:AddToggle(
+                    config.Flag or config.Name or "Toggle",
+                    {
+                        Text = config.Name or "Toggle",
+                        Default = config.Default == true,
+                        Callback = config.Callback,
+                    }
+                )
+            end
+
+            function ZenTab:CreateSlider(config)
+                config = config or {}
+                local Group = EnsureGroup(self)
+                if not Group then return nil end
+
+                return Group:AddSlider(
+                    config.Flag or config.Name or "Slider",
+                    {
+                        Text = config.Name or "Slider",
+                        Default = config.Default or 0,
+                        Min = config.Min or 0,
+                        Max = config.Max or 100,
+                        Rounding = config.Rounding or 2,
+                        Compact = false,
+                        Callback = config.Callback,
+                    }
+                )
+            end
+
+            function ZenTab:CreateTextBox(config)
+                config = config or {}
+                local Group = EnsureGroup(self)
+                if not Group then return nil end
+
+                local input =
+                    Group:AddInput(
+                        config.Flag or config.Name or "Input",
+                        {
+                            Text = config.Name or "Input",
+                            Placeholder = config.Placeholder or "",
+                            Default = config.Default or "",
+                            Callback = config.Callback,
+                        }
+                    )
+
+                local api = {}
+
+                function api:GetText()
+                    if input and input.Value ~= nil then
+                        return tostring(input.Value)
+                    end
+                    return ""
+                end
+
+                function api:SetText(value)
+                    if input and input.SetValue then
+                        input:SetValue(tostring(value or ""))
+                    end
+                end
+
+                function api:Focus()
+                    if input and input.Input then
+                        input.Input:CaptureFocus()
+                    end
+                end
+
+                return api
+            end
+
+            function ZenTab:CreateKeybind(config)
+                config = config or {}
+                local Group = EnsureGroup(self)
+                if not Group then return nil end
+
+                local defaultKey =
+                    config.Default or "RightControl"
+
+                if typeof(defaultKey) == "EnumItem" then
+                    defaultKey = defaultKey.Name
+                elseif type(defaultKey) ~= "string" then
+                    defaultKey = "RightControl"
+                end
+
+                local label =
+                    Group:AddLabel(
+                        config.Name or "Keybind"
+                    )
+
+                return label:AddKeyPicker(
+                    config.Flag or config.Name or "Keybind",
+                    {
+                        Default = defaultKey,
+                        NoUI = config.NoUI == true,
+                    }
+                )
+            end
+
+            function ZenTab:CreateParagraph(config)
+                config = config or {}
+                local Group = EnsureGroup(self)
+                if not Group then return nil end
+
+                return Group:AddLabel({
+                    Text =
+                        (
+                            config.Title
+                            and (
+                                tostring(config.Title)
+                                .. "\n"
+                            )
+                            or ""
+                        )
+                        .. tostring(config.Content or ""),
+                    DoesWrap = true,
+                })
+            end
+
+            function ZenTab:CreateConfigSection()
+                local Group = EnsureGroup(self)
+                if not Group then return nil end
+
+                if self.Window.SaveManager
+                    and self.Window.SaveManager.BuildConfigSection
+                then
+                    pcall(function()
+                        self.Window.SaveManager:
+                            BuildConfigSection(self.Tab)
+                    end)
+                end
+
+                if self.Window.ThemeManager
+                    and self.Window.ThemeManager.ApplyToTab
+                then
+                    pcall(function()
+                        self.Window.ThemeManager:
+                            ApplyToTab(self.Tab)
+                    end)
+                end
+
+                return Group
+            end
+
+            function ZenTab:CreateDivider()
+                local Group = EnsureGroup(self)
+                if not Group then return nil end
+                return Group:AddDivider()
+            end
+
+
             --------------------------------------------------
             -- GROUP
             --------------------------------------------------
 
-            function ZenTab:CreateSection(name, icon)
+                        function ZenTab:CreateSection(name, icon)
                 local Group
 
                 self._ColumnIndex =
@@ -276,8 +462,7 @@ function Obsidian.new(title, configFolder)
                         end)
 
                     if ok and result then
-                        Group =
-                            result
+                        Group = result
                     end
                 end
 
@@ -298,10 +483,8 @@ function Obsidian.new(title, configFolder)
 
                 self.Group = Group
 
-                function self:ResetColumnLayout()
-                    self._ColumnIndex = 0
-                end
-
+                return Group
+            end
 
                 --------------------------------------------------
                 -- BUTTON
