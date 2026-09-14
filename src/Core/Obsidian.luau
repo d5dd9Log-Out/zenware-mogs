@@ -65,7 +65,7 @@ function Obsidian.new(title, configFolder)
         ),
 
         BackgroundImage =
-            "rbxassetid://83486595661123",
+            "rbxthumb://type=Asset&id=137423681201950&w=768&h=768",
     }
 
     Library.Scheme = LilacTheme
@@ -128,138 +128,6 @@ function Obsidian.new(title, configFolder)
     end
 
     --------------------------------------------------
-    -- NORMALIZE SCHEME BEFORE WINDOW CREATION
-    --
-    -- Obsidian resolves strings such as "OutlineColor"
-    -- through Library.Scheme when creating UI strokes.
-    -- Force every Color field to an actual Color3 so
-    -- AddOutline/FillInstance cannot receive a string.
-    --------------------------------------------------
-
-    local function NormalizeLilacScheme()
-        local Scheme =
-            Library.Scheme
-            or {}
-
-        local function ForceColor(
-            key,
-            value
-        )
-            if typeof(
-                Scheme[key]
-            ) ~= "Color3"
-            then
-                Scheme[key] =
-                    value
-            end
-        end
-
-        ForceColor(
-            "FontColor",
-            Color3.fromRGB(
-                242,
-                230,
-                248
-            )
-        )
-
-        ForceColor(
-            "MainColor",
-            Color3.fromRGB(
-                18,
-                9,
-                24
-            )
-        )
-
-        ForceColor(
-            "AccentColor",
-            Color3.fromRGB(
-                194,
-                109,
-                228
-            )
-        )
-
-        ForceColor(
-            "BackgroundColor",
-            Color3.fromRGB(
-                3,
-                2,
-                5
-            )
-        )
-
-        ForceColor(
-            "OutlineColor",
-            Color3.fromRGB(
-                76,
-                38,
-                91
-            )
-        )
-
-        ForceColor(
-            "RedColor",
-            Color3.fromRGB(
-                255,
-                92,
-                121
-            )
-        )
-
-        ForceColor(
-            "DestructiveColor",
-            Color3.fromRGB(
-                225,
-                63,
-                94
-            )
-        )
-
-        ForceColor(
-            "DarkColor",
-            Color3.fromRGB(
-                2,
-                1,
-                4
-            )
-        )
-
-        ForceColor(
-            "WhiteColor",
-            Color3.fromRGB(
-                255,
-                250,
-                255
-            )
-        )
-
-        if typeof(
-            Scheme.Font
-        ) ~= "Font"
-        then
-            Scheme.Font =
-                Font.fromEnum(
-                    Enum.Font.GothamMedium
-                )
-        end
-
-        if type(
-            Scheme.BackgroundImage
-        ) ~= "string"
-        then
-            Scheme.BackgroundImage =
-                "rbxassetid://83486595661123"
-        end
-
-        Library.Scheme =
-            Scheme
-    end
-
-    NormalizeLilacScheme()
-
-    --------------------------------------------------
     -- WINDOW
     --------------------------------------------------
 
@@ -280,7 +148,7 @@ function Obsidian.new(title, configFolder)
             ),
 
         BackgroundImage =
-            "rbxassetid://83486595661123",
+            "rbxthumb://type=Asset&id=137423681201950&w=768&h=768",
 
         NotifySide = "Right",
 
@@ -314,11 +182,152 @@ function Obsidian.new(title, configFolder)
             IndicatorWidth = 3,
             IndicatorHeight = 22,
         },
+
+    --------------------------------------------------
+    -- FULLSCREEN LILAC IMAGE
+    --------------------------------------------------
+
+    pcall(function()
+        local ScreenGui =
+            Library.ScreenGui
+
+        if not ScreenGui then
+            return
+        end
+
+        local old =
+            ScreenGui:FindFirstChild(
+                "LilacFullscreenBackground"
+            )
+
+        if old then
+            old:Destroy()
+        end
+
+        ScreenGui.IgnoreGuiInset =
+            true
+
+        local background =
+            Instance.new(
+                "ImageLabel"
+            )
+
+        background.Name =
+            "LilacFullscreenBackground"
+
+        background.Position =
+            UDim2.fromScale(
+                0,
+                0
+            )
+
+        background.Size =
+            UDim2.fromScale(
+                1,
+                1
+            )
+
+        background.BackgroundTransparency =
+            1
+
+        background.BorderSizePixel =
+            0
+
+        background.Image =
+            "rbxthumb://type=Asset&id=99217170570093&w=1920&h=1080"
+
+        background.ImageTransparency =
+            0.42
+
+        background.ScaleType =
+            Enum.ScaleType.Crop
+
+        background.Active =
+            false
+
+        background.Selectable =
+            false
+
+        background.ZIndex =
+            0
+
+        background.Visible =
+            Library.Toggled == true
+
+        background.Parent =
+            ScreenGui
+
+        local tint =
+            Instance.new(
+                "Frame"
+            )
+
+        tint.Name =
+            "LilacFullscreenTint"
+
+        tint.Position =
+            UDim2.fromScale(
+                0,
+                0
+            )
+
+        tint.Size =
+            UDim2.fromScale(
+                1,
+                1
+            )
+
+        tint.BackgroundColor3 =
+            Color3.fromRGB(
+                12,
+                3,
+                18
+            )
+
+        tint.BackgroundTransparency =
+            0.70
+
+        tint.BorderSizePixel =
+            0
+
+        tint.Active =
+            false
+
+        tint.ZIndex =
+            1
+
+        tint.Visible =
+            background.Visible
+
+        tint.Parent =
+            ScreenGui
+
+        task.spawn(function()
+            while
+                background.Parent
+                and not Library.Unloaded
+            do
+                local visible =
+                    Library.Toggled == true
+
+                background.Visible =
+                    visible
+
+                tint.Visible =
+                    visible
+
+                task.wait(
+                    0.05
+                )
+            end
+        end)
+    end)
+
     })
 
     pcall(function()
         Window:SetBackgroundImage(
-            "rbxassetid://83486595661123"
+            "rbxthumb://type=Asset&id=137423681201950&w=768&h=768"
         )
     end)
 
@@ -337,8 +346,6 @@ function Obsidian.new(title, configFolder)
             KeyPicker = true,
         }, 0.20, 24, "bottom")
     end)
-
-    NormalizeLilacScheme()
 
     local ZenWindow = {
         Library = Library,
@@ -381,10 +388,9 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateSection(name, icon)
                 local Group
 
-                -- Alternate every section between the left and right
-                -- column for every tab, not only Utilities.
                 self._ColumnIndex =
-                    (self._ColumnIndex or 0) + 1
+                    (self._ColumnIndex or 0)
+                    + 1
 
                 local useRight =
                     (
@@ -407,7 +413,8 @@ function Obsidian.new(title, configFolder)
                         end)
 
                     if ok and result then
-                        Group = result
+                        Group =
+                            result
                     end
                 end
 
@@ -427,11 +434,6 @@ function Obsidian.new(title, configFolder)
                 end
 
                 self.Group = Group
-
-                function self:ResetColumnLayout()
-                    self._ColumnIndex = 0
-                end
-
 
                 --------------------------------------------------
                 -- BUTTON
@@ -940,7 +942,7 @@ function Obsidian.new(title, configFolder)
                         ),
 
                     BackgroundImage =
-                        "rbxassetid://83486595661123",
+                        "rbxthumb://type=Asset&id=137423681201950&w=768&h=768",
                 })
 
             self.ThemeManager:
