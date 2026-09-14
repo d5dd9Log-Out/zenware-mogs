@@ -2347,8 +2347,848 @@ local UtilityTab =
         "sparkles"
     )
 
+local UtilityMoreTab =
+    UtilitySection:CreateTab(
+        "More",
+        "layers"
+    )
+
 local SessionStart =
     os.clock()
+
+--------------------------------------------------
+-- MOVEMENT / CHARACTER
+--------------------------------------------------
+
+UtilityMoreTab:CreateSection(
+    "Movement"
+)
+
+UtilityMoreTab:CreateSlider({
+    Name = "WalkSpeed",
+
+    Min = 1,
+    Max = 100,
+
+    Default =
+        State.WalkSpeed,
+
+    Flag = "WalkSpeed",
+
+    Callback = function(value)
+        State.WalkSpeed =
+            tonumber(value)
+            or 16
+
+        local humanoid =
+            GetHumanoid()
+
+        if humanoid then
+            humanoid.WalkSpeed =
+                State.WalkSpeed
+        end
+    end,
+})
+
+UtilityMoreTab:CreateSlider({
+    Name = "JumpPower",
+
+    Min = 1,
+    Max = 150,
+
+    Default =
+        State.JumpPower,
+
+    Flag = "JumpPower",
+
+    Callback = function(value)
+        State.JumpPower =
+            tonumber(value)
+            or 50
+
+        local humanoid =
+            GetHumanoid()
+
+        if humanoid then
+            humanoid.UseJumpPower = true
+            humanoid.JumpPower =
+                State.JumpPower
+        end
+    end,
+})
+
+UtilityMoreTab:CreateSlider({
+    Name = "HipHeight",
+
+    Min = 0,
+    Max = 10,
+
+    Default =
+        State.HipHeight,
+
+    Flag = "HipHeight",
+
+    Callback = function(value)
+        State.HipHeight =
+            tonumber(value)
+            or 2
+
+        local humanoid =
+            GetHumanoid()
+
+        if humanoid then
+            humanoid.HipHeight =
+                State.HipHeight
+        end
+    end,
+})
+
+UtilityMoreTab:CreateToggle({
+    Name = "Anti AFK",
+
+    Default =
+        State.AntiAFK == true,
+
+    Flag = "AntiAFK",
+
+    Callback = function(enabled)
+        State.AntiAFK =
+            enabled == true
+
+        if enabled then
+            SafeCall(function()
+                LocalPlayer.Idled:Connect(
+                    function()
+                        VirtualUser:CaptureController()
+                        VirtualUser:ClickButton2(
+                            Vector2.new()
+                        )
+                    end
+                )
+            end)
+        end
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Reset Character Physics",
+
+    Callback = function()
+        local humanoid =
+            GetHumanoid()
+
+        local root =
+            GetRoot()
+
+        if root then
+            root.AssemblyLinearVelocity =
+                Vector3.zero
+
+            root.AssemblyAngularVelocity =
+                Vector3.zero
+        end
+
+        if humanoid then
+            humanoid.WalkSpeed =
+                16
+
+            humanoid.JumpPower =
+                50
+
+            humanoid.HipHeight =
+                2
+        end
+
+        State.WalkSpeed = 16
+        State.JumpPower = 50
+        State.HipHeight = 2
+
+        Notify(
+            "Movement",
+            "Character physics reset.",
+            3
+        )
+    end,
+})
+
+--------------------------------------------------
+-- CAMERA / VISUAL
+--------------------------------------------------
+
+UtilityMoreTab:CreateSection(
+    "Camera & Visuals"
+)
+
+UtilityMoreTab:CreateSlider({
+    Name = "Camera FOV",
+
+    Min = 40,
+    Max = 120,
+
+    Default = 70,
+
+    Flag = "CameraFOV",
+
+    Callback = function(value)
+        local camera =
+            GetCamera()
+
+        if camera then
+            camera.FieldOfView =
+                tonumber(value)
+                or 70
+        end
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "FOV 70",
+
+    Callback = function()
+        local camera =
+            GetCamera()
+
+        if camera then
+            camera.FieldOfView = 70
+        end
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "FOV 90",
+
+    Callback = function()
+        local camera =
+            GetCamera()
+
+        if camera then
+            camera.FieldOfView = 90
+        end
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Clear Visual Effects",
+
+    Callback = function()
+        for _, object in ipairs(
+            Lighting:GetChildren()
+        ) do
+            if
+                object:IsA("BlurEffect")
+                or object:IsA("ColorCorrectionEffect")
+                or object:IsA("BloomEffect")
+                or object:IsA("SunRaysEffect")
+            then
+                pcall(function()
+                    object.Enabled = false
+                end)
+            end
+        end
+
+        Notify(
+            "Visuals",
+            "Local visual effects disabled.",
+            3
+        )
+    end,
+})
+
+--------------------------------------------------
+-- SESSION
+--------------------------------------------------
+
+UtilityMoreTab:CreateSection(
+    "Session"
+)
+
+UtilityMoreTab:CreateParagraph({
+    Title = "🌸 Lilac Utilities",
+    Content =
+        "Client information, dev tests and small helpers."
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Session Info",
+
+    Callback = function()
+        local character =
+            LocalPlayer.Character
+
+        local position =
+            character
+            and character:GetPivot().Position
+
+        Notify(
+            "Session Info",
+            "Place: "
+                .. tostring(game.PlaceId)
+                .. "\nPlayers: "
+                .. tostring(#Players:GetPlayers())
+                .. "\nUptime: "
+                .. string.format(
+                    "%.0fs",
+                    os.clock() - SessionStart
+                )
+                .. "\nPosition: "
+                .. (
+                    position
+                    and string.format(
+                        "%.1f, %.1f, %.1f",
+                        position.X,
+                        position.Y,
+                        position.Z
+                    )
+                    or "Unknown"
+                ),
+            6
+        )
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Show Place ID",
+
+    Callback = function()
+        Notify(
+            "Place ID",
+            tostring(game.PlaceId),
+            4
+        )
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Show Job ID",
+
+    Callback = function()
+        Notify(
+            "Job ID",
+            tostring(game.JobId),
+            4
+        )
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Show Player Count",
+
+    Callback = function()
+        Notify(
+            "Server",
+            tostring(
+                #Players:GetPlayers()
+            ) .. " players online.",
+            3
+        )
+    end,
+})
+
+--------------------------------------------------
+-- CHARACTER
+--------------------------------------------------
+
+UtilityMoreTab:CreateSection(
+    "Character"
+)
+
+UtilityMoreTab:CreateButton({
+    Name = "Refresh Character",
+
+    Callback = function()
+        SafeCall(function()
+            LocalPlayer:LoadCharacter()
+        end)
+
+        Notify(
+            "Character",
+            "Refresh requested.",
+            3
+        )
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Reset Camera",
+
+    Callback = function()
+        SafeCall(function()
+            local character =
+                LocalPlayer.Character
+
+            local humanoid =
+                character
+                and character:FindFirstChildOfClass(
+                    "Humanoid"
+                )
+
+            if humanoid then
+                Workspace.CurrentCamera.CameraSubject =
+                    humanoid
+                Workspace.CurrentCamera.CameraType =
+                    Enum.CameraType.Custom
+            end
+        end)
+
+        Notify(
+            "Camera",
+            "Camera reset.",
+            2
+        )
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Character Position",
+
+    Callback = function()
+        local position =
+            GetPosition()
+
+        Notify(
+            "Position",
+            FormatVector3(
+                position
+            ),
+            4
+        )
+    end,
+})
+
+--------------------------------------------------
+-- EXTRA DEV UTILITIES
+--------------------------------------------------
+
+UtilityMoreTab:CreateSection(
+    "Performance"
+)
+
+local fpsLabel =
+    UtilityMoreTab:CreateParagraph({
+        Title = "FPS Monitor",
+        Content = "FPS: measuring...",
+    })
+
+local fpsMonitorEnabled =
+    false
+
+local fpsConnection =
+    nil
+
+local fpsFrames =
+    0
+
+local fpsStarted =
+    os.clock()
+
+local function StopFPSMonitor()
+    fpsMonitorEnabled =
+        false
+
+    if fpsConnection then
+        fpsConnection:Disconnect()
+        fpsConnection =
+            nil
+    end
+end
+
+local function StartFPSMonitor()
+    StopFPSMonitor()
+
+    fpsMonitorEnabled =
+        true
+
+    fpsFrames =
+        0
+
+    fpsStarted =
+        os.clock()
+
+    fpsConnection =
+        RunService.RenderStepped:Connect(
+            function()
+                if not fpsMonitorEnabled then
+                    return
+                end
+
+                fpsFrames +=
+                    1
+
+                local elapsed =
+                    os.clock()
+                    - fpsStarted
+
+                if elapsed >= 0.5 then
+                    local fps =
+                        math.floor(
+                            (
+                                fpsFrames
+                                / elapsed
+                            )
+                            + 0.5
+                        )
+
+                    pcall(function()
+                        fpsLabel:SetText(
+                            "FPS: "
+                                .. tostring(
+                                    fps
+                                )
+                        )
+                    end)
+
+                    fpsFrames =
+                        0
+
+                    fpsStarted =
+                        os.clock()
+                end
+            end
+        )
+end
+
+UtilityMoreTab:CreateToggle({
+    Name = "FPS Monitor",
+
+    Default = false,
+
+    Flag = "FPSMonitor",
+
+    Callback = function(enabled)
+        if enabled then
+            StartFPSMonitor()
+        else
+            StopFPSMonitor()
+
+            pcall(function()
+                fpsLabel:SetText(
+                    "FPS: stopped"
+                )
+            end)
+        end
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Performance Snapshot",
+
+    Callback = function()
+        local character =
+            LocalPlayer.Character
+
+        local root =
+            GetRoot()
+
+        Notify(
+            "Performance",
+            "Players: "
+                .. tostring(
+                    #Players:GetPlayers()
+                )
+                .. "\nGravity: "
+                .. string.format(
+                    "%.1f",
+                    Workspace.Gravity
+                )
+                .. "\nCharacter: "
+                .. tostring(
+                    character ~= nil
+                )
+                .. "\nRoot: "
+                .. tostring(
+                    root ~= nil
+                ),
+            5
+        )
+    end,
+})
+
+--------------------------------------------------
+-- ENVIRONMENT
+--------------------------------------------------
+
+UtilityMoreTab:CreateSection(
+    "Environment"
+)
+
+UtilityMoreTab:CreateSlider({
+    Name = "Clock Time",
+
+    Min = 0,
+    Max = 24,
+
+    Default = Lighting.ClockTime,
+
+    Flag = "ClockTime",
+
+    Callback = function(value)
+        Lighting.ClockTime =
+            tonumber(value)
+            or Lighting.ClockTime
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Day",
+
+    Callback = function()
+        Lighting.ClockTime =
+            12
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Sunset",
+
+    Callback = function()
+        Lighting.ClockTime =
+            18
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Night",
+
+    Callback = function()
+        Lighting.ClockTime =
+            0
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Restore Local Visuals",
+
+    Callback = function()
+        pcall(function()
+            Lighting.ClockTime =
+                14
+
+            local camera =
+                GetCamera()
+
+            if camera then
+                camera.FieldOfView =
+                    70
+            end
+        end)
+
+        Notify(
+            "Environment",
+            "Local visual settings restored.",
+            3
+        )
+    end,
+})
+
+--------------------------------------------------
+-- QUICK ACTIONS
+--------------------------------------------------
+
+UtilityMoreTab:CreateSection(
+    "Quick Actions"
+)
+
+UtilityMoreTab:CreateButton({
+    Name = "Copy Position",
+
+    Callback = function()
+        local position =
+            GetPosition()
+
+        if not position then
+            Notify(
+                "Clipboard",
+                "Character position unavailable.",
+                3
+            )
+            return
+        end
+
+        local value =
+            string.format(
+                "%.3f %.3f %.3f",
+                position.X,
+                position.Y,
+                position.Z
+            )
+
+        if SetClipboard(
+            value
+        ) then
+            Notify(
+                "Clipboard",
+                "Position copied.",
+                3
+            )
+        end
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Copy Camera Position",
+
+    Callback = function()
+        local camera =
+            GetCamera()
+
+        if not camera then
+            return
+        end
+
+        local position =
+            camera.CFrame.Position
+
+        local value =
+            string.format(
+                "%.3f %.3f %.3f",
+                position.X,
+                position.Y,
+                position.Z
+            )
+
+        if SetClipboard(
+            value
+        ) then
+            Notify(
+                "Clipboard",
+                "Camera position copied.",
+                3
+            )
+        end
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Show Camera Info",
+
+    Callback = function()
+        local camera =
+            GetCamera()
+
+        if not camera then
+            return
+        end
+
+        local position =
+            camera.CFrame.Position
+
+        Notify(
+            "Camera",
+            string.format(
+                "X %.2f | Y %.2f | Z %.2f\nFOV %.1f",
+                position.X,
+                position.Y,
+                position.Z,
+                camera.FieldOfView
+            ),
+            4
+        )
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Reset Character Rotation",
+
+    Callback = function()
+        local root =
+            GetRoot()
+
+        if not root then
+            return
+        end
+
+        local position =
+            root.Position
+
+        root.CFrame =
+            CFrame.new(
+                position
+            )
+
+        root.AssemblyAngularVelocity =
+            Vector3.zero
+
+        Notify(
+            "Character",
+            "Rotation reset.",
+            2
+        )
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Respawn",
+
+    Callback = function()
+        SafeCall(function()
+            LocalPlayer:LoadCharacter()
+        end)
+    end,
+})
+
+--------------------------------------------------
+-- FUN / USELESS STUFF
+--------------------------------------------------
+
+UtilityMoreTab:CreateSection(
+    "Fun"
+)
+
+UtilityMoreTab:CreateButton({
+    Name = "Where Am I?",
+
+    Callback = function()
+        local position =
+            GetPosition()
+
+        Notify(
+            "Where Am I?",
+            FormatVector3(
+                position
+            ),
+            4
+        )
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Random Camera FOV",
+
+    Callback = function()
+        local camera =
+            GetCamera()
+
+        if camera then
+            camera.FieldOfView =
+                math.random(
+                    55,
+                    110
+                )
+        end
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Random Clock",
+
+    Callback = function()
+        Lighting.ClockTime =
+            math.random()
+            * 24
+    end,
+})
+
+UtilityMoreTab:CreateButton({
+    Name = "Notify Test",
+
+    Callback = function()
+        Notify(
+            "🌸 Lilac v1488",
+            "Everything is alive and running.",
+            4
+        )
+    end,
+})
 
 local SetDevGravity0
 local StartDevCamera
@@ -3453,26 +4293,32 @@ UtilityTab:CreateButton({
 --------------------------------------------------
 
 function StopDevFly()
-    devFlyEnabled =
-        false
-
-    devVerticalInput =
-        0
+    devFlyEnabled = false
+    devVerticalInput = 0
 
     if devFlyConnection then
         devFlyConnection:Disconnect()
-        devFlyConnection =
-            nil
+        devFlyConnection = nil
     end
 
     if devInputConnection then
         devInputConnection:Disconnect()
-        devInputConnection =
-            nil
+        devInputConnection = nil
     end
 
     local humanoid =
         GetHumanoid()
+
+    if humanoid then
+        humanoid.AutoRotate = true
+
+        pcall(function()
+            humanoid.PlatformStand = false
+            humanoid:ChangeState(
+                Enum.HumanoidStateType.GettingUp
+            )
+        end)
+    end
 
     local root =
         GetRoot()
@@ -3483,20 +4329,6 @@ function StopDevFly()
 
         root.AssemblyAngularVelocity =
             Vector3.zero
-    end
-
-    if humanoid then
-        humanoid.AutoRotate =
-            true
-
-        pcall(function()
-            humanoid.PlatformStand =
-                false
-
-            humanoid:ChangeState(
-                Enum.HumanoidStateType.GettingUp
-            )
-        end)
     end
 end
 
@@ -3522,17 +4354,15 @@ function StartDevFly()
         return
     end
 
-    devFlyEnabled =
-        true
-
+    devFlyEnabled = true
     devFlyHeight =
         root.Position.Y
 
-    humanoid.AutoRotate =
-        true
+    humanoid.AutoRotate = false
+    humanoid.PlatformStand = false
 
-    -- Match the character's normal movement speed.
-    local characterSpeed =
+    -- Keep the normal character WalkSpeed.
+    local flySpeed =
         math.max(
             1,
             tonumber(
@@ -3541,8 +4371,8 @@ function StartDevFly()
             or 16
         )
 
-    -- Keep the character in a falling/freefall state while
-    -- we control its position manually.
+    -- Force the falling animation/state while we hold the
+    -- character at a fixed altitude.
     pcall(function()
         humanoid:ChangeState(
             Enum.HumanoidStateType.Freefall
@@ -3551,35 +4381,26 @@ function StartDevFly()
 
     devInputConnection =
         UserInputService.InputBegan:Connect(
-            function(
-                input
-            )
-                if not devFlyEnabled then
-                    return
-                end
-
-                -- Do not let a textbox consume Q/E.
-                if UserInputService:GetFocusedTextBox() then
+            function(input, processed)
+                if processed or not devFlyEnabled then
                     return
                 end
 
                 if input.KeyCode ==
                     Enum.KeyCode.Q
                 then
-                    devVerticalInput =
-                        -1
+                    devVerticalInput = -1
 
                 elseif input.KeyCode ==
                     Enum.KeyCode.E
                 then
-                    devVerticalInput =
-                        1
+                    devVerticalInput = 1
                 end
             end
         )
 
     devFlyConnection =
-        RunService.Heartbeat:Connect(
+        RunService.RenderStepped:Connect(
             function(dt)
                 if not devFlyEnabled then
                     return
@@ -3588,73 +4409,38 @@ function StartDevFly()
                 local currentRoot =
                     GetRoot()
 
-                local currentHumanoid =
-                    GetHumanoid()
-
-                if not currentRoot
-                    or not currentHumanoid
-                then
+                if not currentRoot then
                     return
                 end
 
-                characterSpeed =
+                local currentHumanoid =
+                    GetHumanoid()
+
+                local currentSpeed =
                     math.max(
                         1,
                         tonumber(
-                            currentHumanoid.WalkSpeed
+                            currentHumanoid
+                            and currentHumanoid.WalkSpeed
                         )
-                        or characterSpeed
+                        or flySpeed
                     )
-
-                -- Normal movement direction uses the player's
-                -- regular Roblox controls at WalkSpeed.
-                local moveDirection =
-                    currentHumanoid.MoveDirection
-
-                local horizontalDelta =
-                    moveDirection
-                    * characterSpeed
-                    * dt
-
-                local verticalDelta =
-                    devVerticalInput
-                    * characterSpeed
-                    * dt
 
                 devFlyHeight +=
-                    verticalDelta
-
-                local currentPosition =
-                    currentRoot.Position
-
-                local nextPosition =
-                    Vector3.new(
-                        currentPosition.X
-                            + horizontalDelta.X,
-
-                        devFlyHeight,
-
-                        currentPosition.Z
-                            + horizontalDelta.Z
+                    (
+                        devVerticalInput
+                        * currentSpeed
+                        * dt
                     )
 
-                local look =
-                    currentRoot.CFrame.LookVector
-
-                if moveDirection.Magnitude > 0.01 then
-                    look =
-                        moveDirection.Unit
-                end
+                local current =
+                    currentRoot.Position
 
                 currentRoot.CFrame =
-                    CFrame.lookAt(
-                        nextPosition,
-                        nextPosition
-                            + Vector3.new(
-                                look.X,
-                                0,
-                                look.Z
-                            )
+                    CFrame.new(
+                        current.X,
+                        devFlyHeight,
+                        current.Z
                     )
 
                 currentRoot.AssemblyLinearVelocity =
@@ -3663,8 +4449,6 @@ function StartDevFly()
                 currentRoot.AssemblyAngularVelocity =
                     Vector3.zero
 
-                -- Re-assert freefall so the character remains
-                -- visually in the falling state.
                 pcall(function()
                     currentHumanoid:ChangeState(
                         Enum.HumanoidStateType.Freefall
@@ -3675,11 +4459,10 @@ function StartDevFly()
 
     Notify(
         "Dev Fly",
-        "Enabled.\n"
-            .. "Speed = character WalkSpeed\n"
-            .. "WASD = normal movement\n"
-            .. "Hold E = up • Q = down\n"
-            .. "Hover + Freefall animation",
+        "Hover enabled.\n"
+            .. "Speed = WalkSpeed\n"
+            .. "Hold E to rise • Q to descend\n"
+            .. "Freefall animation is kept active.",
         5
     )
 end
@@ -3693,8 +4476,7 @@ UserInputService.InputEnded:Connect(
             input.KeyCode ==
                 Enum.KeyCode.E
         then
-            devVerticalInput =
-                0
+            devVerticalInput = 0
         end
     end
 )

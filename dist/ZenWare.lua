@@ -186,74 +186,117 @@ _modules["Core/Obsidian.luau"] = {
 			    --------------------------------------------------
 
 			    local MENU_IMAGE =
-			        "rbxassetid://137423681201950"
+			        "rbxthumb://type=Asset&id=137423681201950&w=768&h=768"
 
 			    local MenuRoot =
 			        Window.Window
 
 			    pcall(function()
-			        -- Make the menu itself translucent so the artwork behind its
-			        -- controls is actually visible.
+			        -- Use Obsidian's own background ImageLabel first.
+			        Window:SetBackgroundImage(
+			            MENU_IMAGE
+			        )
+
+			        local BackgroundImage =
+			            Window.BackgroundImage
+
+			        if
+			            not BackgroundImage
+			        then
+			            BackgroundImage =
+			                MenuRoot:FindFirstChild(
+			                    "BackgroundImage",
+			                    true
+			                )
+			        end
+
+			        if
+			            BackgroundImage
+			            and
+			            BackgroundImage:IsA(
+			                "ImageLabel"
+			            )
+			        then
+			            BackgroundImage.Image =
+			                MENU_IMAGE
+
+			            BackgroundImage.ImageTransparency =
+			                0.22
+
+			            BackgroundImage.BackgroundTransparency =
+			                1
+
+			            BackgroundImage.ScaleType =
+			                Enum.ScaleType.Crop
+
+			            BackgroundImage.Visible =
+			                true
+
+			            BackgroundImage.ZIndex =
+			                0
+			        end
+
 			        MenuRoot.BackgroundTransparency =
 			            0.12
+			    end)
 
+			    -- Fallback overlay in case the library did not expose its
+			    -- background ImageLabel.
+			    pcall(function()
 			        local old =
 			            MenuRoot:FindFirstChild(
-			                "LilacMenuBackground"
+			                "LilacMenuBackgroundFallback"
 			            )
 
 			        if old then
 			            old:Destroy()
 			        end
 
-			        local MenuImage =
+			        local fallback =
 			            Instance.new(
 			                "ImageLabel"
 			            )
 
-			        MenuImage.Name =
-			            "LilacMenuBackground"
+			        fallback.Name =
+			            "LilacMenuBackgroundFallback"
 
-			        MenuImage.Position =
+			        fallback.Position =
 			            UDim2.fromScale(
 			                0,
 			                0
 			            )
 
-			        MenuImage.Size =
+			        fallback.Size =
 			            UDim2.fromScale(
 			                1,
 			                1
 			            )
 
-			        MenuImage.AnchorPoint =
-			            Vector2.zero
-
-			        MenuImage.BackgroundTransparency =
+			        fallback.BackgroundTransparency =
 			            1
 
-			        MenuImage.BorderSizePixel =
+			        fallback.BorderSizePixel =
 			            0
 
-			        MenuImage.Image =
+			        fallback.Image =
 			            MENU_IMAGE
 
-			        MenuImage.ImageTransparency =
+			        fallback.ImageTransparency =
 			            0.38
 
-			        MenuImage.ScaleType =
+			        fallback.ScaleType =
 			            Enum.ScaleType.Crop
 
-			        MenuImage.Active =
+			        fallback.Active =
 			            false
 
-			        MenuImage.Selectable =
+			        fallback.Selectable =
 			            false
 
-			        MenuImage.ZIndex =
+			        fallback.ZIndex =
 			            0
 
-			        MenuImage.Parent =
+			        fallback.Parent =
 			            MenuRoot
 			    end)
 
@@ -262,7 +305,7 @@ _modules["Core/Obsidian.luau"] = {
 			    --------------------------------------------------
 
 			    local FULLSCREEN_IMAGE =
-			        "rbxassetid://99217170570093"
+			        "rbxthumb://type=Asset&id=99217170570093&w=1920&h=1080"
 
 			    pcall(function()
 			        local ScreenGui =
@@ -274,12 +317,6 @@ _modules["Core/Obsidian.luau"] = {
 
 			        ScreenGui.IgnoreGuiInset =
 			            true
-
-			        ScreenGui.DisplayOrder =
-			            math.max(
-			                ScreenGui.DisplayOrder,
-			                100
-			            )
 
 			        local old =
 			            ScreenGui:FindFirstChild(
@@ -310,9 +347,6 @@ _modules["Core/Obsidian.luau"] = {
 			                1
 			            )
 
-			        FullscreenLayer.AnchorPoint =
-			            Vector2.zero
-
 			        FullscreenLayer.BackgroundTransparency =
 			            1
 
@@ -338,7 +372,7 @@ _modules["Core/Obsidian.luau"] = {
 			            0
 
 			        FullscreenLayer.Visible =
-			            true
+			            Library.Toggled == true
 
 			        FullscreenLayer.Parent =
 			            ScreenGui
@@ -346,15 +380,11 @@ _modules["Core/Obsidian.luau"] = {
 			        task.spawn(function()
 			            while
 			                FullscreenLayer.Parent
-			                and not Library.Unloaded
+			                and
+			                not Library.Unloaded
 			            do
-			                -- Keep it behind the UI, but only while the UI is open.
-			                local visible =
-			                    Library.Toggled
-			                    ~= false
-
 			                FullscreenLayer.Visible =
-			                    visible
+			                    Library.Toggled == true
 
 			                task.wait(
 			                    0.05
@@ -363,7 +393,7 @@ _modules["Core/Obsidian.luau"] = {
 			        end)
 			    end)
 
-			    pcall(function()
+			pcall(function()
 			        Window:SetFooter(
 			            "zenware"
 			        )
@@ -925,7 +955,6 @@ _modules["Core/Obsidian.luau"] = {
 			end
 
 			return Obsidian
-
 		end)(unpack(_vararg))
 	end,
 }
@@ -1455,35 +1484,35 @@ _modules["Main.luau"] = {
 			local RunService = game:GetService("RunService")
 			local UserInputService = game:GetService("UserInputService")
 			local HttpService = game:GetService("HttpService")
-			
+
 			local LocalPlayer = Players.LocalPlayer
-			
+
 			--------------------------------------------------
 			-- DEV MODE
 			--------------------------------------------------
 			-- Keep this enabled only while running your private
 			-- development/test build. Set false before production.
 			local DEV_TEST_MODE = true
-			
+
 			local State = require("Core/State")
 			local Utils = require("Core/Utils")
 			local Remotes = require("Core/Remotes")
-			
+
 			local Teleports = require("Features/Teleports")
 			local AutoClicker = require("Features/AutoClicker")
 			local AutoMog = require("Features/AutoMog")
 			local AutoLoad = require("Features/AutoLoad")
-			
+
 			local UI = require("UI/UI")
-			
+
 			print("[ZenWare V3] Starting...")
-			
+
 			local Window = UI.Create()
-			
+
 			--------------------------------------------------
 			-- HELPERS
 			--------------------------------------------------
-			
+
 			local function Notify(title, description, duration)
 			    pcall(function()
 			        Window:Notify({
@@ -1493,63 +1522,63 @@ _modules["Main.luau"] = {
 			        })
 			    end)
 			end
-			
+
 			local function SafeCall(callback)
 			    if type(callback) ~= "function" then
 			        return false, nil
 			    end
-			
+
 			    local ok, result = pcall(callback)
-			
+
 			    if not ok then
 			        warn(
 			            "[ZenWare V3]",
 			            tostring(result)
 			        )
 			    end
-			
+
 			    return ok, result
 			end
-			
+
 			local function GetCharacter()
 			    return LocalPlayer.Character
 			end
-			
+
 			local function GetHumanoid()
 			    local character = GetCharacter()
-			
+
 			    if not character then
 			        return nil
 			    end
-			
+
 			    return character:FindFirstChildOfClass(
 			        "Humanoid"
 			    )
 			end
-			
+
 			local function GetRoot()
 			    return Utils.GetRoot()
 			end
-			
+
 			local function GetCamera()
 			    return Workspace.CurrentCamera
 			end
-			
+
 			local function GetPosition()
 			    local root = GetRoot()
-			
+
 			    if not root then
 			        return nil
 			    end
-			
+
 			    return root.Position
 			end
-			
+
 			local function FormatVector3(position)
 			    if not position then
 			        return "Unknown"
 			    end
-			
+
 			    return string.format(
 			        "X %.2f | Y %.2f | Z %.2f",
 			        position.X,
@@ -1557,135 +1586,135 @@ _modules["Main.luau"] = {
 			        position.Z
 			    )
 			end
-			
+
 			local function SetClipboard(value)
 			    if type(setclipboard) ~= "function" then
 			        return false
 			    end
-			
+
 			    return pcall(function()
 			        setclipboard(
 			            tostring(value)
 			        )
 			    end)
 			end
-			
+
 			--------------------------------------------------
 			-- STATE
 			--------------------------------------------------
-			
+
 			State.AutoWin =
 			    State.AutoWin or false
-			
+
 			State.TeleportLoop =
 			    State.TeleportLoop or false
-			
+
 			State.TreadmillLoop =
 			    State.TreadmillLoop or false
-			
+
 			State.TeleportInterval =
 			    tonumber(
 			        State.TeleportInterval
 			    )
 			    or 0.5
-			
+
 			State.AutoRebirth = false
 			State.RebirthInterval = 0.25
-			
+
 			State.AutoClicker = false
 			State.AutoClickerSpeed =
 			    tonumber(
 			        State.AutoClickerSpeed
 			    )
 			    or 10
-			
+
 			State.AutoMog = false
 			State.AutoMogAll = false
-			
+
 			State.WalkSpeed =
 			    tonumber(
 			        State.WalkSpeed
 			    )
 			    or 16
-			
+
 			State.JumpPower =
 			    tonumber(
 			        State.JumpPower
 			    )
 			    or 50
-			
+
 			State.HipHeight =
 			    tonumber(
 			        State.HipHeight
 			    )
 			    or 2
-			
+
 			State.AntiAFK = false
-			
+
 			--------------------------------------------------
 			-- MAIN
 			--------------------------------------------------
-			
+
 			local MainSection =
 			    Window:CreateSection(
 			        "Main"
 			    )
-			
+
 			local MainTab =
 			    MainSection:CreateTab(
 			        "Main",
 			        "home"
 			    )
-			
+
 			--------------------------------------------------
 			-- WIN
 			--------------------------------------------------
-			
+
 			MainTab:CreateSection(
 			    "Win"
 			)
-			
+
 			MainTab:CreateButton({
 			    Name = "Teleport to Win",
-			
+
 			    Callback = function()
 			        SafeCall(function()
 			            Teleports.Win()
 			        end)
 			    end,
 			})
-			
+
 			MainTab:CreateButton({
 			    Name = "Teleport to Treadmill",
-			
+
 			    Callback = function()
 			        SafeCall(function()
 			            Teleports.Treadmill()
 			        end)
 			    end,
 			})
-			
+
 			MainTab:CreateButton({
 			    Name = "Respawn Character",
-			
+
 			    Callback = function()
 			        SafeCall(function()
 			            LocalPlayer:LoadCharacter()
 			        end)
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- AUTO WIN TESTS
 			--------------------------------------------------
-			
+
 			local TweenService = game:GetService("TweenService")
-			
+
 			local DevTests = {
 			    World1AutoWin = false,
 			    World2AutoWin = false,
 			}
-			
+
 			local AutoWinState = {
 			    World1 = {
 			        running = false,
@@ -1696,7 +1725,7 @@ _modules["Main.luau"] = {
 			        part = nil,
 			    },
 			}
-			
+
 			local WorldProfiles = {
 			    -- Corrected mapping: the coordinates previously labeled World 2
 			    -- belong to World 1, and vice versa.
@@ -1705,40 +1734,40 @@ _modules["Main.luau"] = {
 			        finish = Vector3.new(-700, 40, -51),
 			        name = "World 1",
 			    },
-			
+
 			    World2 = {
 			        start = Vector3.new(-129, 40, 4944),
 			        finish = Vector3.new(-720, 40, 4944),
 			        name = "World 2",
 			    },
 			}
-			
+
 			local function GetDevCharacter()
 			    return LocalPlayer.Character
 			end
-			
+
 			local function GetDevRoot()
 			    local character = GetDevCharacter()
-			
+
 			    if not character then
 			        return nil
 			    end
-			
+
 			    return character:FindFirstChild("HumanoidRootPart")
 			end
-			
+
 			local function CreateAutoWinPart(worldName)
 			    local profile = WorldProfiles[worldName]
 			    local state = AutoWinState[worldName]
-			
+
 			    if not profile or not state then
 			        return nil
 			    end
-			
+
 			    if state.part and state.part.Parent then
 			        return state.part
 			    end
-			
+
 			    local part = Instance.new("Part")
 			    part.Name = "ZenWare_" .. worldName .. "_AutoWin"
 			    part.Size = Vector3.new(7, 1, 7)
@@ -1749,66 +1778,66 @@ _modules["Main.luau"] = {
 			    part.CanQuery = false
 			    part.Transparency = 0.5
 			    part.Parent = workspace
-			
+
 			    state.part = part
-			
+
 			    return part
 			end
-			
+
 			local function RemoveAutoWinPart(worldName)
 			    local state = AutoWinState[worldName]
-			
+
 			    if not state then
 			        return
 			    end
-			
+
 			    if state.part then
 			        pcall(function()
 			            state.part:Destroy()
 			        end)
 			    end
-			
+
 			    state.part = nil
 			end
-			
+
 			local function StopAutoWinTest(worldName)
 			    local state =
 			        AutoWinState[worldName]
-			
+
 			    if not state then
 			        return
 			    end
-			
+
 			    state.running =
 			        false
-			
+
 			    if state.gravityLocked then
 			        state.gravityLocked =
 			            false
-			
+
 			        SetDeveloperGravity(
 			            false
 			        )
 			    end
 			end
-			
+
 			local function RunVerticalOscillation(character, finishPosition, state)
 			    if not character or not character.Parent then
 			        return
 			    end
-			
+
 			    local cycles = 10
 			    local totalDuration = 1
 			    local halfDuration = totalDuration / (cycles * 2)
-			
+
 			    local highY = 40
 			    local lowY = -1
-			
+
 			    for _ = 1, cycles do
 			        if not state.running or not character.Parent then
 			            break
 			        end
-			
+
 			        local currentPivot = character:GetPivot()
 			        local highPivot = CFrame.new(
 			            finishPosition.X,
@@ -1820,7 +1849,7 @@ _modules["Main.luau"] = {
 			            currentPivot.YVector,
 			            currentPivot.ZVector
 			        )
-			
+
 			        local lowPivot = CFrame.new(
 			            finishPosition.X,
 			            lowY,
@@ -1831,17 +1860,17 @@ _modules["Main.luau"] = {
 			            currentPivot.YVector,
 			            currentPivot.ZVector
 			        )
-			
+
 			        local driver = Instance.new("CFrameValue")
 			        driver.Value = highPivot
-			
+
 			        local connection =
 			            driver:GetPropertyChangedSignal("Value"):Connect(function()
 			                if character.Parent then
 			                    character:PivotTo(driver.Value)
 			                end
 			            end)
-			
+
 			        local downTween = TweenService:Create(
 			            driver,
 			            TweenInfo.new(
@@ -1851,16 +1880,16 @@ _modules["Main.luau"] = {
 			            ),
 			            {Value = lowPivot}
 			        )
-			
+
 			        downTween:Play()
 			        downTween.Completed:Wait()
-			
+
 			        if not state.running or not character.Parent then
 			            connection:Disconnect()
 			            driver:Destroy()
 			            break
 			        end
-			
+
 			        local upTween = TweenService:Create(
 			            driver,
 			            TweenInfo.new(
@@ -1870,61 +1899,61 @@ _modules["Main.luau"] = {
 			            ),
 			            {Value = highPivot}
 			        )
-			
+
 			        upTween:Play()
 			        upTween.Completed:Wait()
-			
+
 			        connection:Disconnect()
 			        driver:Destroy()
 			    end
-			
+
 			    if character.Parent and state.running then
 			        character:PivotTo(
 			            CFrame.new(finishPosition)
 			        )
 			    end
 			end
-			
+
 			local function RunAutoWinCycle(worldName)
 			    local profile = WorldProfiles[worldName]
 			    local state = AutoWinState[worldName]
-			
+
 			    if not profile or not state then
 			        return
 			    end
-			
+
 			    local character = GetDevCharacter()
-			
+
 			    if not character then
 			        return
 			    end
-			
+
 			    local part = CreateAutoWinPart(worldName)
-			
+
 			    if not part then
 			        return
 			    end
-			
+
 			    character:PivotTo(
 			        part.CFrame + Vector3.new(0, 3, 0)
 			    )
-			
+
 			    task.wait(0.5)
-			
+
 			    if not state.running then
 			        return
 			    end
-			
+
 			    local driver = Instance.new("CFrameValue")
 			    driver.Value = character:GetPivot()
-			
+
 			    local connection =
 			        driver:GetPropertyChangedSignal("Value"):Connect(function()
 			            if character.Parent then
 			                character:PivotTo(driver.Value)
 			            end
 			        end)
-			
+
 			    local tween = TweenService:Create(
 			        driver,
 			        TweenInfo.new(
@@ -1936,21 +1965,21 @@ _modules["Main.luau"] = {
 			            Value = CFrame.new(profile.finish),
 			        }
 			    )
-			
+
 			    tween:Play()
 			    tween.Completed:Wait()
-			
+
 			    connection:Disconnect()
 			    driver:Destroy()
-			
+
 			    if not state.running or not character.Parent then
 			        return
 			    end
-			
+
 			    character:PivotTo(
 			        CFrame.new(profile.finish)
 			    )
-			
+
 			    -- Replace the old fall with a 1-second, 10-cycle vertical test.
 			    RunVerticalOscillation(
 			        character,
@@ -1958,16 +1987,16 @@ _modules["Main.luau"] = {
 			        state
 			    )
 			end
-			
+
 			local OriginalGravity = nil
 			local GravityLocks = 0
 			local GravityEnforcer = nil
-			
+
 			local function StartGravityEnforcer()
 			    if GravityEnforcer then
 			        return
 			    end
-			
+
 			    GravityEnforcer =
 			        RunService.Heartbeat:Connect(
 			            function()
@@ -1979,7 +2008,7 @@ _modules["Main.luau"] = {
 			            end
 			        )
 			end
-			
+
 			local function StopGravityEnforcer()
 			    if GravityEnforcer
 			        and GravityLocks <= 0
@@ -1989,19 +2018,19 @@ _modules["Main.luau"] = {
 			        GravityEnforcer = nil
 			    end
 			end
-			
+
 			local function CaptureGravity()
 			    if OriginalGravity == nil then
 			        OriginalGravity =
 			            Workspace.Gravity
 			    end
 			end
-			
+
 			local function SetDeveloperGravity(enabled)
 			    if not DEV_TEST_MODE then
 			        return
 			    end
-			
+
 			    if enabled then
 			        GravityLocks += 1
 			        CaptureGravity()
@@ -2009,28 +2038,28 @@ _modules["Main.luau"] = {
 			        Workspace.Gravity = 0
 			        return
 			    end
-			
+
 			    GravityLocks =
 			        math.max(
 			            0,
 			            GravityLocks - 1
 			        )
-			
+
 			    if GravityLocks == 0
 			        and not devGravity0Enabled
 			    then
 			        if OriginalGravity ~= nil then
 			            Workspace.Gravity =
 			                OriginalGravity
-			
+
 			            OriginalGravity =
 			                nil
 			        end
-			
+
 			        StopGravityEnforcer()
 			    end
 			end
-			
+
 			local function AnyAutoWinRunning()
 			    return
 			        (
@@ -2043,35 +2072,35 @@ _modules["Main.luau"] = {
 			            and AutoWinState.World2.running
 			        )
 			end
-			
+
 			local function StartAutoWinTest(worldName)
 			    local state = AutoWinState[worldName]
-			
+
 			    if not state or state.running then
 			        return
 			    end
-			
+
 			    state.running = true
-			
+
 			    if not state.gravityLocked then
 			        state.gravityLocked = true
 			        SetDeveloperGravity(true)
 			    end
-			
+
 			    CreateAutoWinPart(worldName)
-			
+
 			    Notify(
 			        "Anti-Cheat Tests",
 			        WorldProfiles[worldName].name .. " Auto Win started.",
 			        3
 			    )
-			
+
 			    task.spawn(function()
 			        while state.running do
 			            local ok, err = pcall(function()
 			                RunAutoWinCycle(worldName)
 			            end)
-			
+
 			            if not ok then
 			                warn("[ZenWare AC TEST]", err)
 			                task.wait(1)
@@ -2079,20 +2108,20 @@ _modules["Main.luau"] = {
 			        end
 			    end)
 			end
-			
+
 			local function StopAllDevTests()
 			    for name in pairs(DevTests) do
 			        DevTests[name] = false
 			    end
-			
+
 			    StopAutoWinTest("World1")
 			    StopAutoWinTest("World2")
 			end
-			
+
 			local function SetDevTest(name, enabled)
 			    DevTests[name] =
 			        enabled == true
-			
+
 			    if name == "World1AutoWin" then
 			        if enabled then
 			            StartAutoWinTest("World1")
@@ -2106,7 +2135,7 @@ _modules["Main.luau"] = {
 			            StopAutoWinTest("World2")
 			        end
 			    end
-			
+
 			    Notify(
 			        "Auto Win Dev",
 			        tostring(name)
@@ -2118,26 +2147,26 @@ _modules["Main.luau"] = {
 			        2
 			    )
 			end
-			
+
 			MainTab:CreateSection(
 			    "Auto Win Dev"
 			)
-			
+
 			MainTab:CreateParagraph({
 			    Title = "🌸 Developer",
 			    Content =
 			        "World 1 and World 2 movement test profiles."
 			})
-			
+
 			MainTab:CreateSection(
 			    "World 1"
 			)
-			
+
 			MainTab:CreateToggle({
 			    Name = "World 1 Auto Win Dev",
 			    Default = false,
 			    Flag = "World1AutoWinTest",
-			
+
 			    Callback = function(enabled)
 			        SetDevTest(
 			            "World1AutoWin",
@@ -2145,16 +2174,16 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			MainTab:CreateSection(
 			    "World 2"
 			)
-			
+
 			MainTab:CreateToggle({
 			    Name = "World 2 Auto Win Dev",
 			    Default = false,
 			    Flag = "World2AutoWinTest",
-			
+
 			    Callback = function(enabled)
 			        SetDevTest(
 			            "World2AutoWin",
@@ -2162,13 +2191,13 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			MainTab:CreateButton({
 			    Name = "Disable Auto Win Dev",
-			
+
 			    Callback = function()
 			        StopAllDevTests()
-			
+
 			        Notify(
 			            "Auto Win Dev",
 			            "Both tests disabled.",
@@ -2176,162 +2205,162 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			local rebirthRunning = false
-			
+
 			local function GetRebirthButton()
 			    local player =
 			        Players.LocalPlayer
-			
+
 			    if not player then
 			        return nil
 			    end
-			
+
 			    local playerGui =
 			        player:FindFirstChild(
 			            "PlayerGui"
 			        )
-			
+
 			    if not playerGui then
 			        return nil
 			    end
-			
+
 			    local mainGui =
 			        playerGui:FindFirstChild(
 			            "MainGui"
 			        )
-			
+
 			    if not mainGui then
 			        return nil
 			    end
-			
+
 			    local frames =
 			        mainGui:FindFirstChild(
 			            "Frames"
 			        )
-			
+
 			    if not frames then
 			        return nil
 			    end
-			
+
 			    local rebirthFrame =
 			        frames:FindFirstChild(
 			            "Rebirth"
 			        )
-			
+
 			    if not rebirthFrame then
 			        return nil
 			    end
-			
+
 			    return rebirthFrame:FindFirstChild(
 			        "Rebirth"
 			    )
 			end
-			
+
 			local function RunRebirthOnce()
 			    local button =
 			        GetRebirthButton()
-			
+
 			    if not button then
 			        return false
 			    end
-			
+
 			    local ok =
 			        pcall(function()
 			            firesignal(
 			                button.MouseButton1Click
 			            )
 			        end)
-			
+
 			    return ok
 			end
-			
+
 			local function StartAutoRebirth()
 			    if rebirthRunning then
 			        return
 			    end
-			
+
 			    State.AutoRebirth = true
 			    rebirthRunning = true
-			
+
 			    task.spawn(function()
 			        while
 			            State.AutoRebirth
 			            and rebirthRunning
 			        do
 			            RunRebirthOnce()
-			
+
 			            task.wait(
 			                State.RebirthInterval
 			                or 0.25
 			            )
 			        end
-			
+
 			        rebirthRunning = false
 			    end)
 			end
-			
+
 			local function StopAutoRebirth()
 			    State.AutoRebirth = false
 			    rebirthRunning = false
 			end
-			
+
 			-- TELEPORTS
 			--------------------------------------------------
-			
+
 			local TeleportSection =
 			    Window:CreateSection(
 			        "Teleports"
 			    )
-			
+
 			local TeleportTab =
 			    TeleportSection:CreateTab(
 			        "Teleports",
 			        "map-pin"
 			    )
-			
+
 			TeleportTab:CreateSection(
 			    "Custom XYZ"
 			)
-			
+
 			local xBox =
 			    TeleportTab:CreateTextBox({
 			        Name = "X",
 			        Placeholder = "X coordinate",
 			    })
-			
+
 			local yBox =
 			    TeleportTab:CreateTextBox({
 			        Name = "Y",
 			        Placeholder = "Y coordinate",
 			    })
-			
+
 			local zBox =
 			    TeleportTab:CreateTextBox({
 			        Name = "Z",
 			        Placeholder = "Z coordinate",
 			    })
-			
+
 			TeleportTab:CreateButton({
 			    Name = "Teleport",
-			
+
 			    Callback = function()
 			        local x =
 			            tonumber(
 			                xBox:GetText()
 			            )
-			
+
 			        local y =
 			            tonumber(
 			                yBox:GetText()
 			            )
-			
+
 			        local z =
 			            tonumber(
 			                zBox:GetText()
 			            )
-			
+
 			        if not (
 			            x
 			            and y
@@ -2342,10 +2371,10 @@ _modules["Main.luau"] = {
 			                "Invalid coordinates.",
 			                3
 			            )
-			
+
 			            return
 			        end
-			
+
 			        SafeCall(function()
 			            Teleports.Teleport(
 			                Vector3.new(
@@ -2357,18 +2386,18 @@ _modules["Main.luau"] = {
 			        end)
 			    end,
 			})
-			
+
 			TeleportTab:CreateButton({
 			    Name = "Use Current Position",
-			
+
 			    Callback = function()
 			        local position =
 			            GetPosition()
-			
+
 			        if not position then
 			            return
 			        end
-			
+
 			        xBox:SetText(
 			            tostring(
 			                math.floor(
@@ -2376,7 +2405,7 @@ _modules["Main.luau"] = {
 			                )
 			            )
 			        )
-			
+
 			        yBox:SetText(
 			            tostring(
 			                math.floor(
@@ -2384,7 +2413,7 @@ _modules["Main.luau"] = {
 			                )
 			            )
 			        )
-			
+
 			        zBox:SetText(
 			            tostring(
 			                math.floor(
@@ -2394,37 +2423,37 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			TeleportTab:CreateButton({
 			    Name = "Clear Coordinates",
-			
+
 			    Callback = function()
 			        xBox:SetText("")
 			        yBox:SetText("")
 			        zBox:SetText("")
 			    end,
 			})
-			
+
 			TeleportTab:CreateSection(
 			    "Saved Locations"
 			)
-			
+
 			local saveBox =
 			    TeleportTab:CreateTextBox({
 			        Name = "Location Name",
 			        Placeholder = "My Location",
 			    })
-			
+
 			TeleportTab:CreateButton({
 			    Name = "Save Current Location",
-			
+
 			    Callback = function()
 			        local root =
 			            GetRoot()
-			
+
 			        local name =
 			            saveBox:GetText()
-			
+
 			        if
 			            root
 			            and name ~= ""
@@ -2439,24 +2468,24 @@ _modules["Main.luau"] = {
 			        end
 			    end,
 			})
-			
+
 			local deleteBox =
 			    TeleportTab:CreateTextBox({
 			        Name = "Delete Location",
 			        Placeholder = "Location Name",
 			    })
-			
+
 			TeleportTab:CreateButton({
 			    Name = "Delete Saved Location",
-			
+
 			    Callback = function()
 			        local name =
 			            deleteBox:GetText()
-			
+
 			        if name == "" then
 			            return
 			        end
-			
+
 			        SafeCall(function()
 			            Teleports.DeleteLocation(
 			                name,
@@ -2465,12 +2494,12 @@ _modules["Main.luau"] = {
 			        end)
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			--------------------------------------------------
 			-- AUTO CLICKER LOGIC
 			--------------------------------------------------
-			
+
 			SafeCall(function()
 			    AutoClicker.SetCallback(
 			        function()
@@ -2480,24 +2509,24 @@ _modules["Main.luau"] = {
 			        end
 			    )
 			end)
-			
+
 			--------------------------------------------------
 			-- AUTO MOG LOGIC
 			--------------------------------------------------
-			
+
 			SafeCall(function()
 			    AutoMog.SetCallbacks(
 			        function(target)
 			            if not target then
 			                return
 			            end
-			
+
 			            Remotes.Fire(
 			                "Mog",
 			                target.UserId
 			            )
 			        end,
-			
+
 			        function()
 			            Remotes.Fire(
 			                "MogStop"
@@ -2505,38 +2534,38 @@ _modules["Main.luau"] = {
 			        end
 			    )
 			end)
-			
+
 			-- SERVER FINDER
 			--------------------------------------------------
-			
+
 			local ServerSection =
 			    Window:CreateSection(
 			        "Server Finder"
 			    )
-			
+
 			local ServerTab =
 			    ServerSection:CreateTab(
 			        "Server Finder",
 			        "server"
 			    )
-			
+
 			ServerTab:CreateSection(
 			    "Current Server"
 			)
-			
+
 			local usernameBox =
 			    ServerTab:CreateTextBox({
 			        Name = "Username",
 			        Placeholder = "Player username",
 			    })
-			
+
 			ServerTab:CreateButton({
 			    Name = "Find Player",
-			
+
 			    Callback = function()
 			        local username =
 			            usernameBox:GetText()
-			
+
 			        username =
 			            tostring(
 			                username
@@ -2545,13 +2574,13 @@ _modules["Main.luau"] = {
 			            :match(
 			                "^%s*(.-)%s*$"
 			            )
-			
+
 			        if username == "" then
 			            return
 			        end
-			
+
 			        local found = nil
-			
+
 			        for _, player in ipairs(
 			            Players:GetPlayers()
 			        ) do
@@ -2568,7 +2597,7 @@ _modules["Main.luau"] = {
 			                break
 			            end
 			        end
-			
+
 			        if found then
 			            Notify(
 			                "Server Finder",
@@ -2591,10 +2620,10 @@ _modules["Main.luau"] = {
 			        end
 			    end,
 			})
-			
+
 			ServerTab:CreateButton({
 			    Name = "Server Information",
-			
+
 			    Callback = function()
 			        Notify(
 			            "Current Server",
@@ -2614,10 +2643,10 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			ServerTab:CreateButton({
 			    Name = "Copy Job ID",
-			
+
 			    Callback = function()
 			        if SetClipboard(
 			            game.JobId
@@ -2630,28 +2659,28 @@ _modules["Main.luau"] = {
 			        end
 			    end,
 			})
-			
+
 			ServerTab:CreateSection(
 			    "Join By Job ID"
 			)
-			
+
 			local jobIdBox =
 			    ServerTab:CreateTextBox({
 			        Name = "Job ID",
 			        Placeholder = "Paste server Job ID",
 			    })
-			
+
 			ServerTab:CreateButton({
 			    Name = "Join Server",
-			
+
 			    Callback = function()
 			        local jobId =
 			            jobIdBox:GetText()
-			
+
 			        jobId =
 			            tostring(jobId or "")
 			            :match("^%s*(.-)%s*$")
-			
+
 			        if jobId == "" then
 			            Notify(
 			                "Server Finder",
@@ -2660,12 +2689,12 @@ _modules["Main.luau"] = {
 			            )
 			            return
 			        end
-			
+
 			        local TeleportService =
 			            game:GetService(
 			                "TeleportService"
 			            )
-			
+
 			        local ok, err =
 			            pcall(function()
 			                TeleportService:
@@ -2675,7 +2704,7 @@ _modules["Main.luau"] = {
 			                        Players.LocalPlayer
 			                    )
 			            end)
-			
+
 			        if not ok then
 			            Notify(
 			                "Server Finder",
@@ -2685,7 +2714,7 @@ _modules["Main.luau"] = {
 			            )
 			            return
 			        end
-			
+
 			        Notify(
 			            "Server Finder",
 			            "Joining Job ID:\n" .. jobId,
@@ -2693,17 +2722,17 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			ServerTab:CreateButton({
 			    Name = "Use Current Job ID",
-			
+
 			    Callback = function()
 			        jobIdBox:SetText(
 			            tostring(
 			                game.JobId
 			            )
 			        )
-			
+
 			        Notify(
 			            "Server Finder",
 			            "Current Job ID loaded.",
@@ -2711,13 +2740,13 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			ServerTab:CreateButton({
 			    Name = "Clear Job ID",
-			
+
 			    Callback = function()
 			        jobIdBox:SetText("")
-			
+
 			        Notify(
 			            "Server Finder",
 			            "Job ID cleared.",
@@ -2725,13 +2754,13 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			ServerTab:CreateButton({
 			    Name = "List Players",
-			
+
 			    Callback = function()
 			        local names = {}
-			
+
 			        for _, player in ipairs(
 			            Players:GetPlayers()
 			        ) do
@@ -2740,9 +2769,9 @@ _modules["Main.luau"] = {
 			                player.Name
 			            )
 			        end
-			
+
 			        table.sort(names)
-			
+
 			        Notify(
 			            "Players",
 			            table.concat(
@@ -2753,59 +2782,59 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- SETTINGS
 			--------------------------------------------------
-			
+
 			local SettingsSection =
 			    Window:CreateSection(
 			        "Settings"
 			    )
-			
+
 			local SettingsTab =
 			    SettingsSection:CreateTab(
 			        "Settings",
 			        "settings"
 			    )
-			
+
 			--------------------------------------------------
 			-- INTERFACE
 			--------------------------------------------------
-			
+
 			SettingsTab:CreateSection(
 			    "Interface"
 			)
-			
+
 			SettingsTab:CreateKeybind({
 			    Name = "UI Toggle Key",
-			
+
 			    Default =
 			        Enum.KeyCode.RightControl,
-			
+
 			    Flag =
 			        "UIToggleKey",
-			
+
 			    Callback = function(key)
 			        Window:SetToggleKey(
 			            key
 			        )
 			    end,
 			})
-			
+
 			SettingsTab:CreateToggle({
 			    Name = "Auto Load",
-			
+
 			    Default =
 			        AutoLoad.Get(true),
-			
+
 			    Flag =
 			        "AutoLoad",
-			
+
 			    Callback = function(enabled)
 			        State.AutoLoad =
 			            enabled
-			
+
 			        SafeCall(function()
 			            AutoLoad.Set(
 			                enabled
@@ -2813,317 +2842,317 @@ _modules["Main.luau"] = {
 			        end)
 			    end,
 			})
-			
+
 			SettingsTab:CreateToggle({
 			    Name = "Auto Save",
-			
+
 			    Default = true,
-			
+
 			    Flag = "AutoSave",
-			
+
 			    Callback = function(enabled)
 			        Window:SetAutoSave(
 			            enabled
 			        )
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- PLAYER
 			--------------------------------------------------
-			
+
 			SettingsTab:CreateSection(
 			    "Player"
 			)
-			
+
 			SettingsTab:CreateSlider({
 			    Name = "Walk Speed",
-			
+
 			    Min = 0,
 			    Max = 100,
-			
+
 			    Default =
 			        State.WalkSpeed,
-			
+
 			    Flag =
 			        "WalkSpeed",
-			
+
 			    Callback = function(value)
 			        State.WalkSpeed =
 			            value
-			
+
 			        local humanoid =
 			            GetHumanoid()
-			
+
 			        if humanoid then
 			            humanoid.WalkSpeed =
 			                value
 			        end
 			    end,
 			})
-			
+
 			SettingsTab:CreateSlider({
 			    Name = "Jump Power",
-			
+
 			    Min = 0,
 			    Max = 150,
-			
+
 			    Default =
 			        State.JumpPower,
-			
+
 			    Flag =
 			        "JumpPower",
-			
+
 			    Callback = function(value)
 			        State.JumpPower =
 			            value
-			
+
 			        local humanoid =
 			            GetHumanoid()
-			
+
 			        if humanoid then
 			            humanoid.UseJumpPower =
 			                true
-			
+
 			            humanoid.JumpPower =
 			                value
 			        end
 			    end,
 			})
-			
+
 			SettingsTab:CreateSlider({
 			    Name = "Hip Height",
-			
+
 			    Min = 0,
 			    Max = 10,
-			
+
 			    Default =
 			        State.HipHeight,
-			
+
 			    Flag =
 			        "HipHeight",
-			
+
 			    Callback = function(value)
 			        State.HipHeight =
 			            value
-			
+
 			        local humanoid =
 			            GetHumanoid()
-			
+
 			        if humanoid then
 			            humanoid.HipHeight =
 			                value
 			        end
 			    end,
 			})
-			
+
 			SettingsTab:CreateButton({
 			    Name = "Apply Player Settings",
-			
+
 			    Callback = function()
 			        local humanoid =
 			            GetHumanoid()
-			
+
 			        if not humanoid then
 			            return
 			        end
-			
+
 			        humanoid.WalkSpeed =
 			            State.WalkSpeed
-			
+
 			        humanoid.UseJumpPower =
 			            true
-			
+
 			        humanoid.JumpPower =
 			            State.JumpPower
-			
+
 			        humanoid.HipHeight =
 			            State.HipHeight
 			    end,
 			})
-			
+
 			SettingsTab:CreateButton({
 			    Name = "Reset Player Settings",
-			
+
 			    Callback = function()
 			        local humanoid =
 			            GetHumanoid()
-			
+
 			        if not humanoid then
 			            return
 			        end
-			
+
 			        humanoid.WalkSpeed =
 			            16
-			
+
 			        humanoid.UseJumpPower =
 			            true
-			
+
 			        humanoid.JumpPower =
 			            50
-			
+
 			        humanoid.HipHeight =
 			            2
-			
+
 			        State.WalkSpeed =
 			            16
-			
+
 			        State.JumpPower =
 			            50
-			
+
 			        State.HipHeight =
 			            2
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- CAMERA
 			--------------------------------------------------
-			
+
 			SettingsTab:CreateSection(
 			    "Camera"
 			)
-			
+
 			SettingsTab:CreateSlider({
 			    Name = "Field Of View",
-			
+
 			    Min = 40,
 			    Max = 120,
-			
+
 			    Default = 70,
-			
+
 			    Flag = "CameraFOV",
-			
+
 			    Callback = function(value)
 			        local camera =
 			            GetCamera()
-			
+
 			        if camera then
 			            camera.FieldOfView =
 			                value
 			        end
 			    end,
 			})
-			
+
 			SettingsTab:CreateButton({
 			    Name = "Reset FOV",
-			
+
 			    Callback = function()
 			        local camera =
 			            GetCamera()
-			
+
 			        if camera then
 			            camera.FieldOfView =
 			                70
 			        end
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- WORLD
 			--------------------------------------------------
-			
+
 			SettingsTab:CreateSection(
 			    "World"
 			)
-			
+
 			SettingsTab:CreateToggle({
 			    Name = "Full Bright",
-			
+
 			    Default = false,
-			
+
 			    Flag =
 			        "FullBright",
-			
+
 			    Callback = function(enabled)
 			        if enabled then
 			            Lighting.Brightness =
 			                2
-			
+
 			            Lighting.ClockTime =
 			                14
-			
+
 			            Lighting.FogEnd =
 			                100000
-			
+
 			            Lighting.GlobalShadows =
 			                false
 			        else
 			            Lighting.Brightness =
 			                1
-			
+
 			            Lighting.FogEnd =
 			                1000
-			
+
 			            Lighting.GlobalShadows =
 			                true
 			        end
 			    end,
 			})
-			
+
 			SettingsTab:CreateSlider({
 			    Name = "Gravity",
-			
+
 			    Min = 0,
 			    Max = 300,
-			
+
 			    Default =
 			        Workspace.Gravity,
-			
+
 			    Flag =
 			        "Gravity",
-			
+
 			    Callback = function(value)
 			        Workspace.Gravity =
 			            value
 			    end,
 			})
-			
+
 			SettingsTab:CreateButton({
 			    Name = "Reset Gravity",
-			
+
 			    Callback = function()
 			        Workspace.Gravity =
 			            196.2
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- UTILITY
 			--------------------------------------------------
-			
+
 			SettingsTab:CreateSection(
 			    "Utility"
 			)
-			
+
 			SettingsTab:CreateToggle({
 			    Name = "Anti AFK",
-			
+
 			    Default = false,
-			
+
 			    Flag =
 			        "AntiAFK",
-			
+
 			    Callback = function(enabled)
 			        State.AntiAFK =
 			            enabled
-			
+
 			        if not enabled then
 			            return
 			        end
-			
+
 			        task.spawn(function()
 			            while State.AntiAFK do
 			                pcall(function()
 			                    VirtualUser:
 			                        CaptureController()
-			
+
 			                    VirtualUser:
 			                        ClickButton2(
 			                            Vector2.new()
 			                        )
 			                end)
-			
+
 			                task.wait(
 			                    60
 			                )
@@ -3131,10 +3160,10 @@ _modules["Main.luau"] = {
 			        end)
 			    end,
 			})
-			
+
 			SettingsTab:CreateButton({
 			    Name = "Get Player Count",
-			
+
 			    Callback = function()
 			        Notify(
 			            "Players",
@@ -3145,13 +3174,13 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			SettingsTab:CreateButton({
 			    Name = "List Players",
-			
+
 			    Callback = function()
 			        local names = {}
-			
+
 			        for _, player in ipairs(
 			            Players:GetPlayers()
 			        ) do
@@ -3160,11 +3189,11 @@ _modules["Main.luau"] = {
 			                player.Name
 			            )
 			        end
-			
+
 			        table.sort(
 			            names
 			        )
-			
+
 			        Notify(
 			            "Players",
 			            table.concat(
@@ -3175,29 +3204,29 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- CONFIGS
 			--------------------------------------------------
-			
+
 			local ConfigSection =
 			    Window:CreateSection(
 			        "Configs"
 			    )
-			
+
 			local ConfigTab =
 			    ConfigSection:CreateTab(
 			        "Configs",
 			        "folder"
 			    )
-			
+
 			--------------------------------------------------
 			-- CONFIG ENGINE
 			--------------------------------------------------
-			
+
 			local CONFIG_FOLDER =
 			    "ZenWare/Lilac"
-			
+
 			local function SafeConfigName(name)
 			    name =
 			        tostring(
@@ -3212,28 +3241,28 @@ _modules["Main.luau"] = {
 			            "%s+",
 			            "_"
 			        )
-			
+
 			    if name == "" then
 			        name = "default"
 			    end
-			
+
 			    return name
 			end
-			
+
 			local function ConfigPath(name)
 			    return CONFIG_FOLDER
 			        .. "/"
 			        .. SafeConfigName(name)
 			        .. ".json"
 			end
-			
+
 			local function EnsureConfigFolder()
 			    if type(makefolder) ~= "function"
 			        or type(isfolder) ~= "function"
 			    then
 			        return
 			    end
-			
+
 			    pcall(function()
 			        if not isfolder(
 			            "ZenWare"
@@ -3242,7 +3271,7 @@ _modules["Main.luau"] = {
 			                "ZenWare"
 			            )
 			        end
-			
+
 			        if not isfolder(
 			            CONFIG_FOLDER
 			        ) then
@@ -3252,104 +3281,104 @@ _modules["Main.luau"] = {
 			        end
 			    end)
 			end
-			
+
 			local function BuildConfigData()
 			    return {
 			        WalkSpeed =
 			            State.WalkSpeed,
-			
+
 			        JumpPower =
 			            State.JumpPower,
-			
+
 			        HipHeight =
 			            State.HipHeight,
-			
+
 			        RebirthInterval =
 			            State.RebirthInterval,
-			
+
 			        AutoClickerSpeed =
 			            State.AutoClickerSpeed,
-			
+
 			        AutoRebirth =
 			            State.AutoRebirth == true,
-			
+
 			        AutoClicker =
 			            State.AutoClicker == true,
-			
+
 			        AutoMog =
 			            State.AutoMog == true,
-			
+
 			        AutoMogAll =
 			            State.AutoMogAll == true,
-			
+
 			        AntiAFK =
 			            State.AntiAFK == true,
-			
+
 			        CameraFOV =
 			            GetCamera()
 			            and GetCamera().FieldOfView
 			            or 70,
-			
+
 			        SavedAt =
 			            os.time(),
 			    }
 			end
-			
+
 			local function ApplyConfigData(data)
 			    if type(data) ~= "table" then
 			        return false
 			    end
-			
+
 			    State.WalkSpeed =
 			        tonumber(
 			            data.WalkSpeed
 			        )
 			        or State.WalkSpeed
-			
+
 			    State.JumpPower =
 			        tonumber(
 			            data.JumpPower
 			        )
 			        or State.JumpPower
-			
+
 			    State.HipHeight =
 			        tonumber(
 			            data.HipHeight
 			        )
 			        or State.HipHeight
-			
+
 			    State.RebirthInterval =
 			        tonumber(
 			            data.RebirthInterval
 			        )
 			        or State.RebirthInterval
-			
+
 			    State.AutoClickerSpeed =
 			        tonumber(
 			            data.AutoClickerSpeed
 			        )
 			        or State.AutoClickerSpeed
-			
+
 			    local humanoid =
 			        GetHumanoid()
-			
+
 			    if humanoid then
 			        humanoid.WalkSpeed =
 			            State.WalkSpeed
-			
+
 			        humanoid.UseJumpPower =
 			            true
-			
+
 			        humanoid.JumpPower =
 			            State.JumpPower
-			
+
 			        humanoid.HipHeight =
 			            State.HipHeight
 			    end
-			
+
 			    local camera =
 			        GetCamera()
-			
+
 			    if camera
 			        and tonumber(
 			            data.CameraFOV
@@ -3360,16 +3389,16 @@ _modules["Main.luau"] = {
 			                data.CameraFOV
 			            )
 			    end
-			
+
 			    if data.AutoRebirth == true then
 			        StartAutoRebirth()
 			    else
 			        StopAutoRebirth()
 			    end
-			
+
 			    State.AutoClicker =
 			        data.AutoClicker == true
-			
+
 			    if State.AutoClicker then
 			        SafeCall(function()
 			            AutoClicker.Start(
@@ -3381,36 +3410,36 @@ _modules["Main.luau"] = {
 			            AutoClicker.Stop()
 			        end)
 			    end
-			
+
 			    State.AutoMog =
 			        data.AutoMog == true
-			
+
 			    State.AutoMogAll =
 			        data.AutoMogAll == true
-			
+
 			    if State.AutoMogAll then
 			        SafeCall(function()
 			            AutoMog.StartAll()
 			        end)
 			    end
-			
+
 			    if data.AntiAFK == true then
 			        State.AntiAFK = true
 			    else
 			        State.AntiAFK = false
 			    end
-			
+
 			    return true
 			end
-			
+
 			local function SaveConfig(name)
 			    EnsureConfigFolder()
-			
+
 			    if type(writefile) ~= "function" then
 			        return false,
 			            "writefile unavailable"
 			    end
-			
+
 			    local ok, err =
 			        pcall(function()
 			            writefile(
@@ -3420,10 +3449,10 @@ _modules["Main.luau"] = {
 			                )
 			            )
 			        end)
-			
+
 			    return ok, err
 			end
-			
+
 			local function LoadConfig(name)
 			    if type(readfile) ~= "function"
 			        or type(isfile) ~= "function"
@@ -3431,32 +3460,32 @@ _modules["Main.luau"] = {
 			        return false,
 			            "readfile/isfile unavailable"
 			    end
-			
+
 			    local path =
 			        ConfigPath(name)
-			
+
 			    if not isfile(path) then
 			        return false,
 			            "Config not found"
 			    end
-			
+
 			    local ok, data =
 			        pcall(function()
 			            return HttpService:JSONDecode(
 			                readfile(path)
 			            )
 			        end)
-			
+
 			    if not ok then
 			        return false,
 			            tostring(data)
 			    end
-			
+
 			    return ApplyConfigData(
 			        data
 			    )
 			end
-			
+
 			local function DeleteConfig(name)
 			    if type(delfile) ~= "function"
 			        or type(isfile) ~= "function"
@@ -3464,51 +3493,51 @@ _modules["Main.luau"] = {
 			        return false,
 			            "delfile/isfile unavailable"
 			    end
-			
+
 			    local path =
 			        ConfigPath(name)
-			
+
 			    if not isfile(path) then
 			        return false,
 			            "Config not found"
 			    end
-			
+
 			    return pcall(function()
 			        delfile(
 			            path
 			        )
 			    end)
 			end
-			
+
 			local function ListConfigs()
 			    if type(listfiles) ~= "function" then
 			        return {}
 			    end
-			
+
 			    EnsureConfigFolder()
-			
+
 			    local result = {}
-			
+
 			    local ok, entries =
 			        pcall(function()
 			            return listfiles(
 			                CONFIG_FOLDER
 			            )
 			        end)
-			
+
 			    if not ok
 			        or type(entries) ~= "table"
 			    then
 			        return result
 			    end
-			
+
 			    for _, path in ipairs(entries) do
 			        local name =
 			            tostring(path)
 			            :match(
 			                "([^/\\]+)%.json$"
 			            )
-			
+
 			        if name then
 			            table.insert(
 			                result,
@@ -3516,67 +3545,67 @@ _modules["Main.luau"] = {
 			            )
 			        end
 			    end
-			
+
 			    table.sort(
 			        result
 			    )
-			
+
 			    return result
 			end
-			
+
 			--------------------------------------------------
 			-- CONFIG UI
 			--------------------------------------------------
-			
+
 			local ConfigLeft =
 			    ConfigTab.Tab:AddLeftGroupbox(
 			        "Configuration",
 			        "folder"
 			    )
-			
+
 			local ConfigRight =
 			    ConfigTab.Tab:AddRightGroupbox(
 			        "Quick Actions",
 			        "zap"
 			    )
-			
+
 			local configNameInput =
 			    ConfigLeft:AddInput(
 			        "ConfigName",
 			        {
 			            Text =
 			                "Config Name",
-			
+
 			            Default =
 			                "default",
-			
+
 			            Placeholder =
 			                "default",
 			        }
 			    )
-			
+
 			ConfigLeft:AddLabel({
 			    Text =
 			        "Local JSON configs\n"
 			        .. "Save / Load / Delete / List",
 			    DoesWrap = true,
 			})
-			
+
 			ConfigLeft:AddButton({
 			    Text = "Save Config",
-			
+
 			    Func = function()
 			        local name =
 			            tostring(
 			                configNameInput.Value
 			                or "default"
 			            )
-			
+
 			        local ok, err =
 			            SaveConfig(
 			                name
 			            )
-			
+
 			        Notify(
 			            "Configs",
 			            ok
@@ -3594,22 +3623,22 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			ConfigLeft:AddButton({
 			    Text = "Load Config",
-			
+
 			    Func = function()
 			        local name =
 			            tostring(
 			                configNameInput.Value
 			                or "default"
 			            )
-			
+
 			        local ok, err =
 			            LoadConfig(
 			                name
 			            )
-			
+
 			        Notify(
 			            "Configs",
 			            ok
@@ -3627,22 +3656,22 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			ConfigLeft:AddButton({
 			    Text = "Delete Config",
-			
+
 			    Func = function()
 			        local name =
 			            tostring(
 			                configNameInput.Value
 			                or "default"
 			            )
-			
+
 			        local ok, err =
 			            DeleteConfig(
 			                name
 			            )
-			
+
 			        Notify(
 			            "Configs",
 			            ok
@@ -3660,14 +3689,14 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			ConfigRight:AddButton({
 			    Text = "List Configs",
-			
+
 			    Func = function()
 			        local list =
 			            ListConfigs()
-			
+
 			        Notify(
 			            "Configs",
 			            #list > 0
@@ -3680,16 +3709,16 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			ConfigRight:AddButton({
 			    Text = "Save Default",
-			
+
 			    Func = function()
 			        local ok, err =
 			            SaveConfig(
 			                "default"
 			            )
-			
+
 			        Notify(
 			            "Configs",
 			            ok
@@ -3702,16 +3731,16 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			ConfigRight:AddButton({
 			    Text = "Load Default",
-			
+
 			    Func = function()
 			        local ok, err =
 			            LoadConfig(
 			                "default"
 			            )
-			
+
 			        Notify(
 			            "Configs",
 			            ok
@@ -3724,37 +3753,37 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			-- CREDITS
 			--------------------------------------------------
-			
+
 			local CreditsSection =
 			    Window:CreateSection(
 			        "Credits"
 			    )
-			
+
 			local CreditsTab =
 			    CreditsSection:CreateTab(
 			        "Credits",
 			        "heart"
 			    )
-			
+
 			CreditsTab:CreateSection(
 			    "ZenWare V3"
 			)
-			
+
 			CreditsTab:CreateParagraph({
 			    Title =
 			        "ZenWare V3",
-			
+
 			    Content =
 			        "@ZensMod\n"
 			        .. "ZenWare V3",
 			})
-			
+
 			CreditsTab:CreateButton({
 			    Name = "Copy ZenWare Name",
-			
+
 			    Callback = function()
 			        if SetClipboard(
 			            "ZenWare V3"
@@ -3767,10 +3796,10 @@ _modules["Main.luau"] = {
 			        end
 			    end,
 			})
-			
+
 			CreditsTab:CreateButton({
 			    Name = "Show Version",
-			
+
 			    Callback = function()
 			        Notify(
 			            "ZenWare",
@@ -3779,68 +3808,908 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- EXTRA UTILITIES
 			--------------------------------------------------
-			
+
 			local UtilitySection =
 			    Window:CreateSection(
 			        "Utilities"
 			    )
-			
+
 			local UtilityTab =
 			    UtilitySection:CreateTab(
 			        "Utilities",
 			        "sparkles"
 			    )
-			
+
+			local UtilityMoreTab =
+			    UtilitySection:CreateTab(
+			        "More",
+			        "layers"
+			    )
+
 			local SessionStart =
 			    os.clock()
-			
+
+			--------------------------------------------------
+			-- MOVEMENT / CHARACTER
+			--------------------------------------------------
+
+			UtilityMoreTab:CreateSection(
+			    "Movement"
+			)
+
+			UtilityMoreTab:CreateSlider({
+			    Name = "WalkSpeed",
+
+			    Min = 1,
+			    Max = 100,
+
+			    Default =
+			        State.WalkSpeed,
+
+			    Flag = "WalkSpeed",
+
+			    Callback = function(value)
+			        State.WalkSpeed =
+			            tonumber(value)
+			            or 16
+
+			        local humanoid =
+			            GetHumanoid()
+
+			        if humanoid then
+			            humanoid.WalkSpeed =
+			                State.WalkSpeed
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateSlider({
+			    Name = "JumpPower",
+
+			    Min = 1,
+			    Max = 150,
+
+			    Default =
+			        State.JumpPower,
+
+			    Flag = "JumpPower",
+
+			    Callback = function(value)
+			        State.JumpPower =
+			            tonumber(value)
+			            or 50
+
+			        local humanoid =
+			            GetHumanoid()
+
+			        if humanoid then
+			            humanoid.UseJumpPower = true
+			            humanoid.JumpPower =
+			                State.JumpPower
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateSlider({
+			    Name = "HipHeight",
+
+			    Min = 0,
+			    Max = 10,
+
+			    Default =
+			        State.HipHeight,
+
+			    Flag = "HipHeight",
+
+			    Callback = function(value)
+			        State.HipHeight =
+			            tonumber(value)
+			            or 2
+
+			        local humanoid =
+			            GetHumanoid()
+
+			        if humanoid then
+			            humanoid.HipHeight =
+			                State.HipHeight
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateToggle({
+			    Name = "Anti AFK",
+
+			    Default =
+			        State.AntiAFK == true,
+
+			    Flag = "AntiAFK",
+
+			    Callback = function(enabled)
+			        State.AntiAFK =
+			            enabled == true
+
+			        if enabled then
+			            SafeCall(function()
+			                LocalPlayer.Idled:Connect(
+			                    function()
+			                        VirtualUser:CaptureController()
+			                        VirtualUser:ClickButton2(
+			                            Vector2.new()
+			                        )
+			                    end
+			                )
+			            end)
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Reset Character Physics",
+
+			    Callback = function()
+			        local humanoid =
+			            GetHumanoid()
+
+			        local root =
+			            GetRoot()
+
+			        if root then
+			            root.AssemblyLinearVelocity =
+			                Vector3.zero
+
+			            root.AssemblyAngularVelocity =
+			                Vector3.zero
+			        end
+
+			        if humanoid then
+			            humanoid.WalkSpeed =
+			                16
+
+			            humanoid.JumpPower =
+			                50
+
+			            humanoid.HipHeight =
+			                2
+			        end
+
+			        State.WalkSpeed = 16
+			        State.JumpPower = 50
+			        State.HipHeight = 2
+
+			        Notify(
+			            "Movement",
+			            "Character physics reset.",
+			            3
+			        )
+			    end,
+			})
+
+			--------------------------------------------------
+			-- CAMERA / VISUAL
+			--------------------------------------------------
+
+			UtilityMoreTab:CreateSection(
+			    "Camera & Visuals"
+			)
+
+			UtilityMoreTab:CreateSlider({
+			    Name = "Camera FOV",
+
+			    Min = 40,
+			    Max = 120,
+
+			    Default = 70,
+
+			    Flag = "CameraFOV",
+
+			    Callback = function(value)
+			        local camera =
+			            GetCamera()
+
+			        if camera then
+			            camera.FieldOfView =
+			                tonumber(value)
+			                or 70
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "FOV 70",
+
+			    Callback = function()
+			        local camera =
+			            GetCamera()
+
+			        if camera then
+			            camera.FieldOfView = 70
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "FOV 90",
+
+			    Callback = function()
+			        local camera =
+			            GetCamera()
+
+			        if camera then
+			            camera.FieldOfView = 90
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Clear Visual Effects",
+
+			    Callback = function()
+			        for _, object in ipairs(
+			            Lighting:GetChildren()
+			        ) do
+			            if
+			                object:IsA("BlurEffect")
+			                or object:IsA("ColorCorrectionEffect")
+			                or object:IsA("BloomEffect")
+			                or object:IsA("SunRaysEffect")
+			            then
+			                pcall(function()
+			                    object.Enabled = false
+			                end)
+			            end
+			        end
+
+			        Notify(
+			            "Visuals",
+			            "Local visual effects disabled.",
+			            3
+			        )
+			    end,
+			})
+
+			--------------------------------------------------
+			-- SESSION
+			--------------------------------------------------
+
+			UtilityMoreTab:CreateSection(
+			    "Session"
+			)
+
+			UtilityMoreTab:CreateParagraph({
+			    Title = "🌸 Lilac Utilities",
+			    Content =
+			        "Client information, dev tests and small helpers."
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Session Info",
+
+			    Callback = function()
+			        local character =
+			            LocalPlayer.Character
+
+			        local position =
+			            character
+			            and character:GetPivot().Position
+
+			        Notify(
+			            "Session Info",
+			            "Place: "
+			                .. tostring(game.PlaceId)
+			                .. "\nPlayers: "
+			                .. tostring(#Players:GetPlayers())
+			                .. "\nUptime: "
+			                .. string.format(
+			                    "%.0fs",
+			                    os.clock() - SessionStart
+			                )
+			                .. "\nPosition: "
+			                .. (
+			                    position
+			                    and string.format(
+			                        "%.1f, %.1f, %.1f",
+			                        position.X,
+			                        position.Y,
+			                        position.Z
+			                    )
+			                    or "Unknown"
+			                ),
+			            6
+			        )
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Show Place ID",
+
+			    Callback = function()
+			        Notify(
+			            "Place ID",
+			            tostring(game.PlaceId),
+			            4
+			        )
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Show Job ID",
+
+			    Callback = function()
+			        Notify(
+			            "Job ID",
+			            tostring(game.JobId),
+			            4
+			        )
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Show Player Count",
+
+			    Callback = function()
+			        Notify(
+			            "Server",
+			            tostring(
+			                #Players:GetPlayers()
+			            ) .. " players online.",
+			            3
+			        )
+			    end,
+			})
+
+			--------------------------------------------------
+			-- CHARACTER
+			--------------------------------------------------
+
+			UtilityMoreTab:CreateSection(
+			    "Character"
+			)
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Refresh Character",
+
+			    Callback = function()
+			        SafeCall(function()
+			            LocalPlayer:LoadCharacter()
+			        end)
+
+			        Notify(
+			            "Character",
+			            "Refresh requested.",
+			            3
+			        )
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Reset Camera",
+
+			    Callback = function()
+			        SafeCall(function()
+			            local character =
+			                LocalPlayer.Character
+
+			            local humanoid =
+			                character
+			                and character:FindFirstChildOfClass(
+			                    "Humanoid"
+			                )
+
+			            if humanoid then
+			                Workspace.CurrentCamera.CameraSubject =
+			                    humanoid
+			                Workspace.CurrentCamera.CameraType =
+			                    Enum.CameraType.Custom
+			            end
+			        end)
+
+			        Notify(
+			            "Camera",
+			            "Camera reset.",
+			            2
+			        )
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Character Position",
+
+			    Callback = function()
+			        local position =
+			            GetPosition()
+
+			        Notify(
+			            "Position",
+			            FormatVector3(
+			                position
+			            ),
+			            4
+			        )
+			    end,
+			})
+
+			--------------------------------------------------
+			-- EXTRA DEV UTILITIES
+			--------------------------------------------------
+
+			UtilityMoreTab:CreateSection(
+			    "Performance"
+			)
+
+			local fpsLabel =
+			    UtilityMoreTab:CreateParagraph({
+			        Title = "FPS Monitor",
+			        Content = "FPS: measuring...",
+			    })
+
+			local fpsMonitorEnabled =
+			    false
+
+			local fpsConnection =
+			    nil
+
+			local fpsFrames =
+			    0
+
+			local fpsStarted =
+			    os.clock()
+
+			local function StopFPSMonitor()
+			    fpsMonitorEnabled =
+			        false
+
+			    if fpsConnection then
+			        fpsConnection:Disconnect()
+			        fpsConnection =
+			            nil
+			    end
+			end
+
+			local function StartFPSMonitor()
+			    StopFPSMonitor()
+
+			    fpsMonitorEnabled =
+			        true
+
+			    fpsFrames =
+			        0
+
+			    fpsStarted =
+			        os.clock()
+
+			    fpsConnection =
+			        RunService.RenderStepped:Connect(
+			            function()
+			                if not fpsMonitorEnabled then
+			                    return
+			                end
+
+			                fpsFrames +=
+			                    1
+
+			                local elapsed =
+			                    os.clock()
+			                    - fpsStarted
+
+			                if elapsed >= 0.5 then
+			                    local fps =
+			                        math.floor(
+			                            (
+			                                fpsFrames
+			                                / elapsed
+			                            )
+			                            + 0.5
+			                        )
+
+			                    pcall(function()
+			                        fpsLabel:SetText(
+			                            "FPS: "
+			                                .. tostring(
+			                                    fps
+			                                )
+			                        )
+			                    end)
+
+			                    fpsFrames =
+			                        0
+
+			                    fpsStarted =
+			                        os.clock()
+			                end
+			            end
+			        )
+			end
+
+			UtilityMoreTab:CreateToggle({
+			    Name = "FPS Monitor",
+
+			    Default = false,
+
+			    Flag = "FPSMonitor",
+
+			    Callback = function(enabled)
+			        if enabled then
+			            StartFPSMonitor()
+			        else
+			            StopFPSMonitor()
+
+			            pcall(function()
+			                fpsLabel:SetText(
+			                    "FPS: stopped"
+			                )
+			            end)
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Performance Snapshot",
+
+			    Callback = function()
+			        local character =
+			            LocalPlayer.Character
+
+			        local root =
+			            GetRoot()
+
+			        Notify(
+			            "Performance",
+			            "Players: "
+			                .. tostring(
+			                    #Players:GetPlayers()
+			                )
+			                .. "\nGravity: "
+			                .. string.format(
+			                    "%.1f",
+			                    Workspace.Gravity
+			                )
+			                .. "\nCharacter: "
+			                .. tostring(
+			                    character ~= nil
+			                )
+			                .. "\nRoot: "
+			                .. tostring(
+			                    root ~= nil
+			                ),
+			            5
+			        )
+			    end,
+			})
+
+			--------------------------------------------------
+			-- ENVIRONMENT
+			--------------------------------------------------
+
+			UtilityMoreTab:CreateSection(
+			    "Environment"
+			)
+
+			UtilityMoreTab:CreateSlider({
+			    Name = "Clock Time",
+
+			    Min = 0,
+			    Max = 24,
+
+			    Default = Lighting.ClockTime,
+
+			    Flag = "ClockTime",
+
+			    Callback = function(value)
+			        Lighting.ClockTime =
+			            tonumber(value)
+			            or Lighting.ClockTime
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Day",
+
+			    Callback = function()
+			        Lighting.ClockTime =
+			            12
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Sunset",
+
+			    Callback = function()
+			        Lighting.ClockTime =
+			            18
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Night",
+
+			    Callback = function()
+			        Lighting.ClockTime =
+			            0
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Restore Local Visuals",
+
+			    Callback = function()
+			        pcall(function()
+			            Lighting.ClockTime =
+			                14
+
+			            local camera =
+			                GetCamera()
+
+			            if camera then
+			                camera.FieldOfView =
+			                    70
+			            end
+			        end)
+
+			        Notify(
+			            "Environment",
+			            "Local visual settings restored.",
+			            3
+			        )
+			    end,
+			})
+
+			--------------------------------------------------
+			-- QUICK ACTIONS
+			--------------------------------------------------
+
+			UtilityMoreTab:CreateSection(
+			    "Quick Actions"
+			)
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Copy Position",
+
+			    Callback = function()
+			        local position =
+			            GetPosition()
+
+			        if not position then
+			            Notify(
+			                "Clipboard",
+			                "Character position unavailable.",
+			                3
+			            )
+			            return
+			        end
+
+			        local value =
+			            string.format(
+			                "%.3f %.3f %.3f",
+			                position.X,
+			                position.Y,
+			                position.Z
+			            )
+
+			        if SetClipboard(
+			            value
+			        ) then
+			            Notify(
+			                "Clipboard",
+			                "Position copied.",
+			                3
+			            )
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Copy Camera Position",
+
+			    Callback = function()
+			        local camera =
+			            GetCamera()
+
+			        if not camera then
+			            return
+			        end
+
+			        local position =
+			            camera.CFrame.Position
+
+			        local value =
+			            string.format(
+			                "%.3f %.3f %.3f",
+			                position.X,
+			                position.Y,
+			                position.Z
+			            )
+
+			        if SetClipboard(
+			            value
+			        ) then
+			            Notify(
+			                "Clipboard",
+			                "Camera position copied.",
+			                3
+			            )
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Show Camera Info",
+
+			    Callback = function()
+			        local camera =
+			            GetCamera()
+
+			        if not camera then
+			            return
+			        end
+
+			        local position =
+			            camera.CFrame.Position
+
+			        Notify(
+			            "Camera",
+			            string.format(
+			                "X %.2f | Y %.2f | Z %.2f\nFOV %.1f",
+			                position.X,
+			                position.Y,
+			                position.Z,
+			                camera.FieldOfView
+			            ),
+			            4
+			        )
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Reset Character Rotation",
+
+			    Callback = function()
+			        local root =
+			            GetRoot()
+
+			        if not root then
+			            return
+			        end
+
+			        local position =
+			            root.Position
+
+			        root.CFrame =
+			            CFrame.new(
+			                position
+			            )
+
+			        root.AssemblyAngularVelocity =
+			            Vector3.zero
+
+			        Notify(
+			            "Character",
+			            "Rotation reset.",
+			            2
+			        )
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Respawn",
+
+			    Callback = function()
+			        SafeCall(function()
+			            LocalPlayer:LoadCharacter()
+			        end)
+			    end,
+			})
+
+			--------------------------------------------------
+			-- FUN / USELESS STUFF
+			--------------------------------------------------
+
+			UtilityMoreTab:CreateSection(
+			    "Fun"
+			)
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Where Am I?",
+
+			    Callback = function()
+			        local position =
+			            GetPosition()
+
+			        Notify(
+			            "Where Am I?",
+			            FormatVector3(
+			                position
+			            ),
+			            4
+			        )
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Random Camera FOV",
+
+			    Callback = function()
+			        local camera =
+			            GetCamera()
+
+			        if camera then
+			            camera.FieldOfView =
+			                math.random(
+			                    55,
+			                    110
+			                )
+			        end
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Random Clock",
+
+			    Callback = function()
+			        Lighting.ClockTime =
+			            math.random()
+			            * 24
+			    end,
+			})
+
+			UtilityMoreTab:CreateButton({
+			    Name = "Notify Test",
+
+			    Callback = function()
+			        Notify(
+			            "🌸 Lilac v1488",
+			            "Everything is alive and running.",
+			            4
+			        )
+			    end,
+			})
+
 			local SetDevGravity0
 			local StartDevCamera
 			local StopDevCamera
 			local StartDevFly
 			local StopDevFly
-			
-			
+
+
 			local UtilityLeft =
 			    UtilityTab.Tab:AddLeftGroupbox(
 			        "Session & Character",
 			        "user"
 			    )
-			
+
 			local UtilityRight =
 			    UtilityTab.Tab:AddRightGroupbox(
 			        "Automation",
 			        "zap"
 			    )
-			
+
 			local UtilityRightDev =
 			    UtilityTab.Tab:AddRightGroupbox(
 			        "Dev / Camera",
 			        "wrench"
 			    )
-			
+
 			--------------------------------------------------
 			-- LEFT: SESSION
 			--------------------------------------------------
-			
+
 			UtilityLeft:AddLabel({
 			    Text =
 			        "🌸 Lilac Utilities\n"
 			        .. "Session, character and small helpers.",
 			    DoesWrap = true,
 			})
-			
+
 			UtilityLeft:AddButton({
 			    Text = "Session Info",
-			
+
 			    Func = function()
 			        local position =
 			            GetPosition()
-			
+
 			        Notify(
 			            "Session Info",
 			            "Place: "
@@ -3865,10 +4734,10 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			UtilityLeft:AddButton({
 			    Text = "Show Place ID",
-			
+
 			    Func = function()
 			        Notify(
 			            "Place ID",
@@ -3879,10 +4748,10 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			UtilityLeft:AddButton({
 			    Text = "Show Job ID",
-			
+
 			    Func = function()
 			        Notify(
 			            "Job ID",
@@ -3893,10 +4762,10 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			UtilityLeft:AddButton({
 			    Text = "Show Player Count",
-			
+
 			    Func = function()
 			        Notify(
 			            "Server",
@@ -3908,20 +4777,20 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			UtilityLeft:AddButton({
 			    Text = "Refresh Character",
-			
+
 			    Func = function()
 			        SafeCall(function()
 			            LocalPlayer:LoadCharacter()
 			        end)
 			    end,
 			})
-			
+
 			UtilityLeft:AddButton({
 			    Text = "Character Position",
-			
+
 			    Func = function()
 			        Notify(
 			            "Position",
@@ -3932,69 +4801,69 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			UtilityLeft:AddButton({
 			    Text = "Reset Character Physics",
-			
+
 			    Func = function()
 			        local humanoid =
 			            GetHumanoid()
-			
+
 			        local root =
 			            GetRoot()
-			
+
 			        if root then
 			            root.AssemblyLinearVelocity =
 			                Vector3.zero
-			
+
 			            root.AssemblyAngularVelocity =
 			                Vector3.zero
 			        end
-			
+
 			        if humanoid then
 			            humanoid.WalkSpeed =
 			                16
-			
+
 			            humanoid.UseJumpPower =
 			                true
-			
+
 			            humanoid.JumpPower =
 			                50
-			
+
 			            humanoid.HipHeight =
 			                2
 			        end
-			
+
 			        State.WalkSpeed = 16
 			        State.JumpPower = 50
 			        State.HipHeight = 2
 			    end,
 			})
-			
+
 			UtilityLeft:AddDivider()
-			
+
 			UtilityLeft:AddSlider(
 			    "WalkSpeed",
 			    {
 			        Text =
 			            "Walk Speed",
-			
+
 			        Default =
 			            State.WalkSpeed,
-			
+
 			        Min = 1,
-			
+
 			        Max = 100,
-			
+
 			        Rounding = 0,
-			
+
 			        Callback = function(value)
 			            State.WalkSpeed =
 			                value
-			
+
 			            local humanoid =
 			                GetHumanoid()
-			
+
 			            if humanoid then
 			                humanoid.WalkSpeed =
 			                    value
@@ -4002,62 +4871,62 @@ _modules["Main.luau"] = {
 			        end,
 			    }
 			)
-			
+
 			UtilityLeft:AddSlider(
 			    "JumpPower",
 			    {
 			        Text =
 			            "Jump Power",
-			
+
 			        Default =
 			            State.JumpPower,
-			
+
 			        Min = 1,
-			
+
 			        Max = 150,
-			
+
 			        Rounding = 0,
-			
+
 			        Callback = function(value)
 			            State.JumpPower =
 			                value
-			
+
 			            local humanoid =
 			                GetHumanoid()
-			
+
 			            if humanoid then
 			                humanoid.UseJumpPower =
 			                    true
-			
+
 			                humanoid.JumpPower =
 			                    value
 			            end
 			        end,
 			    }
 			)
-			
+
 			UtilityLeft:AddSlider(
 			    "HipHeight",
 			    {
 			        Text =
 			            "Hip Height",
-			
+
 			        Default =
 			            State.HipHeight,
-			
+
 			        Min = 0,
-			
+
 			        Max = 10,
-			
+
 			        Rounding = 1,
-			
+
 			        Callback = function(value)
 			            State.HipHeight =
 			                value
-			
+
 			            local humanoid =
 			                GetHumanoid()
-			
+
 			            if humanoid then
 			                humanoid.HipHeight =
 			                    value
@@ -4065,25 +4934,25 @@ _modules["Main.luau"] = {
 			        end,
 			    }
 			)
-			
+
 			UtilityLeft:AddSlider(
 			    "CameraFOV",
 			    {
 			        Text =
 			            "Camera FOV",
-			
+
 			        Default = 70,
-			
+
 			        Min = 40,
-			
+
 			        Max = 120,
-			
+
 			        Rounding = 0,
-			
+
 			        Callback = function(value)
 			            local camera =
 			                GetCamera()
-			
+
 			            if camera then
 			                camera.FieldOfView =
 			                    value
@@ -4091,40 +4960,40 @@ _modules["Main.luau"] = {
 			        end,
 			    }
 			)
-			
+
 			UtilityLeft:AddToggle(
 			    "AntiAFK",
 			    {
 			        Text =
 			            "Anti AFK",
-			
+
 			        Default =
 			            State.AntiAFK
 			            == true,
-			
+
 			        Callback = function(enabled)
 			            State.AntiAFK =
 			                enabled
 			        end,
 			    }
 			)
-			
+
 			UtilityLeft:AddButton({
 			    Text = "Reset Camera",
-			
+
 			    Func = function()
 			        SafeCall(function()
 			            StopDevCamera()
-			
+
 			            local camera =
 			                GetCamera()
-			
+
 			            local humanoid =
 			                GetHumanoid()
-			
+
 			            camera.CameraType =
 			                Enum.CameraType.Custom
-			
+
 			            if humanoid then
 			                camera.CameraSubject =
 			                    humanoid
@@ -4132,49 +5001,49 @@ _modules["Main.luau"] = {
 			        end)
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- RIGHT: AUTOMATION
 			--------------------------------------------------
-			
+
 			UtilityRight:AddLabel({
 			    Text =
 			        "Automation controls",
 			    DoesWrap = true,
 			})
-			
+
 			UtilityRight:AddSlider(
 			    "RebirthInterval",
 			    {
 			        Text =
 			            "Rebirth Interval",
-			
+
 			        Default =
 			            State.RebirthInterval,
-			
+
 			        Min = 0.05,
-			
+
 			        Max = 2,
-			
+
 			        Rounding = 2,
-			
+
 			        Callback = function(value)
 			            State.RebirthInterval =
 			                value
 			        end,
 			    }
 			)
-			
+
 			UtilityRight:AddToggle(
 			    "AutoRebirth",
 			    {
 			        Text =
 			            "Auto Rebirth",
-			
+
 			        Default =
 			            State.AutoRebirth
 			            == true,
-			
+
 			        Callback = function(enabled)
 			            if enabled then
 			                StartAutoRebirth()
@@ -4184,14 +5053,14 @@ _modules["Main.luau"] = {
 			        end,
 			    }
 			)
-			
+
 			UtilityRight:AddButton({
 			    Text = "Rebirth Once",
-			
+
 			    Func = function()
 			        local ok =
 			            RunRebirthOnce()
-			
+
 			        Notify(
 			            "Auto Rebirth",
 			            ok
@@ -4201,26 +5070,26 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			UtilityRight:AddSlider(
 			    "AutoClickerSpeed",
 			    {
 			        Text =
 			            "Clicks Per Second",
-			
+
 			        Default =
 			            State.AutoClickerSpeed,
-			
+
 			        Min = 1,
-			
+
 			        Max = 100,
-			
+
 			        Rounding = 0,
-			
+
 			        Callback = function(value)
 			            State.AutoClickerSpeed =
 			                value
-			
+
 			            if State.AutoClicker then
 			                SafeCall(function()
 			                    AutoClicker.Start(
@@ -4231,21 +5100,21 @@ _modules["Main.luau"] = {
 			        end,
 			    }
 			)
-			
+
 			UtilityRight:AddToggle(
 			    "AutoClicker",
 			    {
 			        Text =
 			            "Auto Clicker",
-			
+
 			        Default =
 			            State.AutoClicker
 			            == true,
-			
+
 			        Callback = function(enabled)
 			            State.AutoClicker =
 			                enabled
-			
+
 			            if enabled then
 			                SafeCall(function()
 			                    AutoClicker.Start(
@@ -4260,62 +5129,62 @@ _modules["Main.luau"] = {
 			        end,
 			    }
 			)
-			
+
 			UtilityRight:AddLabel(
 			    "Clicker hotkey: F"
 			)
-			
+
 			UtilityRight:AddButton({
 			    Text = "Stop Clicker",
-			
+
 			    Func = function()
 			        State.AutoClicker =
 			            false
-			
+
 			        SafeCall(function()
 			            AutoClicker.Stop()
 			        end)
 			    end,
 			})
-			
+
 			local utilityMogInput =
 			    UtilityRight:AddInput(
 			        "UtilityMogTarget",
 			        {
 			            Text =
 			                "Mog Target",
-			
+
 			            Placeholder =
 			                "Player username",
 			        }
 			    )
-			
+
 			UtilityRight:AddButton({
 			    Text = "Mog Target",
-			
+
 			    Func = function()
 			        local username =
 			            tostring(
 			                utilityMogInput.Value
 			                or ""
 			            )
-			
+
 			        if username == "" then
 			            Notify(
 			                "Auto Mog",
 			                "Enter a username first.",
 			                3
 			            )
-			
+
 			            return
 			        end
-			
+
 			        State.CurrentTarget =
 			            username
-			
+
 			        State.AutoMog =
 			            true
-			
+
 			        SafeCall(function()
 			            AutoMog.Start(
 			                username
@@ -4323,45 +5192,45 @@ _modules["Main.luau"] = {
 			        end)
 			    end,
 			})
-			
+
 			UtilityRight:AddButton({
 			    Text = "Mog All",
-			
+
 			    Func = function()
 			        State.AutoMogAll =
 			            true
-			
+
 			        SafeCall(function()
 			            AutoMog.StartAll()
 			        end)
 			    end,
 			})
-			
+
 			UtilityRight:AddButton({
 			    Text = "Stop Mog",
-			
+
 			    Func = function()
 			        State.AutoMog = false
 			        State.AutoMogAll = false
-			
+
 			        SafeCall(function()
 			            AutoMog.Stop()
 			        end)
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- RIGHT: DEV / CAMERA
 			--------------------------------------------------
-			
+
 			UtilityRightDev:AddToggle(
 			    "DevGravity0",
 			    {
 			        Text =
 			            "Dev Gravity 0",
-			
+
 			        Default = false,
-			
+
 			        Callback = function(enabled)
 			            SetDevGravity0(
 			                enabled
@@ -4369,15 +5238,15 @@ _modules["Main.luau"] = {
 			        end,
 			    }
 			)
-			
+
 			UtilityRightDev:AddToggle(
 			    "DevCamera",
 			    {
 			        Text =
 			            "Dev Camera",
-			
+
 			        Default = false,
-			
+
 			        Callback = function(enabled)
 			            if enabled then
 			                StartDevCamera()
@@ -4387,31 +5256,31 @@ _modules["Main.luau"] = {
 			        end,
 			    }
 			)
-			
+
 			UtilityRightDev:AddButton({
 			    Text = "Dev Camera Position",
-			
+
 			    Func = function()
 			        StartDevCamera()
 			    end,
 			})
-			
+
 			UtilityRightDev:AddButton({
 			    Text = "Reset Dev Camera",
-			
+
 			    Func = function()
 			        StopDevCamera()
 			    end,
 			})
-			
+
 			UtilityRightDev:AddToggle(
 			    "DevFly",
 			    {
 			        Text =
 			            "Dev Fly",
-			
+
 			        Default = false,
-			
+
 			        Callback = function(enabled)
 			            if enabled then
 			                StartDevFly()
@@ -4421,46 +5290,46 @@ _modules["Main.luau"] = {
 			        end,
 			    }
 			)
-			
+
 			UtilityRightDev:AddButton({
 			    Text = "Stop All Dev",
-			
+
 			    Func = function()
 			        StopAllDevTests()
 			        StopDevFly()
 			        StopDevCamera()
-			
+
 			        devGravity0Enabled =
 			            false
-			
+
 			        if DevGravityOriginal ~= nil then
 			            Workspace.Gravity =
 			                DevGravityOriginal
-			
+
 			            DevGravityOriginal =
 			                nil
 			        end
 			    end,
 			})
-			
+
 			UtilityRightDev:AddDivider()
-			
+
 			UtilityRightDev:AddButton({
 			    Text = "Start Both Auto Win",
-			
+
 			    Func = function()
 			        if not RequireDevMode() then
 			            return
 			        end
-			
+
 			        StartAutoWinTest(
 			            "World1"
 			        )
-			
+
 			        StartAutoWinTest(
 			            "World2"
 			        )
-			
+
 			        Notify(
 			            "Auto Win Dev",
 			            "Both dev profiles started.",
@@ -4468,86 +5337,86 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			UtilityRightDev:AddLabel({
 			    Text =
 			        "Camera: -73, 62, 4923\n"
 			        .. "Fly: WalkSpeed • Q/E",
 			    DoesWrap = true,
 			})
-			
+
 			-- DEVELOPER PHYSICS TESTS
 			--------------------------------------------------
-			
+
 			local devFlyEnabled = false
 			local devFlyConnection = nil
 			local devInputConnection = nil
 			local devCameraConnection = nil
-			
+
 			local devVerticalInput = 0
 			local devFlyHeight = 62
-			
+
 			local DEV_CAMERA_POSITION =
 			    Vector3.new(
 			        -73,
 			        62,
 			        4923
 			    )
-			
+
 			local DEV_FLY_SPEED = 32
-			
+
 			local function RequireDevMode()
 			    if DEV_TEST_MODE then
 			        return true
 			    end
-			
+
 			    Notify(
 			        "Developer",
 			        "Dev mode is disabled.",
 			        4
 			    )
-			
+
 			    return false
 			end
-			
+
 			local DevGravityOriginal = nil
-			
+
 			local function RestoreGravity()
 			    if DevGravityOriginal ~= nil
 			        and GravityLocks <= 0
 			    then
 			        Workspace.Gravity =
 			            DevGravityOriginal
-			
+
 			        DevGravityOriginal =
 			            nil
 			    end
-			
+
 			    StopGravityEnforcer()
 			end
-			
+
 			local devGravity0Enabled = false
-			
+
 			function SetDevGravity0(enabled)
 			    if not RequireDevMode() then
 			        return
 			    end
-			
+
 			    devGravity0Enabled =
 			        enabled == true
-			
+
 			    if devGravity0Enabled then
 			        if DevGravityOriginal == nil then
 			            DevGravityOriginal =
 			                Workspace.Gravity
 			        end
-			
+
 			        StartGravityEnforcer()
 			        Workspace.Gravity = 0
 			    else
 			        RestoreGravity()
 			    end
-			
+
 			    Notify(
 			        "Dev Physics",
 			        devGravity0Enabled
@@ -4556,24 +5425,24 @@ _modules["Main.luau"] = {
 			        3
 			    )
 			end
-			
+
 			UtilityTab:CreateToggle({
 			    Name = "Dev Gravity 0",
-			
+
 			    Default = false,
 			    Flag = "DevGravity0",
-			
+
 			    Callback = function(enabled)
 			        SetDevGravity0(
 			            enabled
 			        )
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- TEST CAMERA
 			--------------------------------------------------
-			
+
 			local devCameraEnabled = false
 			local devCameraRender = nil
 			local devCameraInputBegan = nil
@@ -4588,67 +5457,67 @@ _modules["Main.luau"] = {
 			local devCameraYaw = 0
 			local devCameraPitch = math.rad(-5)
 			local devCameraKeys = {}
-			
+
 			local DEV_CAMERA_SPEED = 28
 			local DEV_CAMERA_FAST_SPEED = 65
 			local DEV_CAMERA_SENSITIVITY = 0.0025
-			
+
 			function StopDevCamera()
 			    devCameraEnabled = false
-			
+
 			    if devCameraRender then
 			        devCameraRender:Disconnect()
 			        devCameraRender = nil
 			    end
-			
+
 			    if devCameraInputBegan then
 			        devCameraInputBegan:Disconnect()
 			        devCameraInputBegan = nil
 			    end
-			
+
 			    if devCameraInputEnded then
 			        devCameraInputEnded:Disconnect()
 			        devCameraInputEnded = nil
 			    end
-			
+
 			    if devCameraMouse then
 			        devCameraMouse:Disconnect()
 			        devCameraMouse = nil
 			    end
-			
+
 			    table.clear(devCameraKeys)
-			
+
 			    UserInputService.MouseBehavior =
 			        Enum.MouseBehavior.Default
 			    UserInputService.MouseIconEnabled = true
-			
+
 			    local camera =
 			        Workspace.CurrentCamera
-			
+
 			    if camera then
 			        camera.CameraType =
 			            Enum.CameraType.Custom
-			
+
 			        local humanoid =
 			            GetHumanoid()
-			
+
 			        if humanoid then
 			            camera.CameraSubject =
 			                humanoid
 			        end
 			    end
 			end
-			
+
 			function StartDevCamera()
 			    if not RequireDevMode() then
 			        return
 			    end
-			
+
 			    StopDevCamera()
-			
+
 			    local camera =
 			        Workspace.CurrentCamera
-			
+
 			    if not camera then
 			        Notify(
 			            "Dev Camera",
@@ -4657,7 +5526,7 @@ _modules["Main.luau"] = {
 			        )
 			        return
 			    end
-			
+
 			    devCameraEnabled = true
 			    devCameraPosition =
 			        Vector3.new(
@@ -4665,16 +5534,16 @@ _modules["Main.luau"] = {
 			            62,
 			            4923
 			        )
-			
+
 			    local look =
 			        camera.CFrame.LookVector
-			
+
 			    devCameraYaw =
 			        math.atan2(
 			            -look.X,
 			            -look.Z
 			        )
-			
+
 			    devCameraPitch =
 			        math.asin(
 			            math.clamp(
@@ -4683,10 +5552,10 @@ _modules["Main.luau"] = {
 			                0.98
 			            )
 			        )
-			
+
 			    camera.CameraType =
 			        Enum.CameraType.Scriptable
-			
+
 			    camera.CFrame =
 			        CFrame.new(
 			            devCameraPosition
@@ -4696,14 +5565,14 @@ _modules["Main.luau"] = {
 			            devCameraYaw,
 			            0
 			        )
-			
+
 			    devCameraInputBegan =
 			        UserInputService.InputBegan:Connect(
 			            function(input, processed)
 			                if processed then
 			                    return
 			                end
-			
+
 			                if input.UserInputType
 			                    == Enum.UserInputType.Keyboard
 			                then
@@ -4713,7 +5582,7 @@ _modules["Main.luau"] = {
 			                end
 			            end
 			        )
-			
+
 			    devCameraInputEnded =
 			        UserInputService.InputEnded:Connect(
 			            function(input)
@@ -4726,25 +5595,25 @@ _modules["Main.luau"] = {
 			                end
 			            end
 			        )
-			
+
 			    devCameraMouse =
 			        UserInputService.InputChanged:Connect(
 			            function(input)
 			                if not devCameraEnabled then
 			                    return
 			                end
-			
+
 			                if input.UserInputType
 			                    == Enum.UserInputType.MouseMovement
 			                then
 			                    devCameraYaw -=
 			                        input.Delta.X
 			                        * DEV_CAMERA_SENSITIVITY
-			
+
 			                    devCameraPitch -=
 			                        input.Delta.Y
 			                        * DEV_CAMERA_SENSITIVITY
-			
+
 			                    devCameraPitch =
 			                        math.clamp(
 			                            devCameraPitch,
@@ -4754,25 +5623,25 @@ _modules["Main.luau"] = {
 			                end
 			            end
 			        )
-			
+
 			    UserInputService.MouseBehavior =
 			        Enum.MouseBehavior.LockCurrentPosition
 			    UserInputService.MouseIconEnabled = false
-			
+
 			    devCameraRender =
 			        RunService.RenderStepped:Connect(
 			            function(dt)
 			                if not devCameraEnabled then
 			                    return
 			                end
-			
+
 			                local cameraNow =
 			                    Workspace.CurrentCamera
-			
+
 			                if not cameraNow then
 			                    return
 			                end
-			
+
 			                local forward =
 			                    Vector3.new(
 			                        -math.sin(
@@ -4783,7 +5652,7 @@ _modules["Main.luau"] = {
 			                            devCameraYaw
 			                        )
 			                    )
-			
+
 			                local right =
 			                    Vector3.new(
 			                        math.cos(
@@ -4794,46 +5663,46 @@ _modules["Main.luau"] = {
 			                            devCameraYaw
 			                        )
 			                    )
-			
+
 			                local move =
 			                    Vector3.zero
-			
+
 			                if devCameraKeys[
 			                    Enum.KeyCode.W
 			                ] then
 			                    move += forward
 			                end
-			
+
 			                if devCameraKeys[
 			                    Enum.KeyCode.S
 			                ] then
 			                    move -= forward
 			                end
-			
+
 			                if devCameraKeys[
 			                    Enum.KeyCode.D
 			                ] then
 			                    move += right
 			                end
-			
+
 			                if devCameraKeys[
 			                    Enum.KeyCode.A
 			                ] then
 			                    move -= right
 			                end
-			
+
 			                if devCameraKeys[
 			                    Enum.KeyCode.E
 			                ] then
 			                    move += Vector3.yAxis
 			                end
-			
+
 			                if devCameraKeys[
 			                    Enum.KeyCode.Q
 			                ] then
 			                    move -= Vector3.yAxis
 			                end
-			
+
 			                if move.Magnitude > 0 then
 			                    local speed =
 			                        devCameraKeys[
@@ -4841,13 +5710,13 @@ _modules["Main.luau"] = {
 			                        ]
 			                        and DEV_CAMERA_FAST_SPEED
 			                        or DEV_CAMERA_SPEED
-			
+
 			                    devCameraPosition +=
 			                        move.Unit
 			                        * speed
 			                        * dt
 			                end
-			
+
 			                cameraNow.CFrame =
 			                    CFrame.new(
 			                        devCameraPosition
@@ -4859,7 +5728,7 @@ _modules["Main.luau"] = {
 			                    )
 			            end
 			        )
-			
+
 			    Notify(
 			        "Dev Camera",
 			        "Enabled at -73, 62, 4923.\n"
@@ -4868,7 +5737,7 @@ _modules["Main.luau"] = {
 			        5
 			    )
 			end
-			
+
 			UtilityTab:CreateToggle({
 			    Name = "Dev Camera",
 			    Default = false,
@@ -4881,86 +5750,78 @@ _modules["Main.luau"] = {
 			        end
 			    end,
 			})
-			
+
 			UtilityTab:CreateButton({
 			    Name = "Dev Camera Position",
 			    Callback = function()
 			        StartDevCamera()
 			    end,
 			})
-			
+
 			UtilityTab:CreateButton({
 			    Name = "Reset Dev Camera",
 			    Callback = function()
 			        StopDevCamera()
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- DEV FLY
 			--------------------------------------------------
-			
+
 			function StopDevFly()
-			    devFlyEnabled =
-			        false
-			
-			    devVerticalInput =
-			        0
-			
+			    devFlyEnabled = false
+			    devVerticalInput = 0
+
 			    if devFlyConnection then
 			        devFlyConnection:Disconnect()
-			        devFlyConnection =
-			            nil
+			        devFlyConnection = nil
 			    end
-			
+
 			    if devInputConnection then
 			        devInputConnection:Disconnect()
-			        devInputConnection =
-			            nil
+			        devInputConnection = nil
 			    end
-			
+
 			    local humanoid =
 			        GetHumanoid()
-			
-			    local root =
-			        GetRoot()
-			
-			    if root then
-			        root.AssemblyLinearVelocity =
-			            Vector3.zero
-			
-			        root.AssemblyAngularVelocity =
-			            Vector3.zero
-			    end
-			
+
 			    if humanoid then
-			        humanoid.AutoRotate =
-			            true
-			
+			        humanoid.AutoRotate = true
+
 			        pcall(function()
-			            humanoid.PlatformStand =
-			                false
-			
+			            humanoid.PlatformStand = false
 			            humanoid:ChangeState(
 			                Enum.HumanoidStateType.GettingUp
 			            )
 			        end)
 			    end
+
+			    local root =
+			        GetRoot()
+
+			    if root then
+			        root.AssemblyLinearVelocity =
+			            Vector3.zero
+
+			        root.AssemblyAngularVelocity =
+			            Vector3.zero
+			    end
 			end
-			
+
 			function StartDevFly()
 			    if not RequireDevMode() then
 			        return
 			    end
-			
+
 			    StopDevFly()
-			
+
 			    local root =
 			        GetRoot()
-			
+
 			    local humanoid =
 			        GetHumanoid()
-			
+
 			    if not root or not humanoid then
 			        Notify(
 			            "Dev Fly",
@@ -4969,18 +5830,16 @@ _modules["Main.luau"] = {
 			        )
 			        return
 			    end
-			
-			    devFlyEnabled =
-			        true
-			
+
+			    devFlyEnabled = true
 			    devFlyHeight =
 			        root.Position.Y
-			
-			    humanoid.AutoRotate =
-			        true
-			
-			    -- Match the character's normal movement speed.
-			    local characterSpeed =
+
+			    humanoid.AutoRotate = false
+			    humanoid.PlatformStand = false
+
+			    -- Keep the normal character WalkSpeed.
+			    local flySpeed =
 			        math.max(
 			            1,
 			            tonumber(
@@ -4988,131 +5847,85 @@ _modules["Main.luau"] = {
 			            )
 			            or 16
 			        )
-			
-			    -- Keep the character in a falling/freefall state while
-			    -- we control its position manually.
+
+			    -- Force the falling animation/state while we hold the
+			    -- character at a fixed altitude.
 			    pcall(function()
 			        humanoid:ChangeState(
 			            Enum.HumanoidStateType.Freefall
 			        )
 			    end)
-			
+
 			    devInputConnection =
 			        UserInputService.InputBegan:Connect(
-			            function(
-			                input
-			            )
-			                if not devFlyEnabled then
+			            function(input, processed)
+			                if processed or not devFlyEnabled then
 			                    return
 			                end
-			
-			                -- Do not let a textbox consume Q/E.
-			                if UserInputService:GetFocusedTextBox() then
-			                    return
-			                end
-			
+
 			                if input.KeyCode ==
 			                    Enum.KeyCode.Q
 			                then
-			                    devVerticalInput =
-			                        -1
-			
+			                    devVerticalInput = -1
+
 			                elseif input.KeyCode ==
 			                    Enum.KeyCode.E
 			                then
-			                    devVerticalInput =
-			                        1
+			                    devVerticalInput = 1
 			                end
 			            end
 			        )
-			
+
 			    devFlyConnection =
-			        RunService.Heartbeat:Connect(
+			        RunService.RenderStepped:Connect(
 			            function(dt)
 			                if not devFlyEnabled then
 			                    return
 			                end
-			
+
 			                local currentRoot =
 			                    GetRoot()
-			
-			                local currentHumanoid =
-			                    GetHumanoid()
-			
-			                if not currentRoot
-			                    or not currentHumanoid
-			                then
+
+			                if not currentRoot then
 			                    return
 			                end
-			
-			                characterSpeed =
+
+			                local currentHumanoid =
+			                    GetHumanoid()
+
+			                local currentSpeed =
 			                    math.max(
 			                        1,
 			                        tonumber(
-			                            currentHumanoid.WalkSpeed
+			                            currentHumanoid
+			                            and currentHumanoid.WalkSpeed
 			                        )
-			                        or characterSpeed
+			                        or flySpeed
 			                    )
-			
-			                -- Normal movement direction uses the player's
-			                -- regular Roblox controls at WalkSpeed.
-			                local moveDirection =
-			                    currentHumanoid.MoveDirection
-			
-			                local horizontalDelta =
-			                    moveDirection
-			                    * characterSpeed
-			                    * dt
-			
-			                local verticalDelta =
-			                    devVerticalInput
-			                    * characterSpeed
-			                    * dt
-			
+
 			                devFlyHeight +=
-			                    verticalDelta
-			
-			                local currentPosition =
+			                    (
+			                        devVerticalInput
+			                        * currentSpeed
+			                        * dt
+			                    )
+
+			                local current =
 			                    currentRoot.Position
-			
-			                local nextPosition =
-			                    Vector3.new(
-			                        currentPosition.X
-			                            + horizontalDelta.X,
-			
-			                        devFlyHeight,
-			
-			                        currentPosition.Z
-			                            + horizontalDelta.Z
-			                    )
-			
-			                local look =
-			                    currentRoot.CFrame.LookVector
-			
-			                if moveDirection.Magnitude > 0.01 then
-			                    look =
-			                        moveDirection.Unit
-			                end
-			
+
 			                currentRoot.CFrame =
-			                    CFrame.lookAt(
-			                        nextPosition,
-			                        nextPosition
-			                            + Vector3.new(
-			                                look.X,
-			                                0,
-			                                look.Z
-			                            )
+			                    CFrame.new(
+			                        current.X,
+			                        devFlyHeight,
+			                        current.Z
 			                    )
-			
+
 			                currentRoot.AssemblyLinearVelocity =
 			                    Vector3.zero
-			
+
 			                currentRoot.AssemblyAngularVelocity =
 			                    Vector3.zero
-			
-			                -- Re-assert freefall so the character remains
-			                -- visually in the falling state.
+
 			                pcall(function()
 			                    currentHumanoid:ChangeState(
 			                        Enum.HumanoidStateType.Freefall
@@ -5120,18 +5933,17 @@ _modules["Main.luau"] = {
 			                end)
 			            end
 			        )
-			
+
 			    Notify(
 			        "Dev Fly",
-			        "Enabled.\n"
-			            .. "Speed = character WalkSpeed\n"
-			            .. "WASD = normal movement\n"
-			            .. "Hold E = up • Q = down\n"
-			            .. "Hover + Freefall animation",
+			        "Hover enabled.\n"
+			            .. "Speed = WalkSpeed\n"
+			            .. "Hold E to rise • Q to descend\n"
+			            .. "Freefall animation is kept active.",
 			        5
 			    )
 			end
-			
+
 			UserInputService.InputEnded:Connect(
 			    function(input)
 			        if
@@ -5141,36 +5953,35 @@ _modules["Main.luau"] = {
 			            input.KeyCode ==
 			                Enum.KeyCode.E
 			        then
-			            devVerticalInput =
-			                0
+			            devVerticalInput = 0
 			        end
 			    end
 			)
-			
+
 			--------------------------------------------------
 			-- TEST PRESETS
 			--------------------------------------------------
-			
+
 			UtilityTab:CreateSection(
 			    "Quick Tests"
 			)
-			
+
 			UtilityTab:CreateButton({
 			    Name = "Start Both Auto Win",
-			
+
 			    Callback = function()
 			        if not RequireDevMode() then
 			            return
 			        end
-			
+
 			        StartAutoWinTest(
 			            "World1"
 			        )
-			
+
 			        StartAutoWinTest(
 			            "World2"
 			        )
-			
+
 			        Notify(
 			            "Auto Win Dev",
 			            "Both dev tests started.",
@@ -5178,28 +5989,28 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			UtilityTab:CreateButton({
 			    Name = "Stop All Developers",
-			
+
 			    Callback = function()
 			        StopAllDevTests()
 			        StopDevFly()
 			        StopDevCamera()
-			
+
 			        StopTreadmillLock(
 			            "World1"
 			        )
-			
+
 			        StopTreadmillLock(
 			            "World2"
 			        )
-			
+
 			        devGravity0Enabled =
 			            false
-			
+
 			        RestoreGravity()
-			
+
 			        Notify(
 			            "Developers",
 			            "All dev test systems stopped.",
@@ -5207,11 +6018,11 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- TREADMILL DEV
 			--------------------------------------------------
-			
+
 			local TreadmillProfiles = {
 			    -- Coordinates supplied by the user:
 			    -- World 1 = second screenshot
@@ -5220,7 +6031,7 @@ _modules["Main.luau"] = {
 			        13,
 			        -163
 			    ),
-			
+
 			    -- World 2 = first screenshot
 			    World2 = Vector3.new(
 			        -60,
@@ -5228,41 +6039,41 @@ _modules["Main.luau"] = {
 			        4837
 			    ),
 			}
-			
+
 			local treadmillLocks = {
 			    World1 = false,
 			    World2 = false,
 			}
-			
+
 			local treadmillConnections = {
 			    World1 = nil,
 			    World2 = nil,
 			}
-			
+
 			local treadmillTweening = {
 			    World1 = false,
 			    World2 = false,
 			}
-			
+
 			local TREADMILL_TWEEN_TIME =
 			    0.35
-			
+
 			local TREADMILL_CHECK_INTERVAL =
 			    0.15
-			
+
 			local function GetRootSafe()
 			    local character =
 			        LocalPlayer.Character
-			
+
 			    if not character then
 			        return nil
 			    end
-			
+
 			    return character:FindFirstChild(
 			        "HumanoidRootPart"
 			    )
 			end
-			
+
 			local function TweenCharacterTo(
 			    position,
 			    worldName,
@@ -5271,24 +6082,24 @@ _modules["Main.luau"] = {
 			    if not RequireDevMode() then
 			        return false
 			    end
-			
+
 			    local root =
 			        GetRootSafe()
-			
+
 			    if not root then
 			        return false
 			    end
-			
+
 			    if treadmillTweening[worldName] then
 			        return false
 			    end
-			
+
 			    treadmillTweening[worldName] =
 			        true
-			
+
 			    local target =
 			        CFrame.new(position)
-			
+
 			    local tween =
 			        TweenService:Create(
 			            root,
@@ -5303,26 +6114,26 @@ _modules["Main.luau"] = {
 			                    target
 			            }
 			        )
-			
+
 			    tween:Play()
-			
+
 			    tween.Completed:Wait()
-			
+
 			    treadmillTweening[worldName] =
 			        false
-			
+
 			    return true
 			end
-			
+
 			local function StopTreadmillLock(
 			    worldName
 			)
 			    treadmillLocks[worldName] =
 			        false
-			
+
 			    local thread =
 			        treadmillConnections[worldName]
-			
+
 			    if thread
 			        and task.cancel
 			    then
@@ -5331,46 +6142,46 @@ _modules["Main.luau"] = {
 			                thread
 			            )
 			        end)
-			
+
 			        treadmillConnections[worldName] =
 			            nil
 			    end
-			
+
 			    treadmillTweening[worldName] =
 			        false
 			end
-			
+
 			local function StartTreadmillLock(
 			    worldName
 			)
 			    if not RequireDevMode() then
 			        return
 			    end
-			
+
 			    StopTreadmillLock(
 			        worldName
 			    )
-			
+
 			    treadmillLocks[worldName] =
 			        true
-			
+
 			    local target =
 			        TreadmillProfiles[worldName]
-			
+
 			    treadmillConnections[worldName] =
 			        task.spawn(
 			            function()
 			                while treadmillLocks[worldName] do
 			                    local root =
 			                        GetRootSafe()
-			
+
 			                    if root then
 			                        local distance =
 			                            (
 			                                root.Position
 			                                - target
 			                            ).Magnitude
-			
+
 			                        if distance >= 1 then
 			                            pcall(function()
 			                                TweenCharacterTo(
@@ -5381,14 +6192,14 @@ _modules["Main.luau"] = {
 			                            end)
 			                        end
 			                    end
-			
+
 			                    task.wait(
 			                        TREADMILL_CHECK_INTERVAL
 			                    )
 			                end
 			            end
 			        )
-			
+
 			    Notify(
 			        "Treadmill Dev",
 			        worldName
@@ -5403,28 +6214,28 @@ _modules["Main.luau"] = {
 			        3
 			    )
 			end
-			
+
 			UtilityTab:CreateSection(
 			    "Treadmill Dev"
 			)
-			
+
 			UtilityTab:CreateParagraph({
 			    Title =
 			        "🌸 Treadmill Position Lock",
-			
+
 			    Content =
 			        "Tweens the character to the configured treadmill "
 			        .. "position and returns it whenever it moves 1+ stud away.",
 			})
-			
+
 			--------------------------------------------------
 			-- WORLD 1
 			--------------------------------------------------
-			
+
 			UtilityTab:CreateButton({
 			    Name =
 			        "World 1 Tween to Treadmill",
-			
+
 			    Callback = function()
 			        task.spawn(function()
 			            TweenCharacterTo(
@@ -5435,16 +6246,16 @@ _modules["Main.luau"] = {
 			        end)
 			    end,
 			})
-			
+
 			UtilityTab:CreateToggle({
 			    Name =
 			        "World 1 Treadmill Lock",
-			
+
 			    Default = false,
-			
+
 			    Flag =
 			        "World1TreadmillLock",
-			
+
 			    Callback = function(enabled)
 			        if enabled then
 			            StartTreadmillLock(
@@ -5454,7 +6265,7 @@ _modules["Main.luau"] = {
 			            StopTreadmillLock(
 			                "World1"
 			            )
-			
+
 			            Notify(
 			                "Treadmill Dev",
 			                "World 1 lock disabled.",
@@ -5463,15 +6274,15 @@ _modules["Main.luau"] = {
 			        end
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- WORLD 2
 			--------------------------------------------------
-			
+
 			UtilityTab:CreateButton({
 			    Name =
 			        "World 2 Tween to Treadmill",
-			
+
 			    Callback = function()
 			        task.spawn(function()
 			            TweenCharacterTo(
@@ -5482,16 +6293,16 @@ _modules["Main.luau"] = {
 			        end)
 			    end,
 			})
-			
+
 			UtilityTab:CreateToggle({
 			    Name =
 			        "World 2 Treadmill Lock",
-			
+
 			    Default = false,
-			
+
 			    Flag =
 			        "World2TreadmillLock",
-			
+
 			    Callback = function(enabled)
 			        if enabled then
 			            StartTreadmillLock(
@@ -5501,7 +6312,7 @@ _modules["Main.luau"] = {
 			            StopTreadmillLock(
 			                "World2"
 			            )
-			
+
 			            Notify(
 			                "Treadmill Dev",
 			                "World 2 lock disabled.",
@@ -5510,20 +6321,20 @@ _modules["Main.luau"] = {
 			        end
 			    end,
 			})
-			
+
 			UtilityTab:CreateButton({
 			    Name =
 			        "Stop Treadmill Locks",
-			
+
 			    Callback = function()
 			        StopTreadmillLock(
 			            "World1"
 			        )
-			
+
 			        StopTreadmillLock(
 			            "World2"
 			        )
-			
+
 			        Notify(
 			            "Treadmill Dev",
 			            "All treadmill locks stopped.",
@@ -5531,18 +6342,18 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- DIAGNOSTICS
 			--------------------------------------------------
-			
+
 			UtilityTab:CreateSection(
 			    "Diagnostics"
 			)
-			
+
 			UtilityTab:CreateButton({
 			    Name = "Check Worlds",
-			
+
 			    Callback = function()
 			        Notify(
 			            "Workspace",
@@ -5562,14 +6373,14 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			UtilityTab:CreateButton({
 			    Name = "Check Character",
-			
+
 			    Callback = function()
 			        local character =
 			            LocalPlayer.Character
-			
+
 			        Notify(
 			            "Character Diagnostics",
 			            "Character: "
@@ -5594,14 +6405,14 @@ _modules["Main.luau"] = {
 			        )
 			    end,
 			})
-			
+
 			UtilityTab:CreateButton({
 			    Name = "Copy Position",
-			
+
 			    Callback = function()
 			        local position =
 			            GetPosition()
-			
+
 			        if position then
 			            SetClipboard(
 			                string.format(
@@ -5611,7 +6422,7 @@ _modules["Main.luau"] = {
 			                    position.Z
 			                )
 			            )
-			
+
 			            Notify(
 			                "Clipboard",
 			                "Position copied.",
@@ -5620,21 +6431,21 @@ _modules["Main.luau"] = {
 			        end
 			    end,
 			})
-			
+
 			--------------------------------------------------
 			-- FINALIZE
 			--------------------------------------------------
-			
+
 			Window:SetAutoSave(
 			    true
 			)
-			
+
 			Notify(
 			    "🌸 Lilac v1488",
 			    "All modules loaded successfully.",
 			    4
 			)
-			
+
 			print(
 			    "[Lilac v1488] Loaded successfully"
 			)
