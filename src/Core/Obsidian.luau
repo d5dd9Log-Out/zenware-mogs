@@ -128,6 +128,138 @@ function Obsidian.new(title, configFolder)
     end
 
     --------------------------------------------------
+    -- NORMALIZE SCHEME BEFORE WINDOW CREATION
+    --
+    -- Obsidian resolves strings such as "OutlineColor"
+    -- through Library.Scheme when creating UI strokes.
+    -- Force every Color field to an actual Color3 so
+    -- AddOutline/FillInstance cannot receive a string.
+    --------------------------------------------------
+
+    local function NormalizeLilacScheme()
+        local Scheme =
+            Library.Scheme
+            or {}
+
+        local function ForceColor(
+            key,
+            value
+        )
+            if typeof(
+                Scheme[key]
+            ) ~= "Color3"
+            then
+                Scheme[key] =
+                    value
+            end
+        end
+
+        ForceColor(
+            "FontColor",
+            Color3.fromRGB(
+                242,
+                230,
+                248
+            )
+        )
+
+        ForceColor(
+            "MainColor",
+            Color3.fromRGB(
+                18,
+                9,
+                24
+            )
+        )
+
+        ForceColor(
+            "AccentColor",
+            Color3.fromRGB(
+                194,
+                109,
+                228
+            )
+        )
+
+        ForceColor(
+            "BackgroundColor",
+            Color3.fromRGB(
+                3,
+                2,
+                5
+            )
+        )
+
+        ForceColor(
+            "OutlineColor",
+            Color3.fromRGB(
+                76,
+                38,
+                91
+            )
+        )
+
+        ForceColor(
+            "RedColor",
+            Color3.fromRGB(
+                255,
+                92,
+                121
+            )
+        )
+
+        ForceColor(
+            "DestructiveColor",
+            Color3.fromRGB(
+                225,
+                63,
+                94
+            )
+        )
+
+        ForceColor(
+            "DarkColor",
+            Color3.fromRGB(
+                2,
+                1,
+                4
+            )
+        )
+
+        ForceColor(
+            "WhiteColor",
+            Color3.fromRGB(
+                255,
+                250,
+                255
+            )
+        )
+
+        if typeof(
+            Scheme.Font
+        ) ~= "Font"
+        then
+            Scheme.Font =
+                Font.fromEnum(
+                    Enum.Font.GothamMedium
+                )
+        end
+
+        if type(
+            Scheme.BackgroundImage
+        ) ~= "string"
+        then
+            Scheme.BackgroundImage =
+                "rbxassetid://83486595661123"
+        end
+
+        Library.Scheme =
+            Scheme
+    end
+
+    NormalizeLilacScheme()
+
+    --------------------------------------------------
     -- WINDOW
     --------------------------------------------------
 
@@ -205,6 +337,8 @@ function Obsidian.new(title, configFolder)
             KeyPicker = true,
         }, 0.20, 24, "bottom")
     end)
+
+    NormalizeLilacScheme()
 
     local ZenWindow = {
         Library = Library,
