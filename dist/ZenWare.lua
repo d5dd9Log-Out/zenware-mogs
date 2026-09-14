@@ -81,119 +81,82 @@ _modules["Core/Obsidian.luau"] = {
 			
 			    Library.ForceCheckbox = false
 			    Library.ShowToggleFrameInKeybinds = true
-			    Library.ShowCustomCursor = true
-			    Library.GlobalSearch = true
 			
-			    local ThemeManager
-			    local SaveManager
+			    --------------------------------------------------
+			    -- LILAC V1488 PALETTE
+			    --------------------------------------------------
 			
 			    pcall(function()
-			        ThemeManager = loadstring(
-			            game:HttpGet(REPO .. "addons/ThemeManager.lua")
-			        )()
+			        local Scheme = Library.Scheme
+			
+			        Scheme.FontColor =
+			            Color3.fromRGB(
+			                245,
+			                235,
+			                250
+			            )
+			
+			        Scheme.BackgroundColor =
+			            Color3.fromRGB(
+			                8,
+			                3,
+			                12
+			            )
+			
+			        Scheme.MainColor =
+			            Color3.fromRGB(
+			                22,
+			                8,
+			                30
+			            )
+			
+			        Scheme.AccentColor =
+			            Color3.fromRGB(
+			                194,
+			                91,
+			                230
+			            )
+			
+			        Scheme.OutlineColor =
+			            Color3.fromRGB(
+			                92,
+			                42,
+			                112
+			            )
+			
+			        Scheme.Font =
+			            Font.fromEnum(
+			                Enum.Font.Gotham
+			            )
+			
+			        Scheme.RedColor =
+			            Color3.fromRGB(
+			                255,
+			                92,
+			                121
+			            )
+			
+			        Scheme.DestructiveColor =
+			            Color3.fromRGB(
+			                225,
+			                63,
+			                94
+			            )
+			
+			        Scheme.DarkColor =
+			            Color3.fromRGB(
+			                2,
+			                1,
+			                4
+			            )
+			
+			        Scheme.WhiteColor =
+			            Color3.fromRGB(
+			                255,
+			                250,
+			                255
+			            )
 			    end)
-			
-			    pcall(function()
-			        SaveManager = loadstring(
-			            game:HttpGet(REPO .. "addons/SaveManager.lua")
-			        )()
-			    end)
-			
-			    --------------------------------------------------
-			    -- LILAC THEME
-			    --------------------------------------------------
-			
-			    local LilacTheme = {
-			        FontColor = Color3.fromRGB(
-			            242, 230, 248
-			        ),
-			
-			        MainColor = Color3.fromRGB(
-			            18, 9, 24
-			        ),
-			
-			        AccentColor = Color3.fromRGB(
-			            194, 109, 228
-			        ),
-			
-			        BackgroundColor = Color3.fromRGB(
-			            3, 2, 5
-			        ),
-			
-			        OutlineColor = Color3.fromRGB(
-			            76, 38, 91
-			        ),
-			
-			        FontFace = Font.fromEnum(
-			            Enum.Font.GothamMedium
-			        ),
-			
-			        BackgroundImage =
-			            "rbxthumb://type=Asset&id=137423681201950&w=768&h=768",
-			    }
-			
-			    Library.Scheme = LilacTheme
-			
-			    pcall(function()
-			        Library:SetFont(
-			            Enum.Font.GothamMedium
-			        )
-			    end)
-			
-			    --------------------------------------------------
-			    -- THEME MANAGER
-			    --------------------------------------------------
-			
-			    if ThemeManager then
-			        pcall(function()
-			            ThemeManager:SetLibrary(
-			                Library
-			            )
-			
-			            ThemeManager:SetFolder(
-			                configFolder
-			                    or "ZenWare/Lilac"
-			            )
-			
-			            ThemeManager:SetDefaultTheme(
-			                LilacTheme
-			            )
-			        end)
-			    end
-			
-			    --------------------------------------------------
-			    -- SAVE MANAGER
-			    --------------------------------------------------
-			
-			    if SaveManager then
-			        pcall(function()
-			            SaveManager:SetLibrary(
-			                Library
-			            )
-			
-			            SaveManager:SetFolder(
-			                configFolder
-			                    or "ZenWare/Configs"
-			            )
-			
-			            SaveManager:SetSubFolder(
-			                tostring(
-			                    game.PlaceId
-			                )
-			            )
-			
-			            SaveManager:IgnoreThemeSettings()
-			
-			            SaveManager:SetIgnoreIndexes({
-			                "MenuKeybind",
-			                "UIToggleKey",
-			            })
-			        end)
-			    end
-			
-			    --------------------------------------------------
-			    -- WINDOW
-			    --------------------------------------------------
 			
 			    local Window = Library:CreateWindow({
 			        Title =
@@ -205,15 +168,6 @@ _modules["Core/Obsidian.luau"] = {
 			
 			        Icon = LOGO,
 			
-			        IconSize =
-			            UDim2.fromOffset(
-			                18,
-			                18
-			            ),
-			
-			        BackgroundImage =
-			            "rbxthumb://type=Asset&id=137423681201950&w=768&h=768",
-			
 			        NotifySide = "Right",
 			
 			        ShowCustomCursor = true,
@@ -223,199 +177,108 @@ _modules["Core/Obsidian.luau"] = {
 			
 			        Glow = true,
 			        GlobalSearch = true,
+			    })
 			
-			        CornerRadius = 10,
+			    --------------------------------------------------
+			    -- LILAC MENU IMAGE
+			    --------------------------------------------------
 			
-			        Animations = {
-			            ToggleWindow = true,
-			            TabSwitch = true,
-			            Groupbox = true,
-			            Dropdown = true,
-			            KeyPicker = true,
-			        },
+			    local MENU_IMAGE_ID = "137423681201950"
+			    local MENU_IMAGE = "rbxthumb://type=Asset&id=" .. MENU_IMAGE_ID .. "&w=768&h=768"
 			
-			        TabTransitionTime = 0.20,
-			        TabSwipeOffset = 24,
-			        TabSwipeFrom = "bottom",
+			    local MenuRoot = Window.Window
 			
-			        TabButtonsStyle = {
-			            Gap = 5,
-			            Padding = 9,
-			            CornerRadius = 7,
-			            Indicator = true,
-			            IndicatorWidth = 3,
-			            IndicatorHeight = 22,
-			        },
+			    -- Obsidian already creates a real BackgroundImage ImageLabel.
+			    -- Set it directly so the artwork is actually rendered by Roblox.
+			    pcall(function()
+			        Window:SetBackgroundImage(MENU_IMAGE)
+			
+			        local BackgroundImage = Window.BackgroundImage
+			            or MenuRoot:FindFirstChild("BackgroundImage")
+			
+			        if BackgroundImage and BackgroundImage:IsA("ImageLabel") then
+			            BackgroundImage.Image = MENU_IMAGE
+			            BackgroundImage.ImageTransparency = 0.35
+			            BackgroundImage.BackgroundTransparency = 1
+			            BackgroundImage.ScaleType = Enum.ScaleType.Crop
+			            BackgroundImage.Visible = true
+			            BackgroundImage.ZIndex = 1
+			        end
+			    end)
 			
 			    --------------------------------------------------
 			    -- FULLSCREEN LILAC IMAGE
 			    --------------------------------------------------
 			
+			    local FULLSCREEN_IMAGE_ID = "99217170570093"
+			    local FULLSCREEN_IMAGE =
+			        "rbxthumb://type=Asset&id=" .. FULLSCREEN_IMAGE_ID .. "&w=1920&h=1080"
+			
+			    local FullscreenLayer
+			
 			    pcall(function()
-			        local ScreenGui =
-			            Library.ScreenGui
+			        local ScreenGui = Library.ScreenGui
 			
-			        if not ScreenGui then
-			            return
-			        end
+			        if ScreenGui then
+			            ScreenGui.IgnoreGuiInset = true
 			
-			        local old =
-			            ScreenGui:FindFirstChild(
-			                "LilacFullscreenBackground"
-			            )
-			
-			        if old then
-			            old:Destroy()
-			        end
-			
-			        ScreenGui.IgnoreGuiInset =
-			            true
-			
-			        local background =
-			            Instance.new(
-			                "ImageLabel"
-			            )
-			
-			        background.Name =
-			            "LilacFullscreenBackground"
-			
-			        background.Position =
-			            UDim2.fromScale(
-			                0,
-			                0
-			            )
-			
-			        background.Size =
-			            UDim2.fromScale(
-			                1,
-			                1
-			            )
-			
-			        background.BackgroundTransparency =
-			            1
-			
-			        background.BorderSizePixel =
-			            0
-			
-			        background.Image =
-			            "rbxthumb://type=Asset&id=99217170570093&w=1920&h=1080"
-			
-			        background.ImageTransparency =
-			            0.42
-			
-			        background.ScaleType =
-			            Enum.ScaleType.Crop
-			
-			        background.Active =
-			            false
-			
-			        background.Selectable =
-			            false
-			
-			        background.ZIndex =
-			            0
-			
-			        background.Visible =
-			            Library.Toggled == true
-			
-			        background.Parent =
-			            ScreenGui
-			
-			        local tint =
-			            Instance.new(
-			                "Frame"
-			            )
-			
-			        tint.Name =
-			            "LilacFullscreenTint"
-			
-			        tint.Position =
-			            UDim2.fromScale(
-			                0,
-			                0
-			            )
-			
-			        tint.Size =
-			            UDim2.fromScale(
-			                1,
-			                1
-			            )
-			
-			        tint.BackgroundColor3 =
-			            Color3.fromRGB(
-			                12,
-			                3,
-			                18
-			            )
-			
-			        tint.BackgroundTransparency =
-			            0.70
-			
-			        tint.BorderSizePixel =
-			            0
-			
-			        tint.Active =
-			            false
-			
-			        tint.ZIndex =
-			            1
-			
-			        tint.Visible =
-			            background.Visible
-			
-			        tint.Parent =
-			            ScreenGui
-			
-			        task.spawn(function()
-			            while
-			                background.Parent
-			                and not Library.Unloaded
-			            do
-			                local visible =
-			                    Library.Toggled == true
-			
-			                background.Visible =
-			                    visible
-			
-			                tint.Visible =
-			                    visible
-			
-			                task.wait(
-			                    0.05
-			                )
+			            local old = ScreenGui:FindFirstChild("LilacFullscreenBackground")
+			            if old then
+			                old:Destroy()
 			            end
-			        end)
+			
+			            FullscreenLayer = Instance.new("ImageLabel")
+			            FullscreenLayer.Name = "LilacFullscreenBackground"
+			            FullscreenLayer.AnchorPoint = Vector2.zero
+			            FullscreenLayer.Position = UDim2.fromScale(0, 0)
+			            FullscreenLayer.Size = UDim2.fromScale(1, 1)
+			            FullscreenLayer.BackgroundTransparency = 1
+			            FullscreenLayer.BorderSizePixel = 0
+			            FullscreenLayer.Image = FULLSCREEN_IMAGE
+			            FullscreenLayer.ImageTransparency = 0.28
+			            FullscreenLayer.ScaleType = Enum.ScaleType.Crop
+			            FullscreenLayer.Active = false
+			            FullscreenLayer.Selectable = false
+			            FullscreenLayer.ZIndex = 0
+			            FullscreenLayer.Visible = Library.Toggled == true
+			            FullscreenLayer.Parent = ScreenGui
+			
+			            -- Keep the fullscreen image exactly synced with the Obsidian UI.
+			            task.spawn(function()
+			                while FullscreenLayer and FullscreenLayer.Parent and not Library.Unloaded do
+			                    FullscreenLayer.Visible = Library.Toggled == true
+			                    task.wait(0.03)
+			                end
+			            end)
+			
+			            ScreenGui.Destroying:Connect(function()
+			                FullscreenLayer = nil
+			            end)
+			        end
 			    end)
 			
-			    })
+			    pcall(function()
+			        MenuRoot.BackgroundTransparency =
+			            0.10
+			    end)
 			
 			    pcall(function()
-			        Window:SetBackgroundImage(
-			            "rbxthumb://type=Asset&id=137423681201950&w=768&h=768"
+			        Window:SetFooter(
+			            "zenware"
 			        )
-			    end)
 			
-			    pcall(function()
+			        Window:ChangeTitle(
+			            "🌸 Lilac v1488"
+			        )
+			
 			        Window:SetCornerRadius(
-			            10
+			            9
 			        )
-			    end)
-			
-			    pcall(function()
-			        Window:SetAnimations({
-			            ToggleWindow = true,
-			            TabSwitch = true,
-			            Groupbox = true,
-			            Dropdown = true,
-			            KeyPicker = true,
-			        }, 0.20, 24, "bottom")
 			    end)
 			
 			    local ZenWindow = {
 			        Library = Library,
 			        Window = Window,
-			        ThemeManager = ThemeManager,
-			        SaveManager = SaveManager,
 			        Sections = {},
 			    }
 			
@@ -498,6 +361,11 @@ _modules["Core/Obsidian.luau"] = {
 			                end
 			
 			                self.Group = Group
+			
+			                function self:ResetColumnLayout()
+			                    self._ColumnIndex = 0
+			                end
+			
 			
 			                --------------------------------------------------
 			                -- BUTTON
@@ -807,37 +675,9 @@ _modules["Core/Obsidian.luau"] = {
 			                --------------------------------------------------
 			
 			                function self:CreateConfigSection()
-			                    local built = false
-			
-			                    if
-			                        self.Window.SaveManager
-			                        and self.Window.SaveManager.BuildConfigSection
-			                    then
-			                        built = pcall(function()
-			                            self.Window.SaveManager:
-			                                BuildConfigSection(
-			                                    self.Tab
-			                                )
-			                        end)
-			                    end
-			
-			                    if not built then
-			                        Group:AddLabel(
-			                            "Configuration"
-			                        )
-			                    end
-			
-			                    if
-			                        self.Window.ThemeManager
-			                        and self.Window.ThemeManager.ApplyToTab
-			                    then
-			                        pcall(function()
-			                            self.Window.ThemeManager:
-			                                ApplyToTab(
-			                                    self.Tab
-			                                )
-			                        end)
-			                    end
+			                    Group:AddLabel(
+			                        "Configuration"
+			                    )
 			                end
 			
 			                return Group
@@ -876,12 +716,7 @@ _modules["Core/Obsidian.luau"] = {
 			                config.BigIcon,
 			
 			            IconColor =
-			                config.IconColor
-			                or Color3.fromRGB(
-			                    194,
-			                    109,
-			                    228
-			                ),
+			                config.IconColor,
 			        })
 			    end
 			
@@ -917,103 +752,56 @@ _modules["Core/Obsidian.luau"] = {
 			    end
 			
 			    --------------------------------------------------
-			    -- CONFIG / THEME HELPERS
+			    -- LILAC THEME HELPER
 			    --------------------------------------------------
 			
-			    function ZenWindow:SaveConfig(name)
-			        if
-			            not self.SaveManager
-			            or not self.SaveManager.Save
-			        then
-			            return false
+			    function ZenWindow:SetLilacBackgroundVisible(visible)
+			        if FullscreenLayer then
+			            FullscreenLayer.Visible =
+			                visible == true
 			        end
-			
-			        return pcall(function()
-			            self.SaveManager:Save(
-			                name or "Default"
-			            )
-			        end)
-			    end
-			
-			    function ZenWindow:LoadConfig(name)
-			        if
-			            not self.SaveManager
-			            or not self.SaveManager.Load
-			        then
-			            return false
-			        end
-			
-			        return pcall(function()
-			            self.SaveManager:Load(
-			                name or "Default"
-			            )
-			        end)
-			    end
-			
-			    function ZenWindow:LoadAutoloadConfig()
-			        if
-			            not self.SaveManager
-			            or not self.SaveManager.LoadAutoloadConfig
-			        then
-			            return false
-			        end
-			
-			        return pcall(function()
-			            self.SaveManager:
-			                LoadAutoloadConfig()
-			        end)
 			    end
 			
 			    function ZenWindow:ApplyLilacTheme()
-			        if
-			            not self.ThemeManager
-			            or not self.ThemeManager.SetDefaultTheme
-			        then
-			            return false
-			        end
+			        pcall(function()
+			            local Scheme =
+			                self.Library.Scheme
 			
-			        local ok = pcall(function()
-			            self.ThemeManager:
-			                SetDefaultTheme({
-			                    FontColor =
-			                        Color3.fromRGB(
-			                            242, 230, 248
-			                        ),
+			            Scheme.FontColor =
+			                Color3.fromRGB(
+			                    245,
+			                    235,
+			                    250
+			                )
 			
-			                    MainColor =
-			                        Color3.fromRGB(
-			                            18, 9, 24
-			                        ),
+			            Scheme.BackgroundColor =
+			                Color3.fromRGB(
+			                    8,
+			                    3,
+			                    12
+			                )
 			
-			                    AccentColor =
-			                        Color3.fromRGB(
-			                            194, 109, 228
-			                        ),
+			            Scheme.MainColor =
+			                Color3.fromRGB(
+			                    22,
+			                    8,
+			                    30
+			                )
 			
-			                    BackgroundColor =
-			                        Color3.fromRGB(
-			                            3, 2, 5
-			                        ),
+			            Scheme.AccentColor =
+			                Color3.fromRGB(
+			                    194,
+			                    91,
+			                    230
+			                )
 			
-			                    OutlineColor =
-			                        Color3.fromRGB(
-			                            76, 38, 91
-			                        ),
-			
-			                    FontFace =
-			                        Font.fromEnum(
-			                            Enum.Font.GothamMedium
-			                        ),
-			
-			                    BackgroundImage =
-			                        "rbxthumb://type=Asset&id=137423681201950&w=768&h=768",
-			                })
-			
-			            self.ThemeManager:
-			                LoadDefault()
+			            Scheme.OutlineColor =
+			                Color3.fromRGB(
+			                    92,
+			                    42,
+			                    112
+			                )
 			        end)
-			
-			        return ok
 			    end
 			
 			    --------------------------------------------------
@@ -1023,17 +811,6 @@ _modules["Core/Obsidian.luau"] = {
 			    function ZenWindow:SetAutoSave(enabled)
 			        self.AutoSave =
 			            enabled == true
-			
-			        if
-			            self.AutoSave
-			            and self.SaveManager
-			            and self.SaveManager.LoadAutoloadConfig
-			        then
-			            pcall(function()
-			                self.SaveManager:
-			                    LoadAutoloadConfig()
-			            end)
-			        end
 			    end
 			
 			    --------------------------------------------------
