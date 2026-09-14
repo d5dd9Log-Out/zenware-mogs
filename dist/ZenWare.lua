@@ -3096,487 +3096,43 @@ _modules["Main.luau"] = {
 			        "folder"
 			    )
 			
-			local CONFIG_FOLDER =
-			    "ZenWare/Lilac"
-			
-			local ConfigNameBox =
-			    ConfigTab:CreateTextBox({
-			        Name = "Config Name",
-			        Placeholder = "Example: main",
-			        Default = "default",
-			    })
-			
-			local function SafeConfigName(name)
-			    name =
-			        tostring(
-			            name
-			            or "default"
-			        )
-			        :gsub(
-			            "[^%w_%-%s]",
-			            ""
-			        )
-			        :gsub(
-			            "%s+",
-			            "_"
-			        )
-			
-			    if name == "" then
-			        name = "default"
-			    end
-			
-			    return name
-			end
-			
-			local function ConfigPath(name)
-			    return CONFIG_FOLDER
-			        .. "/"
-			        .. SafeConfigName(name)
-			        .. ".json"
-			end
-			
-			local function EnsureConfigFolder()
-			    if type(isfolder) == "function"
-			        and type(makefolder) == "function"
-			    then
-			        pcall(function()
-			            if not isfolder(CONFIG_FOLDER) then
-			                makefolder(
-			                    "ZenWare"
-			                )
-			            end
-			
-			            if not isfolder(
-			                CONFIG_FOLDER
-			            ) then
-			                makefolder(
-			                    CONFIG_FOLDER
-			                )
-			            end
-			        end)
-			    end
-			end
-			
-			local function BuildConfigData()
-			    return {
-			        WalkSpeed =
-			            State.WalkSpeed,
-			
-			        JumpPower =
-			            State.JumpPower,
-			
-			        HipHeight =
-			            State.HipHeight,
-			
-			        RebirthInterval =
-			            State.RebirthInterval,
-			
-			        AutoClickerSpeed =
-			            State.AutoClickerSpeed,
-			
-			        AutoRebirth =
-			            State.AutoRebirth == true,
-			
-			        AutoClicker =
-			            State.AutoClicker == true,
-			
-			        AutoMog =
-			            State.AutoMog == true,
-			
-			        AutoMogAll =
-			            State.AutoMogAll == true,
-			
-			        AntiAFK =
-			            State.AntiAFK == true,
-			
-			        World1AutoWin =
-			            DevTests.World1AutoWin == true,
-			
-			        World2AutoWin =
-			            DevTests.World2AutoWin == true,
-			
-			        SavedAt =
-			            os.time(),
-			    }
-			end
-			
-			local function ApplyOption(
-			    flag,
-			    value
-			)
-			    pcall(function()
-			        local library =
-			            Window.Library
-			
-			        local options =
-			            library
-			            and library.Options
-			
-			        local option =
-			            options
-			            and options[flag]
-			
-			        if option
-			            and option.SetValue
-			        then
-			            option:SetValue(
-			                value
-			            )
-			        end
-			    end)
-			end
-			
-			local function ApplyConfigData(data)
-			    if type(data) ~= "table" then
-			        return false
-			    end
-			
-			    State.WalkSpeed =
-			        tonumber(
-			            data.WalkSpeed
-			        )
-			        or State.WalkSpeed
-			
-			    State.JumpPower =
-			        tonumber(
-			            data.JumpPower
-			        )
-			        or State.JumpPower
-			
-			    State.HipHeight =
-			        tonumber(
-			            data.HipHeight
-			        )
-			        or State.HipHeight
-			
-			    State.RebirthInterval =
-			        tonumber(
-			            data.RebirthInterval
-			        )
-			        or State.RebirthInterval
-			
-			    State.AutoClickerSpeed =
-			        tonumber(
-			            data.AutoClickerSpeed
-			        )
-			        or State.AutoClickerSpeed
-			
-			    ApplyOption(
-			        "WalkSpeed",
-			        State.WalkSpeed
-			    )
-			
-			    ApplyOption(
-			        "JumpPower",
-			        State.JumpPower
-			    )
-			
-			    ApplyOption(
-			        "HipHeight",
-			        State.HipHeight
-			    )
-			
-			    ApplyOption(
-			        "RebirthInterval",
-			        State.RebirthInterval
-			    )
-			
-			    ApplyOption(
-			        "AutoClickerSpeed",
-			        State.AutoClickerSpeed
-			    )
-			
-			    ApplyOption(
-			        "AutoRebirth",
-			        data.AutoRebirth == true
-			    )
-			
-			    ApplyOption(
-			        "AutoClicker",
-			        data.AutoClicker == true
-			    )
-			
-			    ApplyOption(
-			        "AutoMog",
-			        data.AutoMog == true
-			    )
-			
-			    ApplyOption(
-			        "AutoMogAll",
-			        data.AutoMogAll == true
-			    )
-			
-			    ApplyOption(
-			        "AntiAFK",
-			        data.AntiAFK == true
-			    )
-			
-			    ApplyOption(
-			        "World1AutoWinTest",
-			        data.World1AutoWin == true
-			    )
-			
-			    ApplyOption(
-			        "World2AutoWinTest",
-			        data.World2AutoWin == true
-			    )
-			
-			    return true
-			end
-			
-			local function SaveConfig(name)
-			    EnsureConfigFolder()
-			
-			    if type(writefile) ~= "function" then
-			        return false,
-			            "writefile is unavailable"
-			    end
-			
-			    local encoded =
-			        HttpService:JSONEncode(
-			            BuildConfigData()
-			        )
-			
-			    local ok, err =
-			        pcall(function()
-			            writefile(
-			                ConfigPath(name),
-			                encoded
-			            )
-			        end)
-			
-			    return ok, err
-			end
-			
-			local function LoadConfig(name)
-			    if type(readfile) ~= "function"
-			        or type(isfile) ~= "function"
-			    then
-			        return false,
-			            "readfile/isfile is unavailable"
-			    end
-			
-			    local path =
-			        ConfigPath(name)
-			
-			    if not isfile(path) then
-			        return false,
-			            "Config not found"
-			    end
-			
-			    local ok, data =
-			        pcall(function()
-			            return HttpService:JSONDecode(
-			                readfile(path)
-			            )
-			        end)
-			
-			    if not ok then
-			        return false,
-			            tostring(data)
-			    end
-			
-			    return ApplyConfigData(
-			        data
-			    ),
-			        nil
-			end
-			
-			local function DeleteConfig(name)
-			    if type(delfile) ~= "function"
-			        or type(isfile) ~= "function"
-			    then
-			        return false,
-			            "delfile/isfile is unavailable"
-			    end
-			
-			    local path =
-			        ConfigPath(name)
-			
-			    if not isfile(path) then
-			        return false,
-			            "Config not found"
-			    end
-			
-			    return pcall(function()
-			        delfile(path)
-			    end)
-			end
-			
-			local function ListConfigs()
-			    if type(listfiles) ~= "function" then
-			        return {}
-			    end
-			
-			    EnsureConfigFolder()
-			
-			    local result = {}
-			
-			    local ok, files =
-			        pcall(function()
-			            return listfiles(
-			                CONFIG_FOLDER
-			            )
-			        end)
-			
-			    if not ok or type(files) ~= "table" then
-			        return result
-			    end
-			
-			    for _, path in ipairs(files) do
-			        local name =
-			            tostring(path)
-			            :match(
-			                "([^/\\]+)%.json$"
-			            )
-			
-			        if name then
-			            table.insert(
-			                result,
-			                name
-			            )
-			        end
-			    end
-			
-			    table.sort(result)
-			
-			    return result
-			end
-			
 			ConfigTab:CreateSection(
 			    "Configuration"
 			)
 			
-			ConfigTab:CreateButton({
-			    Name = "Save Config",
-			
-			    Callback = function()
-			        local name =
-			            ConfigNameBox:GetText()
-			
-			        local ok, err =
-			            SaveConfig(name)
-			
-			        Notify(
-			            "Configs",
-			            ok
-			                and (
-			                    "Saved "
-			                    .. SafeConfigName(name)
-			                    .. "."
-			                )
-			                or (
-			                    "Save failed: "
-			                    .. tostring(err)
-			                ),
-			            4
-			        )
-			    end,
-			})
-			
-			ConfigTab:CreateButton({
-			    Name = "Load Config",
-			
-			    Callback = function()
-			        local name =
-			            ConfigNameBox:GetText()
-			
-			        local ok, err =
-			            LoadConfig(name)
-			
-			        Notify(
-			            "Configs",
-			            ok
-			                and (
-			                    "Loaded "
-			                    .. SafeConfigName(name)
-			                    .. "."
-			                )
-			                or (
-			                    "Load failed: "
-			                    .. tostring(err)
-			                ),
-			            4
-			        )
-			    end,
-			})
-			
-			ConfigTab:CreateButton({
-			    Name = "Delete Config",
-			
-			    Callback = function()
-			        local name =
-			            ConfigNameBox:GetText()
-			
-			        local ok, err =
-			            DeleteConfig(name)
-			
-			        Notify(
-			            "Configs",
-			            ok
-			                and (
-			                    "Deleted "
-			                    .. SafeConfigName(name)
-			                    .. "."
-			                )
-			                or (
-			                    "Delete failed: "
-			                    .. tostring(err)
-			                ),
-			            4
-			        )
-			    end,
-			})
-			
-			ConfigTab:CreateButton({
-			    Name = "List Configs",
-			
-			    Callback = function()
-			        local configs =
-			            ListConfigs()
-			
-			        Notify(
-			            "Configs",
-			            #configs > 0
-			                and table.concat(
-			                    configs,
-			                    ", "
-			                )
-			                or "No configs found.",
-			            6
-			        )
-			    end,
-			})
-			
-			ConfigTab:CreateButton({
-			    Name = "Save As Default",
-			
-			    Callback = function()
-			        local ok, err =
-			            SaveConfig(
-			                "default"
-			            )
-			
-			        Notify(
-			            "Configs",
-			            ok
-			                and "Default config saved."
-			                or (
-			                    "Save failed: "
-			                    .. tostring(err)
-			                ),
-			            4
-			        )
-			    end,
-			})
+			ConfigTab:CreateConfigSection()
 			
 			ConfigTab:CreateParagraph({
 			    Title =
-			        "Local Configs",
+			        "Lilac Configs",
 			
 			    Content =
-			        "Configs are stored locally as JSON. "
-			        .. "Save and Load are real file operations.",
+			        "Use the built-in configuration manager above. "
+			        .. "It stores the UI flags and can restore them between sessions.",
+			})
+			
+			ConfigTab:CreateButton({
+			    Name = "Config Status",
+			
+			    Callback = function()
+			        Notify(
+			            "Configs",
+			            "Built-in Config Manager active.",
+			            3
+			        )
+			    end,
+			})
+			
+			ConfigTab:CreateButton({
+			    Name = "Config Help",
+			
+			    Callback = function()
+			        Notify(
+			            "Configs",
+			            "Create/select a config in the manager, then save or load it there.",
+			            5
+			        )
+			    end,
 			})
 			
 			-- CREDITS
@@ -3649,8 +3205,25 @@ _modules["Main.luau"] = {
 			        "sparkles"
 			    )
 			
+			local UtilityMoreTab =
+			    UtilitySection:CreateTab(
+			        "More",
+			        "layers"
+			    )
+			
 			local SessionStart =
 			    os.clock()
+			
+			UtilityMoreTab:CreateSection(
+			    "More Utilities"
+			)
+			
+			UtilityMoreTab:CreateParagraph({
+			    Title = "🌸 Utilities+",
+			    Content =
+			        "Extra movement, camera, visual and developer controls.",
+			})
+			
 			
 			--------------------------------------------------
 			-- AUTOMATION
@@ -3870,11 +3443,11 @@ _modules["Main.luau"] = {
 			-- MOVEMENT / CHARACTER
 			--------------------------------------------------
 			
-			UtilityTab:CreateSection(
+			UtilityMoreTab:CreateSection(
 			    "Movement"
 			)
 			
-			UtilityTab:CreateSlider({
+			UtilityMoreTab:CreateSlider({
 			    Name = "WalkSpeed",
 			
 			    Min = 1,
@@ -3900,7 +3473,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateSlider({
+			UtilityMoreTab:CreateSlider({
 			    Name = "JumpPower",
 			
 			    Min = 1,
@@ -3927,7 +3500,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateSlider({
+			UtilityMoreTab:CreateSlider({
 			    Name = "HipHeight",
 			
 			    Min = 0,
@@ -3953,7 +3526,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateToggle({
+			UtilityMoreTab:CreateToggle({
 			    Name = "Anti AFK",
 			
 			    Default =
@@ -3980,7 +3553,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "Reset Character Physics",
 			
 			    Callback = function()
@@ -4025,11 +3598,11 @@ _modules["Main.luau"] = {
 			-- CAMERA / VISUAL
 			--------------------------------------------------
 			
-			UtilityTab:CreateSection(
+			UtilityMoreTab:CreateSection(
 			    "Camera & Visuals"
 			)
 			
-			UtilityTab:CreateSlider({
+			UtilityMoreTab:CreateSlider({
 			    Name = "Camera FOV",
 			
 			    Min = 40,
@@ -4051,7 +3624,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "FOV 70",
 			
 			    Callback = function()
@@ -4064,7 +3637,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "FOV 90",
 			
 			    Callback = function()
@@ -4077,7 +3650,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "Clear Visual Effects",
 			
 			    Callback = function()
@@ -4108,17 +3681,17 @@ _modules["Main.luau"] = {
 			-- SESSION
 			--------------------------------------------------
 			
-			UtilityTab:CreateSection(
+			UtilityMoreTab:CreateSection(
 			    "Session"
 			)
 			
-			UtilityTab:CreateParagraph({
+			UtilityMoreTab:CreateParagraph({
 			    Title = "🌸 Lilac Utilities",
 			    Content =
 			        "Client information, dev tests and small helpers."
 			})
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "Session Info",
 			
 			    Callback = function()
@@ -4156,7 +3729,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "Show Place ID",
 			
 			    Callback = function()
@@ -4168,7 +3741,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "Show Job ID",
 			
 			    Callback = function()
@@ -4180,7 +3753,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "Show Player Count",
 			
 			    Callback = function()
@@ -4198,11 +3771,11 @@ _modules["Main.luau"] = {
 			-- CHARACTER
 			--------------------------------------------------
 			
-			UtilityTab:CreateSection(
+			UtilityMoreTab:CreateSection(
 			    "Character"
 			)
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "Refresh Character",
 			
 			    Callback = function()
@@ -4218,7 +3791,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "Reset Camera",
 			
 			    Callback = function()
@@ -4248,7 +3821,7 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
-			UtilityTab:CreateButton({
+			UtilityMoreTab:CreateButton({
 			    Name = "Character Position",
 			
 			    Callback = function()
