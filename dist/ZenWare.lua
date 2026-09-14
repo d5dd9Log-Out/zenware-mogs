@@ -4891,32 +4891,26 @@ _modules["Main.luau"] = {
 			--------------------------------------------------
 			
 			function StopDevFly()
-			    devFlyEnabled = false
-			    devVerticalInput = 0
+			    devFlyEnabled =
+			        false
+			
+			    devVerticalInput =
+			        0
 			
 			    if devFlyConnection then
 			        devFlyConnection:Disconnect()
-			        devFlyConnection = nil
+			        devFlyConnection =
+			            nil
 			    end
 			
 			    if devInputConnection then
 			        devInputConnection:Disconnect()
-			        devInputConnection = nil
+			        devInputConnection =
+			            nil
 			    end
 			
 			    local humanoid =
 			        GetHumanoid()
-			
-			    if humanoid then
-			        humanoid.AutoRotate = true
-			
-			        pcall(function()
-			            humanoid.PlatformStand = false
-			            humanoid:ChangeState(
-			                Enum.HumanoidStateType.GettingUp
-			            )
-			        end)
-			    end
 			
 			    local root =
 			        GetRoot()
@@ -4927,6 +4921,20 @@ _modules["Main.luau"] = {
 			
 			        root.AssemblyAngularVelocity =
 			            Vector3.zero
+			    end
+			
+			    if humanoid then
+			        humanoid.AutoRotate =
+			            true
+			
+			        pcall(function()
+			            humanoid.PlatformStand =
+			                false
+			
+			            humanoid:ChangeState(
+			                Enum.HumanoidStateType.GettingUp
+			            )
+			        end)
 			    end
 			end
 			
@@ -4952,15 +4960,17 @@ _modules["Main.luau"] = {
 			        return
 			    end
 			
-			    devFlyEnabled = true
+			    devFlyEnabled =
+			        true
+			
 			    devFlyHeight =
 			        root.Position.Y
 			
-			    humanoid.AutoRotate = false
-			    humanoid.PlatformStand = false
+			    humanoid.AutoRotate =
+			        true
 			
-			    -- Keep the normal character WalkSpeed.
-			    local flySpeed =
+			    -- Match the character's normal movement speed.
+			    local characterSpeed =
 			        math.max(
 			            1,
 			            tonumber(
@@ -4969,8 +4979,8 @@ _modules["Main.luau"] = {
 			            or 16
 			        )
 			
-			    -- Force the falling animation/state while we hold the
-			    -- character at a fixed altitude.
+			    -- Keep the character in a falling/freefall state while
+			    -- we control its position manually.
 			    pcall(function()
 			        humanoid:ChangeState(
 			            Enum.HumanoidStateType.Freefall
@@ -4979,26 +4989,35 @@ _modules["Main.luau"] = {
 			
 			    devInputConnection =
 			        UserInputService.InputBegan:Connect(
-			            function(input, processed)
-			                if processed or not devFlyEnabled then
+			            function(
+			                input
+			            )
+			                if not devFlyEnabled then
+			                    return
+			                end
+			
+			                -- Do not let a textbox consume Q/E.
+			                if UserInputService:GetFocusedTextBox() then
 			                    return
 			                end
 			
 			                if input.KeyCode ==
 			                    Enum.KeyCode.Q
 			                then
-			                    devVerticalInput = -1
+			                    devVerticalInput =
+			                        -1
 			
 			                elseif input.KeyCode ==
 			                    Enum.KeyCode.E
 			                then
-			                    devVerticalInput = 1
+			                    devVerticalInput =
+			                        1
 			                end
 			            end
 			        )
 			
 			    devFlyConnection =
-			        RunService.RenderStepped:Connect(
+			        RunService.Heartbeat:Connect(
 			            function(dt)
 			                if not devFlyEnabled then
 			                    return
@@ -5007,38 +5026,73 @@ _modules["Main.luau"] = {
 			                local currentRoot =
 			                    GetRoot()
 			
-			                if not currentRoot then
-			                    return
-			                end
-			
 			                local currentHumanoid =
 			                    GetHumanoid()
 			
-			                local currentSpeed =
+			                if not currentRoot
+			                    or not currentHumanoid
+			                then
+			                    return
+			                end
+			
+			                characterSpeed =
 			                    math.max(
 			                        1,
 			                        tonumber(
-			                            currentHumanoid
-			                            and currentHumanoid.WalkSpeed
+			                            currentHumanoid.WalkSpeed
 			                        )
-			                        or flySpeed
+			                        or characterSpeed
 			                    )
+			
+			                -- Normal movement direction uses the player's
+			                -- regular Roblox controls at WalkSpeed.
+			                local moveDirection =
+			                    currentHumanoid.MoveDirection
+			
+			                local horizontalDelta =
+			                    moveDirection
+			                    * characterSpeed
+			                    * dt
+			
+			                local verticalDelta =
+			                    devVerticalInput
+			                    * characterSpeed
+			                    * dt
 			
 			                devFlyHeight +=
-			                    (
-			                        devVerticalInput
-			                        * currentSpeed
-			                        * dt
-			                    )
+			                    verticalDelta
 			
-			                local current =
+			                local currentPosition =
 			                    currentRoot.Position
 			
-			                currentRoot.CFrame =
-			                    CFrame.new(
-			                        current.X,
+			                local nextPosition =
+			                    Vector3.new(
+			                        currentPosition.X
+			                            + horizontalDelta.X,
+			
 			                        devFlyHeight,
-			                        current.Z
+			
+			                        currentPosition.Z
+			                            + horizontalDelta.Z
+			                    )
+			
+			                local look =
+			                    currentRoot.CFrame.LookVector
+			
+			                if moveDirection.Magnitude > 0.01 then
+			                    look =
+			                        moveDirection.Unit
+			                end
+			
+			                currentRoot.CFrame =
+			                    CFrame.lookAt(
+			                        nextPosition,
+			                        nextPosition
+			                            + Vector3.new(
+			                                look.X,
+			                                0,
+			                                look.Z
+			                            )
 			                    )
 			
 			                currentRoot.AssemblyLinearVelocity =
@@ -5047,6 +5101,8 @@ _modules["Main.luau"] = {
 			                currentRoot.AssemblyAngularVelocity =
 			                    Vector3.zero
 			
+			                -- Re-assert freefall so the character remains
+			                -- visually in the falling state.
 			                pcall(function()
 			                    currentHumanoid:ChangeState(
 			                        Enum.HumanoidStateType.Freefall
@@ -5057,10 +5113,11 @@ _modules["Main.luau"] = {
 			
 			    Notify(
 			        "Dev Fly",
-			        "Hover enabled.\n"
-			            .. "Speed = WalkSpeed\n"
-			            .. "Hold E to rise • Q to descend\n"
-			            .. "Freefall animation is kept active.",
+			        "Enabled.\n"
+			            .. "Speed = character WalkSpeed\n"
+			            .. "WASD = normal movement\n"
+			            .. "Hold E = up • Q = down\n"
+			            .. "Hover + Freefall animation",
 			        5
 			    )
 			end
@@ -5074,7 +5131,8 @@ _modules["Main.luau"] = {
 			            input.KeyCode ==
 			                Enum.KeyCode.E
 			        then
-			            devVerticalInput = 0
+			            devVerticalInput =
+			                0
 			        end
 			    end
 			)
