@@ -3096,41 +3096,536 @@ _modules["Main.luau"] = {
 			        "folder"
 			    )
 			
-			ConfigTab:CreateSection(
-			    "Configuration"
-			)
+			--------------------------------------------------
+			-- CONFIG ENGINE
+			--------------------------------------------------
 			
-			ConfigTab:CreateConfigSection()
+			local CONFIG_FOLDER =
+			    "ZenWare/Lilac"
 			
-			ConfigTab:CreateParagraph({
-			    Title =
-			        "Lilac Configs",
+			local function SafeConfigName(name)
+			    name =
+			        tostring(
+			            name
+			            or "default"
+			        )
+			        :gsub(
+			            "[^%w_%-%s]",
+			            ""
+			        )
+			        :gsub(
+			            "%s+",
+			            "_"
+			        )
 			
-			    Content =
-			        "Use the built-in configuration manager above. "
-			        .. "It stores the UI flags and can restore them between sessions.",
+			    if name == "" then
+			        name = "default"
+			    end
+			
+			    return name
+			end
+			
+			local function ConfigPath(name)
+			    return CONFIG_FOLDER
+			        .. "/"
+			        .. SafeConfigName(name)
+			        .. ".json"
+			end
+			
+			local function EnsureConfigFolder()
+			    if type(makefolder) ~= "function"
+			        or type(isfolder) ~= "function"
+			    then
+			        return
+			    end
+			
+			    pcall(function()
+			        if not isfolder(
+			            "ZenWare"
+			        ) then
+			            makefolder(
+			                "ZenWare"
+			            )
+			        end
+			
+			        if not isfolder(
+			            CONFIG_FOLDER
+			        ) then
+			            makefolder(
+			                CONFIG_FOLDER
+			            )
+			        end
+			    end)
+			end
+			
+			local function BuildConfigData()
+			    return {
+			        WalkSpeed =
+			            State.WalkSpeed,
+			
+			        JumpPower =
+			            State.JumpPower,
+			
+			        HipHeight =
+			            State.HipHeight,
+			
+			        RebirthInterval =
+			            State.RebirthInterval,
+			
+			        AutoClickerSpeed =
+			            State.AutoClickerSpeed,
+			
+			        AutoRebirth =
+			            State.AutoRebirth == true,
+			
+			        AutoClicker =
+			            State.AutoClicker == true,
+			
+			        AutoMog =
+			            State.AutoMog == true,
+			
+			        AutoMogAll =
+			            State.AutoMogAll == true,
+			
+			        AntiAFK =
+			            State.AntiAFK == true,
+			
+			        CameraFOV =
+			            GetCamera()
+			            and GetCamera().FieldOfView
+			            or 70,
+			
+			        SavedAt =
+			            os.time(),
+			    }
+			end
+			
+			local function ApplyConfigData(data)
+			    if type(data) ~= "table" then
+			        return false
+			    end
+			
+			    State.WalkSpeed =
+			        tonumber(
+			            data.WalkSpeed
+			        )
+			        or State.WalkSpeed
+			
+			    State.JumpPower =
+			        tonumber(
+			            data.JumpPower
+			        )
+			        or State.JumpPower
+			
+			    State.HipHeight =
+			        tonumber(
+			            data.HipHeight
+			        )
+			        or State.HipHeight
+			
+			    State.RebirthInterval =
+			        tonumber(
+			            data.RebirthInterval
+			        )
+			        or State.RebirthInterval
+			
+			    State.AutoClickerSpeed =
+			        tonumber(
+			            data.AutoClickerSpeed
+			        )
+			        or State.AutoClickerSpeed
+			
+			    local humanoid =
+			        GetHumanoid()
+			
+			    if humanoid then
+			        humanoid.WalkSpeed =
+			            State.WalkSpeed
+			
+			        humanoid.UseJumpPower =
+			            true
+			
+			        humanoid.JumpPower =
+			            State.JumpPower
+			
+			        humanoid.HipHeight =
+			            State.HipHeight
+			    end
+			
+			    local camera =
+			        GetCamera()
+			
+			    if camera
+			        and tonumber(
+			            data.CameraFOV
+			        )
+			    then
+			        camera.FieldOfView =
+			            tonumber(
+			                data.CameraFOV
+			            )
+			    end
+			
+			    if data.AutoRebirth == true then
+			        StartAutoRebirth()
+			    else
+			        StopAutoRebirth()
+			    end
+			
+			    State.AutoClicker =
+			        data.AutoClicker == true
+			
+			    if State.AutoClicker then
+			        SafeCall(function()
+			            AutoClicker.Start(
+			                State.AutoClickerSpeed
+			            )
+			        end)
+			    else
+			        SafeCall(function()
+			            AutoClicker.Stop()
+			        end)
+			    end
+			
+			    State.AutoMog =
+			        data.AutoMog == true
+			
+			    State.AutoMogAll =
+			        data.AutoMogAll == true
+			
+			    if State.AutoMogAll then
+			        SafeCall(function()
+			            AutoMog.StartAll()
+			        end)
+			    end
+			
+			    if data.AntiAFK == true then
+			        State.AntiAFK = true
+			    else
+			        State.AntiAFK = false
+			    end
+			
+			    return true
+			end
+			
+			local function SaveConfig(name)
+			    EnsureConfigFolder()
+			
+			    if type(writefile) ~= "function" then
+			        return false,
+			            "writefile unavailable"
+			    end
+			
+			    local ok, err =
+			        pcall(function()
+			            writefile(
+			                ConfigPath(name),
+			                HttpService:JSONEncode(
+			                    BuildConfigData()
+			                )
+			            )
+			        end)
+			
+			    return ok, err
+			end
+			
+			local function LoadConfig(name)
+			    if type(readfile) ~= "function"
+			        or type(isfile) ~= "function"
+			    then
+			        return false,
+			            "readfile/isfile unavailable"
+			    end
+			
+			    local path =
+			        ConfigPath(name)
+			
+			    if not isfile(path) then
+			        return false,
+			            "Config not found"
+			    end
+			
+			    local ok, data =
+			        pcall(function()
+			            return HttpService:JSONDecode(
+			                readfile(path)
+			            )
+			        end)
+			
+			    if not ok then
+			        return false,
+			            tostring(data)
+			    end
+			
+			    return ApplyConfigData(
+			        data
+			    )
+			end
+			
+			local function DeleteConfig(name)
+			    if type(delfile) ~= "function"
+			        or type(isfile) ~= "function"
+			    then
+			        return false,
+			            "delfile/isfile unavailable"
+			    end
+			
+			    local path =
+			        ConfigPath(name)
+			
+			    if not isfile(path) then
+			        return false,
+			            "Config not found"
+			    end
+			
+			    return pcall(function()
+			        delfile(
+			            path
+			        )
+			    end)
+			end
+			
+			local function ListConfigs()
+			    if type(listfiles) ~= "function" then
+			        return {}
+			    end
+			
+			    EnsureConfigFolder()
+			
+			    local result = {}
+			
+			    local ok, entries =
+			        pcall(function()
+			            return listfiles(
+			                CONFIG_FOLDER
+			            )
+			        end)
+			
+			    if not ok
+			        or type(entries) ~= "table"
+			    then
+			        return result
+			    end
+			
+			    for _, path in ipairs(entries) do
+			        local name =
+			            tostring(path)
+			            :match(
+			                "([^/\\]+)%.json$"
+			            )
+			
+			        if name then
+			            table.insert(
+			                result,
+			                name
+			            )
+			        end
+			    end
+			
+			    table.sort(
+			        result
+			    )
+			
+			    return result
+			end
+			
+			--------------------------------------------------
+			-- CONFIG UI
+			--------------------------------------------------
+			
+			local ConfigLeft =
+			    ConfigTab.Tab:AddLeftGroupbox(
+			        "Configuration",
+			        "folder"
+			    )
+			
+			local ConfigRight =
+			    ConfigTab.Tab:AddRightGroupbox(
+			        "Quick Actions",
+			        "zap"
+			    )
+			
+			local configNameInput =
+			    ConfigLeft:AddInput(
+			        "ConfigName",
+			        {
+			            Text =
+			                "Config Name",
+			
+			            Default =
+			                "default",
+			
+			            Placeholder =
+			                "default",
+			        }
+			    )
+			
+			ConfigLeft:AddLabel({
+			    Text =
+			        "Local JSON configs\n"
+			        .. "Save / Load / Delete / List",
+			    DoesWrap = true,
 			})
 			
-			ConfigTab:CreateButton({
-			    Name = "Config Status",
+			ConfigLeft:AddButton({
+			    Text = "Save Config",
 			
-			    Callback = function()
+			    Func = function()
+			        local name =
+			            tostring(
+			                configNameInput.Value
+			                or "default"
+			            )
+			
+			        local ok, err =
+			            SaveConfig(
+			                name
+			            )
+			
 			        Notify(
 			            "Configs",
-			            "Built-in Config Manager active.",
-			            3
+			            ok
+			                and (
+			                    "Saved: "
+			                    .. SafeConfigName(
+			                        name
+			                    )
+			                )
+			                or (
+			                    "Save failed: "
+			                    .. tostring(err)
+			                ),
+			            4
 			        )
 			    end,
 			})
 			
-			ConfigTab:CreateButton({
-			    Name = "Config Help",
+			ConfigLeft:AddButton({
+			    Text = "Load Config",
 			
-			    Callback = function()
+			    Func = function()
+			        local name =
+			            tostring(
+			                configNameInput.Value
+			                or "default"
+			            )
+			
+			        local ok, err =
+			            LoadConfig(
+			                name
+			            )
+			
 			        Notify(
 			            "Configs",
-			            "Create/select a config in the manager, then save or load it there.",
-			            5
+			            ok
+			                and (
+			                    "Loaded: "
+			                    .. SafeConfigName(
+			                        name
+			                    )
+			                )
+			                or (
+			                    "Load failed: "
+			                    .. tostring(err)
+			                ),
+			            4
+			        )
+			    end,
+			})
+			
+			ConfigLeft:AddButton({
+			    Text = "Delete Config",
+			
+			    Func = function()
+			        local name =
+			            tostring(
+			                configNameInput.Value
+			                or "default"
+			            )
+			
+			        local ok, err =
+			            DeleteConfig(
+			                name
+			            )
+			
+			        Notify(
+			            "Configs",
+			            ok
+			                and (
+			                    "Deleted: "
+			                    .. SafeConfigName(
+			                        name
+			                    )
+			                )
+			                or (
+			                    "Delete failed: "
+			                    .. tostring(err)
+			                ),
+			            4
+			        )
+			    end,
+			})
+			
+			ConfigRight:AddButton({
+			    Text = "List Configs",
+			
+			    Func = function()
+			        local list =
+			            ListConfigs()
+			
+			        Notify(
+			            "Configs",
+			            #list > 0
+			                and table.concat(
+			                    list,
+			                    ", "
+			                )
+			                or "No configs found.",
+			            6
+			        )
+			    end,
+			})
+			
+			ConfigRight:AddButton({
+			    Text = "Save Default",
+			
+			    Func = function()
+			        local ok, err =
+			            SaveConfig(
+			                "default"
+			            )
+			
+			        Notify(
+			            "Configs",
+			            ok
+			                and "Default config saved."
+			                or (
+			                    "Save failed: "
+			                    .. tostring(err)
+			                ),
+			            4
+			        )
+			    end,
+			})
+			
+			ConfigRight:AddButton({
+			    Text = "Load Default",
+			
+			    Func = function()
+			        local ok, err =
+			            LoadConfig(
+			                "default"
+			            )
+			
+			        Notify(
+			            "Configs",
+			            ok
+			                and "Default config loaded."
+			                or (
+			                    "Load failed: "
+			                    .. tostring(err)
+			                ),
+			            4
 			        )
 			    end,
 			})
@@ -3205,358 +3700,148 @@ _modules["Main.luau"] = {
 			        "sparkles"
 			    )
 			
-			local UtilityMoreTab =
-			    UtilitySection:CreateTab(
-			        "More",
-			        "layers"
-			    )
-			
 			local SessionStart =
 			    os.clock()
 			
-			UtilityMoreTab:CreateSection(
-			    "More Utilities"
-			)
+			local SetDevGravity0
+			local StartDevCamera
+			local StopDevCamera
+			local StartDevFly
+			local StopDevFly
 			
-			UtilityMoreTab:CreateParagraph({
-			    Title = "🌸 Utilities+",
-			    Content =
-			        "Extra movement, camera, visual and developer controls.",
-			})
 			
+			local UtilityLeft =
+			    UtilityTab.Tab:AddLeftGroupbox(
+			        "Session & Character",
+			        "user"
+			    )
+			
+			local UtilityRight =
+			    UtilityTab.Tab:AddRightGroupbox(
+			        "Automation",
+			        "zap"
+			    )
+			
+			local UtilityRightDev =
+			    UtilityTab.Tab:AddRightGroupbox(
+			        "Dev / Camera",
+			        "wrench"
+			    )
 			
 			--------------------------------------------------
-			-- AUTOMATION
+			-- LEFT: SESSION
 			--------------------------------------------------
 			
-			UtilityTab:CreateSection(
-			    "Automation"
-			)
-			
-			UtilityTab:CreateSlider({
-			    Name = "Rebirth Interval",
-			
-			    Min = 0.05,
-			    Max = 2,
-			
-			    Default =
-			        State.RebirthInterval,
-			
-			    Flag = "RebirthInterval",
-			
-			    Callback = function(value)
-			        State.RebirthInterval =
-			            tonumber(value)
-			            or 0.25
-			    end,
+			UtilityLeft:AddLabel({
+			    Text =
+			        "🌸 Lilac Utilities\n"
+			        .. "Session, character and small helpers.",
+			    DoesWrap = true,
 			})
 			
-			UtilityTab:CreateToggle({
-			    Name = "Auto Rebirth",
+			UtilityLeft:AddButton({
+			    Text = "Session Info",
 			
-			    Default =
-			        State.AutoRebirth == true,
-			
-			    Flag = "AutoRebirth",
-			
-			    Callback = function(enabled)
-			        if enabled then
-			            StartAutoRebirth()
-			        else
-			            StopAutoRebirth()
-			        end
-			    end,
-			})
-			
-			UtilityTab:CreateButton({
-			    Name = "Rebirth Once",
-			
-			    Callback = function()
-			        local ok =
-			            RunRebirthOnce()
+			    Func = function()
+			        local position =
+			            GetPosition()
 			
 			        Notify(
-			            "Auto Rebirth",
-			            ok
-			                and "Rebirth requested."
-			                or "Rebirth button not found.",
+			            "Session Info",
+			            "Place: "
+			                .. tostring(
+			                    game.PlaceId
+			                )
+			                .. "\nPlayers: "
+			                .. tostring(
+			                    #Players:GetPlayers()
+			                )
+			                .. "\nUptime: "
+			                .. string.format(
+			                    "%.0fs",
+			                    os.clock()
+			                        - SessionStart
+			                )
+			                .. "\nPosition: "
+			                .. FormatVector3(
+			                    position
+			                ),
+			            6
+			        )
+			    end,
+			})
+			
+			UtilityLeft:AddButton({
+			    Text = "Show Place ID",
+			
+			    Func = function()
+			        Notify(
+			            "Place ID",
+			            tostring(
+			                game.PlaceId
+			            ),
+			            4
+			        )
+			    end,
+			})
+			
+			UtilityLeft:AddButton({
+			    Text = "Show Job ID",
+			
+			    Func = function()
+			        Notify(
+			            "Job ID",
+			            tostring(
+			                game.JobId
+			            ),
+			            4
+			        )
+			    end,
+			})
+			
+			UtilityLeft:AddButton({
+			    Text = "Show Player Count",
+			
+			    Func = function()
+			        Notify(
+			            "Server",
+			            tostring(
+			                #Players:GetPlayers()
+			            )
+			                .. " players online.",
 			            3
 			        )
 			    end,
 			})
 			
-			UtilityTab:CreateSlider({
-			    Name = "Clicks Per Second",
+			UtilityLeft:AddButton({
+			    Text = "Refresh Character",
 			
-			    Min = 1,
-			    Max = 100,
-			
-			    Default =
-			        State.AutoClickerSpeed,
-			
-			    Flag = "AutoClickerSpeed",
-			
-			    Callback = function(value)
-			        State.AutoClickerSpeed =
-			            tonumber(value)
-			            or 10
-			
-			        if State.AutoClicker then
-			            SafeCall(function()
-			                AutoClicker.Start(
-			                    State.AutoClickerSpeed
-			                )
-			            end)
-			        end
-			    end,
-			})
-			
-			UtilityTab:CreateToggle({
-			    Name = "Auto Clicker",
-			
-			    Default =
-			        State.AutoClicker == true,
-			
-			    Flag = "AutoClicker",
-			
-			    Callback = function(enabled)
-			        State.AutoClicker =
-			            enabled == true
-			
-			        if State.AutoClicker then
-			            SafeCall(function()
-			                AutoClicker.Start(
-			                    State.AutoClickerSpeed
-			                )
-			            end)
-			        else
-			            SafeCall(function()
-			                AutoClicker.Stop()
-			            end)
-			        end
-			    end,
-			})
-			
-			UtilityTab:CreateKeybind({
-			    Name = "Clicker Hotkey",
-			
-			    Default = Enum.KeyCode.F,
-			
-			    Flag = "AutoClickerKey",
-			
-			    Callback = function()
+			    Func = function()
 			        SafeCall(function()
-			            AutoClicker.Toggle(
-			                State.AutoClickerSpeed
-			            )
-			        end)
-			
-			        SafeCall(function()
-			            State.AutoClicker =
-			                AutoClicker.IsRunning()
+			            LocalPlayer:LoadCharacter()
 			        end)
 			    end,
 			})
 			
-			UtilityTab:CreateButton({
-			    Name = "Stop Clicker",
+			UtilityLeft:AddButton({
+			    Text = "Character Position",
 			
-			    Callback = function()
-			        State.AutoClicker = false
-			
-			        SafeCall(function()
-			            AutoClicker.Stop()
-			        end)
+			    Func = function()
+			        Notify(
+			            "Position",
+			            FormatVector3(
+			                GetPosition()
+			            ),
+			            4
+			        )
 			    end,
 			})
 			
-			local utilityTargetBox =
-			    UtilityTab:CreateTextBox({
-			        Name = "Mog Target",
-			        Placeholder = "Player username",
-			    })
+			UtilityLeft:AddButton({
+			    Text = "Reset Character Physics",
 			
-			UtilityTab:CreateButton({
-			    Name = "Mog Target",
-			
-			    Callback = function()
-			        local username =
-			            utilityTargetBox:GetText()
-			
-			        if username == "" then
-			            Notify(
-			                "Auto Mog",
-			                "Enter a username first.",
-			                3
-			            )
-			            return
-			        end
-			
-			        State.CurrentTarget =
-			            username
-			
-			        State.AutoMog = true
-			
-			        SafeCall(function()
-			            AutoMog.Start(
-			                username
-			            )
-			        end)
-			    end,
-			})
-			
-			UtilityTab:CreateButton({
-			    Name = "Mog All",
-			
-			    Callback = function()
-			        State.AutoMogAll = true
-			
-			        SafeCall(function()
-			            AutoMog.StartAll()
-			        end)
-			    end,
-			})
-			
-			UtilityTab:CreateButton({
-			    Name = "Stop Mog",
-			
-			    Callback = function()
-			        State.AutoMog = false
-			        State.AutoMogAll = false
-			
-			        SafeCall(function()
-			            AutoMog.Stop()
-			        end)
-			    end,
-			})
-			
-			UtilityTab:CreateButton({
-			    Name = "Clear Mog Target",
-			
-			    Callback = function()
-			        utilityTargetBox:SetText("")
-			        State.CurrentTarget = nil
-			    end,
-			})
-			
-			--------------------------------------------------
-			-- MOVEMENT / CHARACTER
-			--------------------------------------------------
-			
-			UtilityMoreTab:CreateSection(
-			    "Movement"
-			)
-			
-			UtilityMoreTab:CreateSlider({
-			    Name = "WalkSpeed",
-			
-			    Min = 1,
-			    Max = 100,
-			
-			    Default =
-			        State.WalkSpeed,
-			
-			    Flag = "WalkSpeed",
-			
-			    Callback = function(value)
-			        State.WalkSpeed =
-			            tonumber(value)
-			            or 16
-			
-			        local humanoid =
-			            GetHumanoid()
-			
-			        if humanoid then
-			            humanoid.WalkSpeed =
-			                State.WalkSpeed
-			        end
-			    end,
-			})
-			
-			UtilityMoreTab:CreateSlider({
-			    Name = "JumpPower",
-			
-			    Min = 1,
-			    Max = 150,
-			
-			    Default =
-			        State.JumpPower,
-			
-			    Flag = "JumpPower",
-			
-			    Callback = function(value)
-			        State.JumpPower =
-			            tonumber(value)
-			            or 50
-			
-			        local humanoid =
-			            GetHumanoid()
-			
-			        if humanoid then
-			            humanoid.UseJumpPower = true
-			            humanoid.JumpPower =
-			                State.JumpPower
-			        end
-			    end,
-			})
-			
-			UtilityMoreTab:CreateSlider({
-			    Name = "HipHeight",
-			
-			    Min = 0,
-			    Max = 10,
-			
-			    Default =
-			        State.HipHeight,
-			
-			    Flag = "HipHeight",
-			
-			    Callback = function(value)
-			        State.HipHeight =
-			            tonumber(value)
-			            or 2
-			
-			        local humanoid =
-			            GetHumanoid()
-			
-			        if humanoid then
-			            humanoid.HipHeight =
-			                State.HipHeight
-			        end
-			    end,
-			})
-			
-			UtilityMoreTab:CreateToggle({
-			    Name = "Anti AFK",
-			
-			    Default =
-			        State.AntiAFK == true,
-			
-			    Flag = "AntiAFK",
-			
-			    Callback = function(enabled)
-			        State.AntiAFK =
-			            enabled == true
-			
-			        if enabled then
-			            SafeCall(function()
-			                LocalPlayer.Idled:Connect(
-			                    function()
-			                        VirtualUser:CaptureController()
-			                        VirtualUser:ClickButton2(
-			                            Vector2.new()
-			                        )
-			                    end
-			                )
-			            end)
-			        end
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Reset Character Physics",
-			
-			    Callback = function()
+			    Func = function()
 			        local humanoid =
 			            GetHumanoid()
 			
@@ -3575,6 +3860,9 @@ _modules["Main.luau"] = {
 			            humanoid.WalkSpeed =
 			                16
 			
+			            humanoid.UseJumpPower =
+			                true
+			
 			            humanoid.JumpPower =
 			                50
 			
@@ -3585,695 +3873,514 @@ _modules["Main.luau"] = {
 			        State.WalkSpeed = 16
 			        State.JumpPower = 50
 			        State.HipHeight = 2
-			
-			        Notify(
-			            "Movement",
-			            "Character physics reset.",
-			            3
-			        )
 			    end,
 			})
 			
-			--------------------------------------------------
-			-- CAMERA / VISUAL
-			--------------------------------------------------
+			UtilityLeft:AddDivider()
 			
-			UtilityMoreTab:CreateSection(
-			    "Camera & Visuals"
-			)
+			UtilityLeft:AddSlider(
+			    "WalkSpeed",
+			    {
+			        Text =
+			            "Walk Speed",
 			
-			UtilityMoreTab:CreateSlider({
-			    Name = "Camera FOV",
+			        Default =
+			            State.WalkSpeed,
 			
-			    Min = 40,
-			    Max = 120,
+			        Min = 1,
 			
-			    Default = 70,
+			        Max = 100,
 			
-			    Flag = "CameraFOV",
+			        Rounding = 0,
 			
-			    Callback = function(value)
-			        local camera =
-			            GetCamera()
-			
-			        if camera then
-			            camera.FieldOfView =
-			                tonumber(value)
-			                or 70
-			        end
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "FOV 70",
-			
-			    Callback = function()
-			        local camera =
-			            GetCamera()
-			
-			        if camera then
-			            camera.FieldOfView = 70
-			        end
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "FOV 90",
-			
-			    Callback = function()
-			        local camera =
-			            GetCamera()
-			
-			        if camera then
-			            camera.FieldOfView = 90
-			        end
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Clear Visual Effects",
-			
-			    Callback = function()
-			        for _, object in ipairs(
-			            Lighting:GetChildren()
-			        ) do
-			            if
-			                object:IsA("BlurEffect")
-			                or object:IsA("ColorCorrectionEffect")
-			                or object:IsA("BloomEffect")
-			                or object:IsA("SunRaysEffect")
-			            then
-			                pcall(function()
-			                    object.Enabled = false
-			                end)
-			            end
-			        end
-			
-			        Notify(
-			            "Visuals",
-			            "Local visual effects disabled.",
-			            3
-			        )
-			    end,
-			})
-			
-			--------------------------------------------------
-			-- SESSION
-			--------------------------------------------------
-			
-			UtilityMoreTab:CreateSection(
-			    "Session"
-			)
-			
-			UtilityMoreTab:CreateParagraph({
-			    Title = "🌸 Lilac Utilities",
-			    Content =
-			        "Client information, dev tests and small helpers."
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Session Info",
-			
-			    Callback = function()
-			        local character =
-			            LocalPlayer.Character
-			
-			        local position =
-			            character
-			            and character:GetPivot().Position
-			
-			        Notify(
-			            "Session Info",
-			            "Place: "
-			                .. tostring(game.PlaceId)
-			                .. "\nPlayers: "
-			                .. tostring(#Players:GetPlayers())
-			                .. "\nUptime: "
-			                .. string.format(
-			                    "%.0fs",
-			                    os.clock() - SessionStart
-			                )
-			                .. "\nPosition: "
-			                .. (
-			                    position
-			                    and string.format(
-			                        "%.1f, %.1f, %.1f",
-			                        position.X,
-			                        position.Y,
-			                        position.Z
-			                    )
-			                    or "Unknown"
-			                ),
-			            6
-			        )
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Show Place ID",
-			
-			    Callback = function()
-			        Notify(
-			            "Place ID",
-			            tostring(game.PlaceId),
-			            4
-			        )
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Show Job ID",
-			
-			    Callback = function()
-			        Notify(
-			            "Job ID",
-			            tostring(game.JobId),
-			            4
-			        )
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Show Player Count",
-			
-			    Callback = function()
-			        Notify(
-			            "Server",
-			            tostring(
-			                #Players:GetPlayers()
-			            ) .. " players online.",
-			            3
-			        )
-			    end,
-			})
-			
-			--------------------------------------------------
-			-- CHARACTER
-			--------------------------------------------------
-			
-			UtilityMoreTab:CreateSection(
-			    "Character"
-			)
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Refresh Character",
-			
-			    Callback = function()
-			        SafeCall(function()
-			            LocalPlayer:LoadCharacter()
-			        end)
-			
-			        Notify(
-			            "Character",
-			            "Refresh requested.",
-			            3
-			        )
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Reset Camera",
-			
-			    Callback = function()
-			        SafeCall(function()
-			            local character =
-			                LocalPlayer.Character
+			        Callback = function(value)
+			            State.WalkSpeed =
+			                value
 			
 			            local humanoid =
-			                character
-			                and character:FindFirstChildOfClass(
-			                    "Humanoid"
-			                )
+			                GetHumanoid()
 			
 			            if humanoid then
-			                Workspace.CurrentCamera.CameraSubject =
-			                    humanoid
-			                Workspace.CurrentCamera.CameraType =
-			                    Enum.CameraType.Custom
+			                humanoid.WalkSpeed =
+			                    value
 			            end
-			        end)
-			
-			        Notify(
-			            "Camera",
-			            "Camera reset.",
-			            2
-			        )
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Character Position",
-			
-			    Callback = function()
-			        local position =
-			            GetPosition()
-			
-			        Notify(
-			            "Position",
-			            FormatVector3(
-			                position
-			            ),
-			            4
-			        )
-			    end,
-			})
-			
-			--------------------------------------------------
-			-- EXTRA DEV UTILITIES
-			--------------------------------------------------
-			
-			UtilityMoreTab:CreateSection(
-			    "Performance"
+			        end,
+			    }
 			)
 			
-			local fpsLabel =
-			    UtilityMoreTab:CreateParagraph({
-			        Title = "FPS Monitor",
-			        Content = "FPS: measuring...",
-			    })
+			UtilityLeft:AddSlider(
+			    "JumpPower",
+			    {
+			        Text =
+			            "Jump Power",
 			
-			local fpsMonitorEnabled =
-			    false
+			        Default =
+			            State.JumpPower,
 			
-			local fpsConnection =
-			    nil
+			        Min = 1,
 			
-			local fpsFrames =
-			    0
+			        Max = 150,
 			
-			local fpsStarted =
-			    os.clock()
+			        Rounding = 0,
 			
-			local function StopFPSMonitor()
-			    fpsMonitorEnabled =
-			        false
+			        Callback = function(value)
+			            State.JumpPower =
+			                value
 			
-			    if fpsConnection then
-			        fpsConnection:Disconnect()
-			        fpsConnection =
-			            nil
-			    end
-			end
+			            local humanoid =
+			                GetHumanoid()
 			
-			local function StartFPSMonitor()
-			    StopFPSMonitor()
+			            if humanoid then
+			                humanoid.UseJumpPower =
+			                    true
 			
-			    fpsMonitorEnabled =
-			        true
-			
-			    fpsFrames =
-			        0
-			
-			    fpsStarted =
-			        os.clock()
-			
-			    fpsConnection =
-			        RunService.RenderStepped:Connect(
-			            function()
-			                if not fpsMonitorEnabled then
-			                    return
-			                end
-			
-			                fpsFrames +=
-			                    1
-			
-			                local elapsed =
-			                    os.clock()
-			                    - fpsStarted
-			
-			                if elapsed >= 0.5 then
-			                    local fps =
-			                        math.floor(
-			                            (
-			                                fpsFrames
-			                                / elapsed
-			                            )
-			                            + 0.5
-			                        )
-			
-			                    pcall(function()
-			                        fpsLabel:SetText(
-			                            "FPS: "
-			                                .. tostring(
-			                                    fps
-			                                )
-			                        )
-			                    end)
-			
-			                    fpsFrames =
-			                        0
-			
-			                    fpsStarted =
-			                        os.clock()
-			                end
+			                humanoid.JumpPower =
+			                    value
 			            end
-			        )
-			end
-			
-			UtilityMoreTab:CreateToggle({
-			    Name = "FPS Monitor",
-			
-			    Default = false,
-			
-			    Flag = "FPSMonitor",
-			
-			    Callback = function(enabled)
-			        if enabled then
-			            StartFPSMonitor()
-			        else
-			            StopFPSMonitor()
-			
-			            pcall(function()
-			                fpsLabel:SetText(
-			                    "FPS: stopped"
-			                )
-			            end)
-			        end
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Performance Snapshot",
-			
-			    Callback = function()
-			        local character =
-			            LocalPlayer.Character
-			
-			        local root =
-			            GetRoot()
-			
-			        Notify(
-			            "Performance",
-			            "Players: "
-			                .. tostring(
-			                    #Players:GetPlayers()
-			                )
-			                .. "\nGravity: "
-			                .. string.format(
-			                    "%.1f",
-			                    Workspace.Gravity
-			                )
-			                .. "\nCharacter: "
-			                .. tostring(
-			                    character ~= nil
-			                )
-			                .. "\nRoot: "
-			                .. tostring(
-			                    root ~= nil
-			                ),
-			            5
-			        )
-			    end,
-			})
-			
-			--------------------------------------------------
-			-- ENVIRONMENT
-			--------------------------------------------------
-			
-			UtilityMoreTab:CreateSection(
-			    "Environment"
+			        end,
+			    }
 			)
 			
-			UtilityMoreTab:CreateSlider({
-			    Name = "Clock Time",
+			UtilityLeft:AddSlider(
+			    "HipHeight",
+			    {
+			        Text =
+			            "Hip Height",
 			
-			    Min = 0,
-			    Max = 24,
+			        Default =
+			            State.HipHeight,
 			
-			    Default = Lighting.ClockTime,
+			        Min = 0,
 			
-			    Flag = "ClockTime",
+			        Max = 10,
 			
-			    Callback = function(value)
-			        Lighting.ClockTime =
-			            tonumber(value)
-			            or Lighting.ClockTime
-			    end,
-			})
+			        Rounding = 1,
 			
-			UtilityMoreTab:CreateButton({
-			    Name = "Day",
+			        Callback = function(value)
+			            State.HipHeight =
+			                value
 			
-			    Callback = function()
-			        Lighting.ClockTime =
-			            12
-			    end,
-			})
+			            local humanoid =
+			                GetHumanoid()
 			
-			UtilityMoreTab:CreateButton({
-			    Name = "Sunset",
+			            if humanoid then
+			                humanoid.HipHeight =
+			                    value
+			            end
+			        end,
+			    }
+			)
 			
-			    Callback = function()
-			        Lighting.ClockTime =
-			            18
-			    end,
-			})
+			UtilityLeft:AddSlider(
+			    "CameraFOV",
+			    {
+			        Text =
+			            "Camera FOV",
 			
-			UtilityMoreTab:CreateButton({
-			    Name = "Night",
+			        Default = 70,
 			
-			    Callback = function()
-			        Lighting.ClockTime =
-			            0
-			    end,
-			})
+			        Min = 40,
 			
-			UtilityMoreTab:CreateButton({
-			    Name = "Restore Local Visuals",
+			        Max = 120,
 			
-			    Callback = function()
-			        pcall(function()
-			            Lighting.ClockTime =
-			                14
+			        Rounding = 0,
 			
+			        Callback = function(value)
 			            local camera =
 			                GetCamera()
 			
 			            if camera then
 			                camera.FieldOfView =
-			                    70
+			                    value
+			            end
+			        end,
+			    }
+			)
+			
+			UtilityLeft:AddToggle(
+			    "AntiAFK",
+			    {
+			        Text =
+			            "Anti AFK",
+			
+			        Default =
+			            State.AntiAFK
+			            == true,
+			
+			        Callback = function(enabled)
+			            State.AntiAFK =
+			                enabled
+			        end,
+			    }
+			)
+			
+			UtilityLeft:AddButton({
+			    Text = "Reset Camera",
+			
+			    Func = function()
+			        SafeCall(function()
+			            StopDevCamera()
+			
+			            local camera =
+			                GetCamera()
+			
+			            local humanoid =
+			                GetHumanoid()
+			
+			            camera.CameraType =
+			                Enum.CameraType.Custom
+			
+			            if humanoid then
+			                camera.CameraSubject =
+			                    humanoid
 			            end
 			        end)
+			    end,
+			})
+			
+			--------------------------------------------------
+			-- RIGHT: AUTOMATION
+			--------------------------------------------------
+			
+			UtilityRight:AddLabel({
+			    Text =
+			        "Automation controls",
+			    DoesWrap = true,
+			})
+			
+			UtilityRight:AddSlider(
+			    "RebirthInterval",
+			    {
+			        Text =
+			            "Rebirth Interval",
+			
+			        Default =
+			            State.RebirthInterval,
+			
+			        Min = 0.05,
+			
+			        Max = 2,
+			
+			        Rounding = 2,
+			
+			        Callback = function(value)
+			            State.RebirthInterval =
+			                value
+			        end,
+			    }
+			)
+			
+			UtilityRight:AddToggle(
+			    "AutoRebirth",
+			    {
+			        Text =
+			            "Auto Rebirth",
+			
+			        Default =
+			            State.AutoRebirth
+			            == true,
+			
+			        Callback = function(enabled)
+			            if enabled then
+			                StartAutoRebirth()
+			            else
+			                StopAutoRebirth()
+			            end
+			        end,
+			    }
+			)
+			
+			UtilityRight:AddButton({
+			    Text = "Rebirth Once",
+			
+			    Func = function()
+			        local ok =
+			            RunRebirthOnce()
 			
 			        Notify(
-			            "Environment",
-			            "Local visual settings restored.",
+			            "Auto Rebirth",
+			            ok
+			                and "Rebirth requested."
+			                or "Rebirth button not found.",
 			            3
 			        )
 			    end,
 			})
 			
-			--------------------------------------------------
-			-- QUICK ACTIONS
-			--------------------------------------------------
+			UtilityRight:AddSlider(
+			    "AutoClickerSpeed",
+			    {
+			        Text =
+			            "Clicks Per Second",
 			
-			UtilityMoreTab:CreateSection(
-			    "Quick Actions"
+			        Default =
+			            State.AutoClickerSpeed,
+			
+			        Min = 1,
+			
+			        Max = 100,
+			
+			        Rounding = 0,
+			
+			        Callback = function(value)
+			            State.AutoClickerSpeed =
+			                value
+			
+			            if State.AutoClicker then
+			                SafeCall(function()
+			                    AutoClicker.Start(
+			                        value
+			                    )
+			                end)
+			            end
+			        end,
+			    }
 			)
 			
-			UtilityMoreTab:CreateButton({
-			    Name = "Copy Position",
+			UtilityRight:AddToggle(
+			    "AutoClicker",
+			    {
+			        Text =
+			            "Auto Clicker",
 			
-			    Callback = function()
-			        local position =
-			            GetPosition()
+			        Default =
+			            State.AutoClicker
+			            == true,
 			
-			        if not position then
-			            Notify(
-			                "Clipboard",
-			                "Character position unavailable.",
-			                3
-			            )
-			            return
-			        end
+			        Callback = function(enabled)
+			            State.AutoClicker =
+			                enabled
 			
-			        local value =
-			            string.format(
-			                "%.3f %.3f %.3f",
-			                position.X,
-			                position.Y,
-			                position.Z
-			            )
+			            if enabled then
+			                SafeCall(function()
+			                    AutoClicker.Start(
+			                        State.AutoClickerSpeed
+			                    )
+			                end)
+			            else
+			                SafeCall(function()
+			                    AutoClicker.Stop()
+			                end)
+			            end
+			        end,
+			    }
+			)
 			
-			        if SetClipboard(
-			            value
-			        ) then
-			            Notify(
-			                "Clipboard",
-			                "Position copied.",
-			                3
-			            )
-			        end
-			    end,
-			})
+			UtilityRight:AddLabel(
+			    "Clicker hotkey: F"
+			)
 			
-			UtilityMoreTab:CreateButton({
-			    Name = "Copy Camera Position",
+			UtilityRight:AddButton({
+			    Text = "Stop Clicker",
 			
-			    Callback = function()
-			        local camera =
-			            GetCamera()
+			    Func = function()
+			        State.AutoClicker =
+			            false
 			
-			        if not camera then
-			            return
-			        end
-			
-			        local position =
-			            camera.CFrame.Position
-			
-			        local value =
-			            string.format(
-			                "%.3f %.3f %.3f",
-			                position.X,
-			                position.Y,
-			                position.Z
-			            )
-			
-			        if SetClipboard(
-			            value
-			        ) then
-			            Notify(
-			                "Clipboard",
-			                "Camera position copied.",
-			                3
-			            )
-			        end
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Show Camera Info",
-			
-			    Callback = function()
-			        local camera =
-			            GetCamera()
-			
-			        if not camera then
-			            return
-			        end
-			
-			        local position =
-			            camera.CFrame.Position
-			
-			        Notify(
-			            "Camera",
-			            string.format(
-			                "X %.2f | Y %.2f | Z %.2f\nFOV %.1f",
-			                position.X,
-			                position.Y,
-			                position.Z,
-			                camera.FieldOfView
-			            ),
-			            4
-			        )
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Reset Character Rotation",
-			
-			    Callback = function()
-			        local root =
-			            GetRoot()
-			
-			        if not root then
-			            return
-			        end
-			
-			        local position =
-			            root.Position
-			
-			        root.CFrame =
-			            CFrame.new(
-			                position
-			            )
-			
-			        root.AssemblyAngularVelocity =
-			            Vector3.zero
-			
-			        Notify(
-			            "Character",
-			            "Rotation reset.",
-			            2
-			        )
-			    end,
-			})
-			
-			UtilityMoreTab:CreateButton({
-			    Name = "Respawn",
-			
-			    Callback = function()
 			        SafeCall(function()
-			            LocalPlayer:LoadCharacter()
+			            AutoClicker.Stop()
+			        end)
+			    end,
+			})
+			
+			local utilityMogInput =
+			    UtilityRight:AddInput(
+			        "UtilityMogTarget",
+			        {
+			            Text =
+			                "Mog Target",
+			
+			            Placeholder =
+			                "Player username",
+			        }
+			    )
+			
+			UtilityRight:AddButton({
+			    Text = "Mog Target",
+			
+			    Func = function()
+			        local username =
+			            tostring(
+			                utilityMogInput.Value
+			                or ""
+			            )
+			
+			        if username == "" then
+			            Notify(
+			                "Auto Mog",
+			                "Enter a username first.",
+			                3
+			            )
+			
+			            return
+			        end
+			
+			        State.CurrentTarget =
+			            username
+			
+			        State.AutoMog =
+			            true
+			
+			        SafeCall(function()
+			            AutoMog.Start(
+			                username
+			            )
+			        end)
+			    end,
+			})
+			
+			UtilityRight:AddButton({
+			    Text = "Mog All",
+			
+			    Func = function()
+			        State.AutoMogAll =
+			            true
+			
+			        SafeCall(function()
+			            AutoMog.StartAll()
+			        end)
+			    end,
+			})
+			
+			UtilityRight:AddButton({
+			    Text = "Stop Mog",
+			
+			    Func = function()
+			        State.AutoMog = false
+			        State.AutoMogAll = false
+			
+			        SafeCall(function()
+			            AutoMog.Stop()
 			        end)
 			    end,
 			})
 			
 			--------------------------------------------------
-			-- FUN / USELESS STUFF
+			-- RIGHT: DEV / CAMERA
 			--------------------------------------------------
 			
-			UtilityMoreTab:CreateSection(
-			    "Fun"
+			UtilityRightDev:AddToggle(
+			    "DevGravity0",
+			    {
+			        Text =
+			            "Dev Gravity 0",
+			
+			        Default = false,
+			
+			        Callback = function(enabled)
+			            SetDevGravity0(
+			                enabled
+			            )
+			        end,
+			    }
 			)
 			
-			UtilityMoreTab:CreateButton({
-			    Name = "Where Am I?",
+			UtilityRightDev:AddToggle(
+			    "DevCamera",
+			    {
+			        Text =
+			            "Dev Camera",
 			
-			    Callback = function()
-			        local position =
-			            GetPosition()
+			        Default = false,
 			
-			        Notify(
-			            "Where Am I?",
-			            FormatVector3(
-			                position
-			            ),
-			            4
-			        )
+			        Callback = function(enabled)
+			            if enabled then
+			                StartDevCamera()
+			            else
+			                StopDevCamera()
+			            end
+			        end,
+			    }
+			)
+			
+			UtilityRightDev:AddButton({
+			    Text = "Dev Camera Position",
+			
+			    Func = function()
+			        StartDevCamera()
 			    end,
 			})
 			
-			UtilityMoreTab:CreateButton({
-			    Name = "Random Camera FOV",
+			UtilityRightDev:AddButton({
+			    Text = "Reset Dev Camera",
 			
-			    Callback = function()
-			        local camera =
-			            GetCamera()
+			    Func = function()
+			        StopDevCamera()
+			    end,
+			})
 			
-			        if camera then
-			            camera.FieldOfView =
-			                math.random(
-			                    55,
-			                    110
-			                )
+			UtilityRightDev:AddToggle(
+			    "DevFly",
+			    {
+			        Text =
+			            "Dev Fly",
+			
+			        Default = false,
+			
+			        Callback = function(enabled)
+			            if enabled then
+			                StartDevFly()
+			            else
+			                StopDevFly()
+			            end
+			        end,
+			    }
+			)
+			
+			UtilityRightDev:AddButton({
+			    Text = "Stop All Dev",
+			
+			    Func = function()
+			        StopAllDevTests()
+			        StopDevFly()
+			        StopDevCamera()
+			
+			        devGravity0Enabled =
+			            false
+			
+			        if DevGravityOriginal ~= nil then
+			            Workspace.Gravity =
+			                DevGravityOriginal
+			
+			            DevGravityOriginal =
+			                nil
 			        end
 			    end,
 			})
 			
-			UtilityMoreTab:CreateButton({
-			    Name = "Random Clock",
+			UtilityRightDev:AddDivider()
 			
-			    Callback = function()
-			        Lighting.ClockTime =
-			            math.random()
-			            * 24
-			    end,
-			})
+			UtilityRightDev:AddButton({
+			    Text = "Start Both Auto Win",
 			
-			UtilityMoreTab:CreateButton({
-			    Name = "Notify Test",
+			    Func = function()
+			        if not RequireDevMode() then
+			            return
+			        end
 			
-			    Callback = function()
+			        StartAutoWinTest(
+			            "World1"
+			        )
+			
+			        StartAutoWinTest(
+			            "World2"
+			        )
+			
 			        Notify(
-			            "🌸 Lilac v1488",
-			            "Everything is alive and running.",
-			            4
+			            "Auto Win Dev",
+			            "Both dev profiles started.",
+			            3
 			        )
 			    end,
 			})
 			
-			--------------------------------------------------
+			UtilityRightDev:AddLabel({
+			    Text =
+			        "Camera: -73, 62, 4923\n"
+			        .. "Fly: WalkSpeed • Q/E",
+			    DoesWrap = true,
+			})
+			
 			-- DEVELOPER PHYSICS TESTS
 			--------------------------------------------------
 			
@@ -4324,7 +4431,9 @@ _modules["Main.luau"] = {
 			    StopGravityEnforcer()
 			end
 			
-			local function SetDevGravity0(enabled)
+			local devGravity0Enabled = false
+			
+			function SetDevGravity0(enabled)
 			    if not RequireDevMode() then
 			        return
 			    end
@@ -4389,7 +4498,7 @@ _modules["Main.luau"] = {
 			local DEV_CAMERA_FAST_SPEED = 65
 			local DEV_CAMERA_SENSITIVITY = 0.0025
 			
-			local function StopDevCamera()
+			function StopDevCamera()
 			    devCameraEnabled = false
 			
 			    if devCameraRender then
@@ -4435,7 +4544,7 @@ _modules["Main.luau"] = {
 			    end
 			end
 			
-			local function StartDevCamera()
+			function StartDevCamera()
 			    if not RequireDevMode() then
 			        return
 			    end
@@ -4696,7 +4805,7 @@ _modules["Main.luau"] = {
 			-- DEV FLY
 			--------------------------------------------------
 			
-			local function StopDevFly()
+			function StopDevFly()
 			    devFlyEnabled = false
 			    devVerticalInput = 0
 			
@@ -4736,7 +4845,7 @@ _modules["Main.luau"] = {
 			    end
 			end
 			
-			local function StartDevFly()
+			function StartDevFly()
 			    if not RequireDevMode() then
 			        return
 			    end
