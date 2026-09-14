@@ -2737,6 +2737,101 @@ _modules["Main.luau"] = {
 			    end,
 			})
 			
+			ServerTab:CreateSection(
+			    "Join By Job ID"
+			)
+			
+			local jobIdBox =
+			    ServerTab:CreateTextBox({
+			        Name = "Job ID",
+			        Placeholder = "Paste server Job ID",
+			    })
+			
+			ServerTab:CreateButton({
+			    Name = "Join Server",
+			
+			    Callback = function()
+			        local jobId =
+			            jobIdBox:GetText()
+			
+			        jobId =
+			            tostring(jobId or "")
+			            :match("^%s*(.-)%s*$")
+			
+			        if jobId == "" then
+			            Notify(
+			                "Server Finder",
+			                "Enter a Job ID first.",
+			                3
+			            )
+			            return
+			        end
+			
+			        local TeleportService =
+			            game:GetService(
+			                "TeleportService"
+			            )
+			
+			        local ok, err =
+			            pcall(function()
+			                TeleportService:
+			                    TeleportToPlaceInstance(
+			                        game.PlaceId,
+			                        jobId,
+			                        Players.LocalPlayer
+			                    )
+			            end)
+			
+			        if not ok then
+			            Notify(
+			                "Server Finder",
+			                "Could not join server.\n"
+			                    .. tostring(err),
+			                5
+			            )
+			            return
+			        end
+			
+			        Notify(
+			            "Server Finder",
+			            "Joining Job ID:\n" .. jobId,
+			            3
+			        )
+			    end,
+			})
+			
+			ServerTab:CreateButton({
+			    Name = "Use Current Job ID",
+			
+			    Callback = function()
+			        jobIdBox:SetText(
+			            tostring(
+			                game.JobId
+			            )
+			        )
+			
+			        Notify(
+			            "Server Finder",
+			            "Current Job ID loaded.",
+			            2
+			        )
+			    end,
+			})
+			
+			ServerTab:CreateButton({
+			    Name = "Clear Job ID",
+			
+			    Callback = function()
+			        jobIdBox:SetText("")
+			
+			        Notify(
+			            "Server Finder",
+			            "Job ID cleared.",
+			            2
+			        )
+			    end,
+			})
+			
 			ServerTab:CreateButton({
 			    Name = "List Players",
 			
