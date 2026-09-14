@@ -17,49 +17,119 @@ function Obsidian.new(title, configFolder)
 
     Library.ForceCheckbox = false
     Library.ShowToggleFrameInKeybinds = true
+    Library.ShowCustomCursor = true
+    Library.GlobalSearch = true
 
-    --------------------------------------------------
-    -- LILAC V1488 COLORS
-    --------------------------------------------------
+    local ThemeManager
+    local SaveManager
 
     pcall(function()
-        local Scheme = Library.Scheme
-
-        Scheme.FontColor =
-            Color3.fromRGB(
-                245,
-                235,
-                250
-            )
-
-        Scheme.BackgroundColor =
-            Color3.fromRGB(
-                7,
-                3,
-                10
-            )
-
-        Scheme.MainColor =
-            Color3.fromRGB(
-                21,
-                8,
-                29
-            )
-
-        Scheme.AccentColor =
-            Color3.fromRGB(
-                194,
-                94,
-                230
-            )
-
-        Scheme.OutlineColor =
-            Color3.fromRGB(
-                88,
-                40,
-                108
-            )
+        ThemeManager = loadstring(
+            game:HttpGet(REPO .. "addons/ThemeManager.lua")
+        )()
     end)
+
+    pcall(function()
+        SaveManager = loadstring(
+            game:HttpGet(REPO .. "addons/SaveManager.lua")
+        )()
+    end)
+
+    --------------------------------------------------
+    -- LILAC THEME
+    --------------------------------------------------
+
+    local LilacTheme = {
+        FontColor = Color3.fromRGB(
+            242, 230, 248
+        ),
+
+        MainColor = Color3.fromRGB(
+            18, 9, 24
+        ),
+
+        AccentColor = Color3.fromRGB(
+            194, 109, 228
+        ),
+
+        BackgroundColor = Color3.fromRGB(
+            3, 2, 5
+        ),
+
+        OutlineColor = Color3.fromRGB(
+            76, 38, 91
+        ),
+
+        FontFace = Font.fromEnum(
+            Enum.Font.GothamMedium
+        ),
+
+        BackgroundImage =
+            "rbxassetid://83486595661123",
+    }
+
+    Library.Scheme = LilacTheme
+
+    pcall(function()
+        Library:SetFont(
+            Enum.Font.GothamMedium
+        )
+    end)
+
+    --------------------------------------------------
+    -- THEME MANAGER
+    --------------------------------------------------
+
+    if ThemeManager then
+        pcall(function()
+            ThemeManager:SetLibrary(
+                Library
+            )
+
+            ThemeManager:SetFolder(
+                configFolder
+                    or "ZenWare/Lilac"
+            )
+
+            ThemeManager:SetDefaultTheme(
+                LilacTheme
+            )
+        end)
+    end
+
+    --------------------------------------------------
+    -- SAVE MANAGER
+    --------------------------------------------------
+
+    if SaveManager then
+        pcall(function()
+            SaveManager:SetLibrary(
+                Library
+            )
+
+            SaveManager:SetFolder(
+                configFolder
+                    or "ZenWare/Configs"
+            )
+
+            SaveManager:SetSubFolder(
+                tostring(
+                    game.PlaceId
+                )
+            )
+
+            SaveManager:IgnoreThemeSettings()
+
+            SaveManager:SetIgnoreIndexes({
+                "MenuKeybind",
+                "UIToggleKey",
+            })
+        end)
+    end
+
+    --------------------------------------------------
+    -- WINDOW
+    --------------------------------------------------
 
     local Window = Library:CreateWindow({
         Title =
@@ -71,6 +141,15 @@ function Obsidian.new(title, configFolder)
 
         Icon = LOGO,
 
+        IconSize =
+            UDim2.fromOffset(
+                18,
+                18
+            ),
+
+        BackgroundImage =
+            "rbxassetid://83486595661123",
+
         NotifySide = "Right",
 
         ShowCustomCursor = true,
@@ -80,215 +159,58 @@ function Obsidian.new(title, configFolder)
 
         Glow = true,
         GlobalSearch = true,
-    })
 
-    --------------------------------------------------
-    -- OFFICIAL OBSIDIAN WINDOW BACKGROUND
-    --
-    -- The current Obsidian API accepts either a string
-    -- or number and writes it into Window.BackgroundImage.
-    --------------------------------------------------
+        CornerRadius = 10,
+
+        Animations = {
+            ToggleWindow = true,
+            TabSwitch = true,
+            Groupbox = true,
+            Dropdown = true,
+            KeyPicker = true,
+        },
+
+        TabTransitionTime = 0.20,
+        TabSwipeOffset = 24,
+        TabSwipeFrom = "bottom",
+
+        TabButtonsStyle = {
+            Gap = 5,
+            Padding = 9,
+            CornerRadius = 7,
+            Indicator = true,
+            IndicatorWidth = 3,
+            IndicatorHeight = 22,
+        },
+    })
 
     pcall(function()
         Window:SetBackgroundImage(
-            "rbxassetid://137423681201950"
-        )
-
-        Window:SetBackgroundImageEnabled(
-            true
+            "rbxassetid://83486595661123"
         )
     end)
 
     pcall(function()
-        Window:SetFooter(
-            "zenware"
-        )
-
-        Window:ChangeTitle(
-            "🌸 Lilac v1488"
-        )
-
         Window:SetCornerRadius(
-            9
+            10
         )
     end)
 
-    --------------------------------------------------
-    -- FULLSCREEN BACKGROUND
-    --
-    -- Kept in a SEPARATE low DisplayOrder ScreenGui.
-    -- This means it never sits above / over the menu and
-    -- cannot steal the drag area. It follows Library.Toggled.
-    --------------------------------------------------
-
-    local FullscreenGui
-    local FullscreenImage
-    local FullscreenConnection
-
     pcall(function()
-        local CoreGui =
-            game:GetService(
-                "CoreGui"
-            )
-
-        local old =
-            CoreGui:FindFirstChild(
-                "LilacV1488Fullscreen"
-            )
-
-        if old then
-            old:Destroy()
-        end
-
-        FullscreenGui =
-            Instance.new(
-                "ScreenGui"
-            )
-
-        FullscreenGui.Name =
-            "LilacV1488Fullscreen"
-
-        FullscreenGui.IgnoreGuiInset =
-            true
-
-        FullscreenGui.ResetOnSpawn =
-            false
-
-        FullscreenGui.DisplayOrder =
-            -1000
-
-        FullscreenGui.ZIndexBehavior =
-            Enum.ZIndexBehavior.Global
-
-        FullscreenGui.Parent =
-            CoreGui
-
-        FullscreenImage =
-            Instance.new(
-                "ImageLabel"
-            )
-
-        FullscreenImage.Name =
-            "Background"
-
-        FullscreenImage.BackgroundTransparency =
-            1
-
-        FullscreenImage.BorderSizePixel =
-            0
-
-        FullscreenImage.Position =
-            UDim2.fromScale(
-                0,
-                0
-            )
-
-        FullscreenImage.Size =
-            UDim2.fromScale(
-                1,
-                1
-            )
-
-        FullscreenImage.Image =
-            "rbxassetid://99217170570093"
-
-        FullscreenImage.ImageTransparency =
-            0.38
-
-        FullscreenImage.ScaleType =
-            Enum.ScaleType.Crop
-
-        -- Critical: never capture mouse input.
-        FullscreenImage.Active =
-            false
-
-        FullscreenImage.Selectable =
-            false
-
-        FullscreenImage.ZIndex =
-            -100
-
-        FullscreenImage.Parent =
-            FullscreenGui
-
-        FullscreenImage.Visible =
-            Library.Toggled == true
-
-        --------------------------------------------------
-        -- Dark lilac glass tint
-        --------------------------------------------------
-
-        local Tint =
-            Instance.new(
-                "Frame"
-            )
-
-        Tint.Name =
-            "LilacTint"
-
-        Tint.BackgroundColor3 =
-            Color3.fromRGB(
-                26,
-                6,
-                36
-            )
-
-        Tint.BackgroundTransparency =
-            0.68
-
-        Tint.BorderSizePixel =
-            0
-
-        Tint.Position =
-            UDim2.fromScale(
-                0,
-                0
-            )
-
-        Tint.Size =
-            UDim2.fromScale(
-                1,
-                1
-            )
-
-        Tint.Active =
-            false
-
-        Tint.ZIndex =
-            -99
-
-        Tint.Parent =
-            FullscreenGui
-
-        --------------------------------------------------
-        -- Follow Obsidian's real toggle state.
-        --------------------------------------------------
-
-        FullscreenConnection =
-            game:GetService(
-                "RunService"
-            ).RenderStepped:Connect(
-                function()
-                    if
-                        not FullscreenImage
-                        or not FullscreenImage.Parent
-                    then
-                        return
-                    end
-
-                    FullscreenImage.Visible =
-                        Library.Toggled == true
-
-                    Tint.Visible =
-                        Library.Toggled == true
-                end
-            )
+        Window:SetAnimations({
+            ToggleWindow = true,
+            TabSwitch = true,
+            Groupbox = true,
+            Dropdown = true,
+            KeyPicker = true,
+        }, 0.20, 24, "bottom")
     end)
-
 
     local ZenWindow = {
         Library = Library,
         Window = Window,
+        ThemeManager = ThemeManager,
+        SaveManager = SaveManager,
         Sections = {},
     }
 
@@ -325,20 +247,57 @@ function Obsidian.new(title, configFolder)
             function ZenTab:CreateSection(name, icon)
                 local Group
 
-                if icon then
-                    Group =
-                        self.Tab:AddLeftGroupbox(
-                            name,
-                            icon
-                        )
-                else
-                    Group =
-                        self.Tab:AddLeftGroupbox(
-                            name
-                        )
+                -- Alternate every section between the left and right
+                -- column for every tab, not only Utilities.
+                self._ColumnIndex =
+                    (self._ColumnIndex or 0) + 1
+
+                local useRight =
+                    (
+                        self._ColumnIndex % 2
+                    ) == 0
+
+                if useRight then
+                    local ok, result =
+                        pcall(function()
+                            if icon then
+                                return self.Tab:AddRightGroupbox(
+                                    name,
+                                    icon
+                                )
+                            end
+
+                            return self.Tab:AddRightGroupbox(
+                                name
+                            )
+                        end)
+
+                    if ok and result then
+                        Group = result
+                    end
+                end
+
+                if not Group then
+                    if icon then
+                        Group =
+                            self.Tab:AddLeftGroupbox(
+                                name,
+                                icon
+                            )
+                    else
+                        Group =
+                            self.Tab:AddLeftGroupbox(
+                                name
+                            )
+                    end
                 end
 
                 self.Group = Group
+
+                function self:ResetColumnLayout()
+                    self._ColumnIndex = 0
+                end
+
 
                 --------------------------------------------------
                 -- BUTTON
@@ -648,9 +607,37 @@ function Obsidian.new(title, configFolder)
                 --------------------------------------------------
 
                 function self:CreateConfigSection()
-                    Group:AddLabel(
-                        "Configuration"
-                    )
+                    local built = false
+
+                    if
+                        self.Window.SaveManager
+                        and self.Window.SaveManager.BuildConfigSection
+                    then
+                        built = pcall(function()
+                            self.Window.SaveManager:
+                                BuildConfigSection(
+                                    self.Tab
+                                )
+                        end)
+                    end
+
+                    if not built then
+                        Group:AddLabel(
+                            "Configuration"
+                        )
+                    end
+
+                    if
+                        self.Window.ThemeManager
+                        and self.Window.ThemeManager.ApplyToTab
+                    then
+                        pcall(function()
+                            self.Window.ThemeManager:
+                                ApplyToTab(
+                                    self.Tab
+                                )
+                        end)
+                    end
                 end
 
                 return Group
@@ -689,7 +676,12 @@ function Obsidian.new(title, configFolder)
                 config.BigIcon,
 
             IconColor =
-                config.IconColor,
+                config.IconColor
+                or Color3.fromRGB(
+                    194,
+                    109,
+                    228
+                ),
         })
     end
 
@@ -725,12 +717,123 @@ function Obsidian.new(title, configFolder)
     end
 
     --------------------------------------------------
+    -- CONFIG / THEME HELPERS
+    --------------------------------------------------
+
+    function ZenWindow:SaveConfig(name)
+        if
+            not self.SaveManager
+            or not self.SaveManager.Save
+        then
+            return false
+        end
+
+        return pcall(function()
+            self.SaveManager:Save(
+                name or "Default"
+            )
+        end)
+    end
+
+    function ZenWindow:LoadConfig(name)
+        if
+            not self.SaveManager
+            or not self.SaveManager.Load
+        then
+            return false
+        end
+
+        return pcall(function()
+            self.SaveManager:Load(
+                name or "Default"
+            )
+        end)
+    end
+
+    function ZenWindow:LoadAutoloadConfig()
+        if
+            not self.SaveManager
+            or not self.SaveManager.LoadAutoloadConfig
+        then
+            return false
+        end
+
+        return pcall(function()
+            self.SaveManager:
+                LoadAutoloadConfig()
+        end)
+    end
+
+    function ZenWindow:ApplyLilacTheme()
+        if
+            not self.ThemeManager
+            or not self.ThemeManager.SetDefaultTheme
+        then
+            return false
+        end
+
+        local ok = pcall(function()
+            self.ThemeManager:
+                SetDefaultTheme({
+                    FontColor =
+                        Color3.fromRGB(
+                            242, 230, 248
+                        ),
+
+                    MainColor =
+                        Color3.fromRGB(
+                            18, 9, 24
+                        ),
+
+                    AccentColor =
+                        Color3.fromRGB(
+                            194, 109, 228
+                        ),
+
+                    BackgroundColor =
+                        Color3.fromRGB(
+                            3, 2, 5
+                        ),
+
+                    OutlineColor =
+                        Color3.fromRGB(
+                            76, 38, 91
+                        ),
+
+                    FontFace =
+                        Font.fromEnum(
+                            Enum.Font.GothamMedium
+                        ),
+
+                    BackgroundImage =
+                        "rbxassetid://83486595661123",
+                })
+
+            self.ThemeManager:
+                LoadDefault()
+        end)
+
+        return ok
+    end
+
+    --------------------------------------------------
     -- AUTOSAVE
     --------------------------------------------------
 
     function ZenWindow:SetAutoSave(enabled)
         self.AutoSave =
             enabled == true
+
+        if
+            self.AutoSave
+            and self.SaveManager
+            and self.SaveManager.LoadAutoloadConfig
+        then
+            pcall(function()
+                self.SaveManager:
+                    LoadAutoloadConfig()
+            end)
+        end
     end
 
     --------------------------------------------------
@@ -738,24 +841,6 @@ function Obsidian.new(title, configFolder)
     --------------------------------------------------
 
     function ZenWindow:Destroy()
-        if FullscreenConnection then
-            pcall(function()
-                FullscreenConnection:Disconnect()
-            end)
-
-            FullscreenConnection =
-                nil
-        end
-
-        if FullscreenGui then
-            pcall(function()
-                FullscreenGui:Destroy()
-            end)
-
-            FullscreenGui =
-                nil
-        end
-
         if self.Library then
             pcall(function()
                 self.Library:Unload()
