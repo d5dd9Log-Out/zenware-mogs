@@ -3839,6 +3839,441 @@ _modules["Main.luau"] = {
 			})
 			
 			--------------------------------------------------
+			-- EXTRA DEV UTILITIES
+			--------------------------------------------------
+			
+			UtilityMoreTab:CreateSection(
+			    "Performance"
+			)
+			
+			local fpsLabel =
+			    UtilityMoreTab:CreateParagraph({
+			        Title = "FPS Monitor",
+			        Content = "FPS: measuring...",
+			    })
+			
+			local fpsMonitorEnabled =
+			    false
+			
+			local fpsConnection =
+			    nil
+			
+			local fpsFrames =
+			    0
+			
+			local fpsStarted =
+			    os.clock()
+			
+			local function StopFPSMonitor()
+			    fpsMonitorEnabled =
+			        false
+			
+			    if fpsConnection then
+			        fpsConnection:Disconnect()
+			        fpsConnection =
+			            nil
+			    end
+			end
+			
+			local function StartFPSMonitor()
+			    StopFPSMonitor()
+			
+			    fpsMonitorEnabled =
+			        true
+			
+			    fpsFrames =
+			        0
+			
+			    fpsStarted =
+			        os.clock()
+			
+			    fpsConnection =
+			        RunService.RenderStepped:Connect(
+			            function()
+			                if not fpsMonitorEnabled then
+			                    return
+			                end
+			
+			                fpsFrames +=
+			                    1
+			
+			                local elapsed =
+			                    os.clock()
+			                    - fpsStarted
+			
+			                if elapsed >= 0.5 then
+			                    local fps =
+			                        math.floor(
+			                            (
+			                                fpsFrames
+			                                / elapsed
+			                            )
+			                            + 0.5
+			                        )
+			
+			                    pcall(function()
+			                        fpsLabel:SetText(
+			                            "FPS: "
+			                                .. tostring(
+			                                    fps
+			                                )
+			                        )
+			                    end)
+			
+			                    fpsFrames =
+			                        0
+			
+			                    fpsStarted =
+			                        os.clock()
+			                end
+			            end
+			        )
+			end
+			
+			UtilityMoreTab:CreateToggle({
+			    Name = "FPS Monitor",
+			
+			    Default = false,
+			
+			    Flag = "FPSMonitor",
+			
+			    Callback = function(enabled)
+			        if enabled then
+			            StartFPSMonitor()
+			        else
+			            StopFPSMonitor()
+			
+			            pcall(function()
+			                fpsLabel:SetText(
+			                    "FPS: stopped"
+			                )
+			            end)
+			        end
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Performance Snapshot",
+			
+			    Callback = function()
+			        local character =
+			            LocalPlayer.Character
+			
+			        local root =
+			            GetRoot()
+			
+			        Notify(
+			            "Performance",
+			            "Players: "
+			                .. tostring(
+			                    #Players:GetPlayers()
+			                )
+			                .. "\nGravity: "
+			                .. string.format(
+			                    "%.1f",
+			                    Workspace.Gravity
+			                )
+			                .. "\nCharacter: "
+			                .. tostring(
+			                    character ~= nil
+			                )
+			                .. "\nRoot: "
+			                .. tostring(
+			                    root ~= nil
+			                ),
+			            5
+			        )
+			    end,
+			})
+			
+			--------------------------------------------------
+			-- ENVIRONMENT
+			--------------------------------------------------
+			
+			UtilityMoreTab:CreateSection(
+			    "Environment"
+			)
+			
+			UtilityMoreTab:CreateSlider({
+			    Name = "Clock Time",
+			
+			    Min = 0,
+			    Max = 24,
+			
+			    Default = Lighting.ClockTime,
+			
+			    Flag = "ClockTime",
+			
+			    Callback = function(value)
+			        Lighting.ClockTime =
+			            tonumber(value)
+			            or Lighting.ClockTime
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Day",
+			
+			    Callback = function()
+			        Lighting.ClockTime =
+			            12
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Sunset",
+			
+			    Callback = function()
+			        Lighting.ClockTime =
+			            18
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Night",
+			
+			    Callback = function()
+			        Lighting.ClockTime =
+			            0
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Restore Local Visuals",
+			
+			    Callback = function()
+			        pcall(function()
+			            Lighting.ClockTime =
+			                14
+			
+			            local camera =
+			                GetCamera()
+			
+			            if camera then
+			                camera.FieldOfView =
+			                    70
+			            end
+			        end)
+			
+			        Notify(
+			            "Environment",
+			            "Local visual settings restored.",
+			            3
+			        )
+			    end,
+			})
+			
+			--------------------------------------------------
+			-- QUICK ACTIONS
+			--------------------------------------------------
+			
+			UtilityMoreTab:CreateSection(
+			    "Quick Actions"
+			)
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Copy Position",
+			
+			    Callback = function()
+			        local position =
+			            GetPosition()
+			
+			        if not position then
+			            Notify(
+			                "Clipboard",
+			                "Character position unavailable.",
+			                3
+			            )
+			            return
+			        end
+			
+			        local value =
+			            string.format(
+			                "%.3f %.3f %.3f",
+			                position.X,
+			                position.Y,
+			                position.Z
+			            )
+			
+			        if SetClipboard(
+			            value
+			        ) then
+			            Notify(
+			                "Clipboard",
+			                "Position copied.",
+			                3
+			            )
+			        end
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Copy Camera Position",
+			
+			    Callback = function()
+			        local camera =
+			            GetCamera()
+			
+			        if not camera then
+			            return
+			        end
+			
+			        local position =
+			            camera.CFrame.Position
+			
+			        local value =
+			            string.format(
+			                "%.3f %.3f %.3f",
+			                position.X,
+			                position.Y,
+			                position.Z
+			            )
+			
+			        if SetClipboard(
+			            value
+			        ) then
+			            Notify(
+			                "Clipboard",
+			                "Camera position copied.",
+			                3
+			            )
+			        end
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Show Camera Info",
+			
+			    Callback = function()
+			        local camera =
+			            GetCamera()
+			
+			        if not camera then
+			            return
+			        end
+			
+			        local position =
+			            camera.CFrame.Position
+			
+			        Notify(
+			            "Camera",
+			            string.format(
+			                "X %.2f | Y %.2f | Z %.2f\nFOV %.1f",
+			                position.X,
+			                position.Y,
+			                position.Z,
+			                camera.FieldOfView
+			            ),
+			            4
+			        )
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Reset Character Rotation",
+			
+			    Callback = function()
+			        local root =
+			            GetRoot()
+			
+			        if not root then
+			            return
+			        end
+			
+			        local position =
+			            root.Position
+			
+			        root.CFrame =
+			            CFrame.new(
+			                position
+			            )
+			
+			        root.AssemblyAngularVelocity =
+			            Vector3.zero
+			
+			        Notify(
+			            "Character",
+			            "Rotation reset.",
+			            2
+			        )
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Respawn",
+			
+			    Callback = function()
+			        SafeCall(function()
+			            LocalPlayer:LoadCharacter()
+			        end)
+			    end,
+			})
+			
+			--------------------------------------------------
+			-- FUN / USELESS STUFF
+			--------------------------------------------------
+			
+			UtilityMoreTab:CreateSection(
+			    "Fun"
+			)
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Where Am I?",
+			
+			    Callback = function()
+			        local position =
+			            GetPosition()
+			
+			        Notify(
+			            "Where Am I?",
+			            FormatVector3(
+			                position
+			            ),
+			            4
+			        )
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Random Camera FOV",
+			
+			    Callback = function()
+			        local camera =
+			            GetCamera()
+			
+			        if camera then
+			            camera.FieldOfView =
+			                math.random(
+			                    55,
+			                    110
+			                )
+			        end
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Random Clock",
+			
+			    Callback = function()
+			        Lighting.ClockTime =
+			            math.random()
+			            * 24
+			    end,
+			})
+			
+			UtilityMoreTab:CreateButton({
+			    Name = "Notify Test",
+			
+			    Callback = function()
+			        Notify(
+			            "🌸 Lilac v1488",
+			            "Everything is alive and running.",
+			            4
+			        )
+			    end,
+			})
+			
+			--------------------------------------------------
 			-- DEVELOPER PHYSICS TESTS
 			--------------------------------------------------
 			
